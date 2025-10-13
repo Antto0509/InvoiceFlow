@@ -1,24 +1,44 @@
-import { getUser } from "@/lib/auth/getUser";
-import Link from "next/link";
-import SignOutButton from "@/components/auth/signout-button";
+import type { Metadata } from "next";
+import { Inter, Lexend } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner"; 
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUser();
+// --- Fonts configuration ---
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
+const lexend = Lexend({
+  subsets: ["latin"],
+  variable: "--font-lexend",
+  display: "swap",
+});
+
+// --- Metadata (SEO / title / etc.) ---
+export const metadata: Metadata = {
+  title: {
+    default: "InvoiceFlow",
+    template: "%s | InvoiceFlow",
+  },
+  description: "Gérez vos factures simplement et efficacement avec InvoiceFlow.",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+// --- Root layout ---
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="fr">
-      <head />
-      <body>
-        <div className="min-h-dvh">
-          <header className="border-b p-4 flex items-center justify-between">
-            <Link href="/app" className="font-semibold">InvoiceFlow</Link>
-            <div className="flex items-center gap-3">
-              {user && <span className="text-sm text-muted-foreground">{user.email}</span>}
-              {user ? <SignOutButton /> : <Link href="/login">Se connecter</Link>}
-            </div>
-          </header>
-          <main className="p-6">{children}</main>
-        </div>
+    <html lang="fr" className={`${inter.variable} ${lexend.variable}`}>
+      <body className="font-sans bg-background text-foreground antialiased">
+        {children}
+        <Toaster position="top-right" />
       </body>
     </html>
   );

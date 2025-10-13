@@ -141,5 +141,78 @@ Tu es libre de :
 
 ---
 
+## 🤝 Contribuer
+
+Les contributions sont les bienvenues !  
+Si tu veux aider à améliorer **InvoiceFlow**, voici comment faire 👇
+
+### 🧭 Processus de contribution
+
+1. **Fork** le repo  
+2. **Crée une branche** pour ta feature ou ton correctif :  
+   ```bash
+   git checkout -b feature/ma-super-feature
+   ```
+3. **Commit** tes modifications avec un message clair :
+   ```bash
+   git commit -m "✨ Ajout de la génération automatique de PDF"
+   ```
+4. **Push** la branche :
+   ```bash
+   git push origin feature/ma-super-feature
+   ```
+5. **Ouvre une Pull Request** sur la branche `main`  
+➡️ Merci d’expliquer clairement ce que ta PR apporte ou corrige.
+
+---
+
+## 📋 Règles de style
+
+- Code propre, clair et commenté.
+- Utilise TypeScript si possible.
+- Respecte la structure du projet existante.
+- Évite les dépendances inutiles.
+- Les commits doivent suivre une syntaxe simple :
+  - ✨ feature: ajout de ...
+  - 🐛 fix: correction de ...
+  - 🧹 refactor: nettoyage / simplification
+
+---
+
+## 🧪 Tests & QA
+
+- Vérifie que le build passe avant toute PR (`npm run build`).
+- Teste les fonctionnalités principales manuellement.
+- Si tu ajoutes des tests unitaires, place-les dans `/tests`.
+
+---
+
+## 🗨️ Discussion & Feedback
+
+Tu peux :
+- Ouvrir une issue pour signaler un bug ou proposer une idée 💡
+- Discuter sur les Discussions GitHub (si activées)
+- Ou me contacter directement sur [LinkedIn](https://www.linkedin.com/in/antoine-coutreel/)  
+
+
+---
+
+> Chaque contribution, même minime, rend InvoiceFlow plus utile aux freelances. 💪
+
+---
+
+## 🧭 Roadmap publique
+
+ - Authentification Supabase
+ - CRUD Clients / Factures
+ - Génération PDF
+ - Envoi d’emails
+ - Relances automatiques
+ - Stripe Billing
+ - Déploiement Vercel
+ - Lancement public 🚀
+
+---
+
 > _« Build slow, build right, then let your code earn while you sleep. »_  
 > — Antoine ⚡️

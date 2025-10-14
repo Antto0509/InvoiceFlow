@@ -1,6 +1,6 @@
 export default function AppHome() {
   return (
-    <section className="space-y-6">
+    <section className="p-6 space-y-6">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Factures</h1>
         <div className="text-sm text-muted-foreground">

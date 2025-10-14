@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/app/clients", label: "Clients", icon: Users },
   { href: "/app/invoices", label: "Factures", icon: FileText },
   { href: "/app/settings", label: "Paramètres", icon: Settings },
 ];
@@ -20,7 +21,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto p-2">
         {nav.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+          const isExact = pathname === item.href;
+          const isChild = pathname.startsWith(item.href + "/");
+          const active = item.href === "/app" ? isExact : isExact || isChild;
           return (
             <Link
               key={item.href}

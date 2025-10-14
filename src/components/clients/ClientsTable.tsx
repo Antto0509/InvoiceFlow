@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ClientForm } from "./ClientForm";
 import { useClientsTable } from "./table/useClientsTable";
 import { ClientsToolbar } from "./table/ClientsToolbar";
@@ -11,6 +10,8 @@ import { BulkAddDialog } from "./table/BulkAddDialog";
 import { BulkEditDialog } from "./table/BulkEditDialog";
 import { Th } from "./table/Th";
 import { Pagination } from "./table/Pagination";
+import { RowActions } from "./table/RowActions";
+import { ClientCard } from "./table/ClientCard";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
@@ -18,25 +19,43 @@ import {
 
 export function ClientsTable() {
   const {
-    // data/state
     loading, filtered, total,
-    // query/sort/pagination
     query, setQuery, sortKey, sortDir, setSortKey, setSortDir,
     page, pageSize, setPage, setPageSize,
-    // dialogs
-    isCreateOpen, setIsCreateOpen, editClient, setEditClient, deleteClient, setDeleteClient,
-    isBulkAddOpen, setIsBulkAddOpen, isBulkEditOpen, setIsBulkEditOpen,
-    // selection
+
+    // ⬇️ récupère BIEN les états, pas seulement les setters
+    isCreateOpen, setIsCreateOpen,
+    editClient, setEditClient,
+    deleteClient, setDeleteClient,
+
+    isBulkAddOpen, setIsBulkAddOpen,
+    isBulkEditOpen, setIsBulkEditOpen,
+
     selected, allSelected, toggleAll, toggleOne, selectAllRef,
+
     // handlers
     handleCreate, requestUpdateConfirm, confirmApplySingleEdit, cancelSingleEditConfirm,
     handleDelete, onBulkDeleteConfirmed, handleBulkEditApply, handleBulkAdd,
     exportCurrentPageCSV, exportAllCSV,
-    // confirm edit unitaire
+
+    // confirm edit unitaire (déjà gérée)
     confirmSingleEditOpen, currentEditingName,
+
     // table header click
     toggleSortBy,
   } = useClientsTable();
+
+  // toggle list/card
+  const [viewMode, setViewMode] = React.useState<"list" | "card">("list");
+  const [density, setDensity] = React.useState<"normal" | "dense">("dense");
+  const listView = viewMode === "list";
+  const cardView = viewMode === "card";
+  // Helpers d’affichage cartes
+  const cardVariant = density === "dense" ? "compact" : "default";
+  const cardGridClass =
+    density === "dense"
+      ? "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+      : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className="space-y-4">
@@ -53,6 +72,10 @@ export function ClientsTable() {
         onPageSizeChange={setPageSize}
         onExportPage={exportCurrentPageCSV}
         onExportAll={exportAllCSV}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        density={density}
+        onDensityChange={setDensity}
       />
 
       {selected.size > 0 && (
@@ -63,94 +86,97 @@ export function ClientsTable() {
         />
       )}
 
-      <div className="rounded-2xl border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="w-10 p-3 align-middle">
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  aria-label="Tout sélectionner"
-                  checked={allSelected}
-                  onChange={toggleAll}
-                />
-              </th>
+      {/* Cartes */}
+      {cardView && (
+        <div className={cardGridClass}>
+          {filtered.map((c) => (
+            <ClientCard
+              key={c.id}
+              client={c}
+              selected={selected.has(c.id)}
+              onToggle={toggleOne}
+              onEdit={(cl) => setEditClient(cl)}
+              onDelete={(cl) => setDeleteClient(cl)}
+              variant={cardVariant as "default" | "compact"}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="col-span-full rounded-xl border p-6 text-center text-muted-foreground">
+              {loading ? "Chargement..." : "Aucun client"}
+            </div>
+          )}
+        </div>
+      )}
 
-              <Th label="Nom" column="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
-              <Th label="Email" column="email" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
-              <Th label="Société" column="company" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
-              <Th label="Créé le" column="created_at" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
-
-              <th className="text-right p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((c) => (
-              <tr key={c.id} className="border-b last:border-0">
-                <td className="p-3 align-middle">
+      {/* Tableau */}
+      {listView && (
+        <div className="rounded-2xl border overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="w-10 p-3 align-middle">
                   <input
+                    ref={selectAllRef}
                     type="checkbox"
-                    checked={selected.has(c.id)}
-                    onChange={() => toggleOne(c.id)}
-                    aria-label={`Sélectionner ${c.name}`}
+                    aria-label="Tout sélectionner"
+                    checked={allSelected}
+                    onChange={toggleAll}
                   />
-                </td>
-                <td className="p-3 font-medium">{c.name}</td>
-                <td className="p-3">{c.email}</td>
-                <td className="p-3">{c.company ?? "—"}</td>
-                <td className="p-3">{c.created_at ? new Date(c.created_at).toLocaleDateString() : "—"}</td>
-                <td className="p-3">
-                  <div className="flex justify-end gap-2">
-                    {/* Éditer */}
-                    <Dialog open={!!editClient && editClient.id === c.id} onOpenChange={(o) => !o && setEditClient(null)}>
-                      <DialogTrigger asChild>
-                        <Button variant="secondary" onClick={() => setEditClient(c)}>Éditer</Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[600px]">
-                        <DialogHeader><DialogTitle>Modifier le client</DialogTitle></DialogHeader>
-                        {/* La soumission déclenche une confirmation via requestUpdateConfirm */}
-                        <ClientForm defaultValues={c} onSubmit={requestUpdateConfirm} />
-                      </DialogContent>
-                    </Dialog>
+                </th>
 
-                    {/* Supprimer */}
-                    <Dialog open={!!deleteClient && deleteClient.id === c.id} onOpenChange={(o) => !o && setDeleteClient(null)}>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive" onClick={() => setDeleteClient(c)}>Supprimer</Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader><DialogTitle>Supprimer {c.name} ?</DialogTitle></DialogHeader>
-                        <p>Cette action est irréversible.</p>
-                        <DialogFooter>
-                          <Button variant="secondary" onClick={() => setDeleteClient(null)}>Annuler</Button>
-                          <Button variant="destructive" onClick={() => handleDelete(c.id)}>Confirmer</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                <Th label="Nom" column="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
+                <Th className="hidden md:table-cell" label="Email" column="email" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
+                <Th className="hidden lg:table-cell" label="Société" column="company" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
+                <Th className="hidden xl:table-cell" label="Créé le" column="created_at" sortKey={sortKey} sortDir={sortDir} onSort={toggleSortBy} />
 
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
-                  {loading ? "Chargement..." : "Aucun client"}
-                </td>
+                <th className="text-right p-3">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.map((c) => (
+                <tr key={c.id} className="border-b last:border-0">
+                  <td className="p-3 align-middle">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.id)}
+                      onChange={() => toggleOne(c.id)}
+                      aria-label={`Sélectionner ${c.name}`}
+                    />
+                  </td>
+                  <td className="p-3 font-medium">{c.name}</td>
+                  <td className="p-3 hidden md:table-cell">{c.email}</td>
+                  <td className="p-3 hidden lg:table-cell">{c.company ?? "—"}</td>
+                  <td className="p-3 hidden xl:table-cell">
+                    {c.created_at ? new Date(c.created_at).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="p-3">
+                    <RowActions
+                      client={c}
+                      onEdit={(cl) => setEditClient(cl)}
+                      onDelete={(cl) => setDeleteClient(cl)}
+                    />
+                  </td>
+                </tr>
+              ))}
+
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                    {loading ? "Chargement..." : "Aucun client"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Pagination */}
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        onPageChange={setPage}
-      />
+      <div className="px-1">
+        <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
+      </div>
+
+      {/* —— Modales globales —— */}
 
       {/* Nouveau client */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -161,18 +187,43 @@ export function ClientsTable() {
         </DialogContent>
       </Dialog>
 
-      {/* Ajout en lot */}
-      <BulkAddDialog open={isBulkAddOpen} onOpenChange={setIsBulkAddOpen} onSubmit={handleBulkAdd} />
+      {/* ÉDITER — une seule modale, basée sur editClient */}
+      <Dialog open={!!editClient} onOpenChange={(o) => !o && setEditClient(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader><DialogTitle>Modifier le client</DialogTitle></DialogHeader>
+          {editClient && (
+            <ClientForm
+              defaultValues={editClient}
+              onSubmit={(vals) => {
+                const payload = { id: editClient.id, ...vals };
+                requestUpdateConfirm(payload);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Édition en lot */}
-      <BulkEditDialog
-        open={isBulkEditOpen}
-        onOpenChange={setIsBulkEditOpen}
-        onConfirm={(patch) => handleBulkEditApply(patch)}
-        selectedCount={selected.size}
-      />
+      {/* SUPPRIMER — une seule modale, basée sur deleteClient */}
+      <AlertDialog open={!!deleteClient} onOpenChange={(o) => !o && setDeleteClient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Supprimer {deleteClient?.name ? `« ${deleteClient.name} »` : "ce client"} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteClient) handleDelete(deleteClient.id); }}>
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Confirmation modif unitaire */}
+      {/* Confirmation modif unitaire (déjà fournie par le hook) */}
       <AlertDialog open={confirmSingleEditOpen} onOpenChange={(o) => !o && cancelSingleEditConfirm()}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -187,6 +238,17 @@ export function ClientsTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import en lot */}
+      <BulkAddDialog open={isBulkAddOpen} onOpenChange={setIsBulkAddOpen} onSubmit={handleBulkAdd} />
+
+      {/* Édition en lot */}
+      <BulkEditDialog
+        open={isBulkEditOpen}
+        onOpenChange={setIsBulkEditOpen}
+        onConfirm={(patch) => handleBulkEditApply(patch)}
+        selectedCount={selected.size}
+      />
     </div>
   );
 }

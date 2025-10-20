@@ -6,10 +6,10 @@ import { LayoutDashboard, Users, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { href: "/app", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/app/clients", label: "Clients", icon: Users },
-  { href: "/app/invoices", label: "Factures", icon: FileText },
-  { href: "/app/settings", label: "Paramètres", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/clients", label: "Clients", icon: Users },
+  { href: "/dashboard/invoices", label: "Factures", icon: FileText },
+  { href: "/dashboard/settings", label: "Paramètres", icon: Settings },
 ];
 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -23,7 +23,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           const Icon = item.icon;
           const isExact = pathname === item.href;
           const isChild = pathname.startsWith(item.href + "/");
-          const active = item.href === "/app" ? isExact : isExact || isChild;
+          const active = item.href === "/dashboard" ? isExact : isExact || isChild;
           return (
             <Link
               key={item.href}

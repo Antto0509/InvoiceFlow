@@ -38,7 +38,7 @@ export default function RootLayout({
     <html lang="fr" className={`${inter.variable} ${lexend.variable}`}>
       <body className="font-sans bg-background text-foreground antialiased">
         {children}
-        <Toaster position="top-right" />
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

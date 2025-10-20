@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Sidebar from "./sidebar";
-import { getUser } from "@/lib/auth/getUser";
-import SignOutButton from "@/components/auth/signout-button";
+import { getUser } from "@/data/auth/getUser";
+import SignOutButton from "@/components/auth/SignOutButton";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,

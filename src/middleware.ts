@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/middleware";
+import { createClient } from "@/data/supabase/middleware";
 
 export async function middleware(req: NextRequest) {
   const { supabase, supabaseResponse } = createClient(req);
 
   // Protection des routes /app
-  if (req.nextUrl.pathname.startsWith("/app")) {
+  if (req.nextUrl.pathname.startsWith("/dashboard")) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       const url = req.nextUrl.clone();
@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const url = req.nextUrl.clone();
-      url.pathname = "/app";
+      url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
   }

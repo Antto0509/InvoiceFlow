@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Client } from "@/schemas/clients";
-import { RowActions } from "./RowActions";
+import { RowActions } from "../../entity/table/RowActions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Building2, Mail, Phone, MapPin } from "lucide-react";
@@ -88,7 +88,7 @@ export function ClientCard({
 
       {/* Actions */}
       <div className={cn("flex justify-end", isCompact ? "mt-1" : "mt-2")}>
-        <RowActions client={client} onEdit={onEdit} onDelete={onDelete} />
+        <RowActions item={client} onEdit={onEdit} onDelete={onDelete} />
       </div>
     </div>
   );

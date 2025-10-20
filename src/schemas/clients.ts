@@ -35,3 +35,48 @@ export type Client = {
   created_at: string;   // timestamptz
   updated_at: string;   // timestamptz
 };
+
+/**
+ * Type des lignes de client pour les listes.
+ */
+export type ClientListRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  company: string | null;
+  created_at: string;   // ISO "YYYY-MM-DDTHH:mm:ss.sssZ"
+  updated_at: string;   // ISO "YYYY-MM-DDTHH:mm:ss.sssZ"
+};
+
+/**
+ * Type des props pour le composant ClientsTable.
+ */
+export type ClientsTableProps = {
+  data?: ClientListRow[];
+  loading?: boolean;
+  onRowClick?: (id: string) => void;
+  sort?: ClientSort;
+  onSortChange?: (sort: ClientSort) => void;
+};
+
+/**
+ * Type des paramètres pour les listes de clients.
+ */
+export type ClientListParams = {
+  page: number;
+  pageSize: number;
+  search: string;
+  company: string;
+  hasEmail: boolean;
+  sort: ClientSort;
+  signal?: AbortSignal;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
+};
+
+/**
+ * Type du tri pour les listes de clients.
+ */
+export type ClientSort = { column: "name" | "email" | "company" | "phone" | "address" | "created_at" | "updated_at"; dir: "asc" | "desc" };

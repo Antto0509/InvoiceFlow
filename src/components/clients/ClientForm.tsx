@@ -3,9 +3,8 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ClientFormValues, clientSchema } from "@/schemas/clients";
+import { ClientFormValues, clientFormSchema } from "@/schemas/clients";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -14,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { FormShell } from "../shared/FormShell";
 
 export function ClientForm({
   defaultValues,
@@ -25,7 +25,7 @@ export function ClientForm({
   loading?: boolean;
 }) {
   const form = useForm<ClientFormValues>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientFormSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -44,11 +44,11 @@ export function ClientForm({
 
   return (
     <Form {...form}>
-      <form
+      <FormShell
         onSubmit={form.handleSubmit(async (v) => {
           await onSubmit(v);
         })}
-        className="space-y-4"
+        loading={loading}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -72,7 +72,7 @@ export function ClientForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="marie@exemple.com" {...field} />
+                  <Input type="email" placeholder="marie@exemple.com" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -135,13 +135,7 @@ export function ClientForm({
             </FormItem>
           )}
         />
-
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={loading}>
-            {loading ? "En cours..." : "Enregistrer"}
-          </Button>
-        </div>
-      </form>
+      </FormShell>
     </Form>
   );
 }

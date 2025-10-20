@@ -9,50 +9,65 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { Client } from "@/schemas/clients";
 
-export function RowActions({
-  client,
+type RowActionsProps<T> = {
+  /** L’élément de la ligne (client, facture, etc.) */
+  item: T;
+
+  /** Callbacks */
+  onEdit: (item: T) => void;
+  onDelete: (item: T) => void;
+
+  /** Libellés personnalisables */
+  labels?: {
+    edit?: string;
+    delete?: string;
+    menu?: string; // aria-label
+  };
+
+  /**
+   * Affiche toujours les boutons (et pas le menu) — pratique pour debug
+   * ou sur de grands écrans si tu veux forcer l’affichage.
+   */
+  alwaysVisible?: boolean;
+};
+
+export function RowActions<T>({
+  item,
   onEdit,
   onDelete,
+  labels,
   alwaysVisible = false,
-}: {
-  client: Client;
-  onEdit: (c: Client) => void;
-  onDelete: (c: Client) => void;
-  /** for debugging: if true, shows actions even on mobile */
-  alwaysVisible?: boolean;
-}) {
+}: RowActionsProps<T>) {
+  const editLabel = labels?.edit ?? "Éditer";
+  const deleteLabel = labels?.delete ?? "Supprimer";
+  const menuLabel = labels?.menu ?? "Actions";
+
   return (
     <div className="relative flex justify-end">
-      {/* 💻 Grand écran: boutons directs */}
-      <div
-        className={`
-          ${alwaysVisible ? "flex" : "hidden 2xl:flex"}
-          gap-2
-        `}
-      >
+      {/* Grand écran: boutons directs */}
+      <div className={`${alwaysVisible ? "flex" : "hidden 2xl:flex"} gap-2`}>
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => onEdit(client)}
+          onClick={() => onEdit(item)}
           className="flex items-center"
         >
           <Pencil className="h-4 w-4 mr-1" />
-          Éditer
+          {editLabel}
         </Button>
         <Button
           size="sm"
           variant="destructive"
-          onClick={() => onDelete(client)}
+          onClick={() => onDelete(item)}
           className="flex items-center"
         >
           <Trash2 className="h-4 w-4 mr-1" />
-          Supprimer
+          {deleteLabel}
         </Button>
       </div>
 
-      {/* 📱 Mobile / tablette: menu kebab */}
+      {/* Mobile / tablette: menu kebab */}
       {!alwaysVisible && (
         <div className="2xl:hidden">
           <DropdownMenu>
@@ -61,28 +76,27 @@ export function RowActions({
                 size="sm"
                 variant="ghost"
                 className="hover:bg-muted/80"
-                aria-label="Actions"
+                aria-label={menuLabel}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-
             <DropdownMenuContent
               align="end"
               sideOffset={4}
               className="w-40 z-50"
               onClick={(e) => e.stopPropagation()}
             >
-              <DropdownMenuItem onClick={() => onEdit(client)}>
+              <DropdownMenuItem onClick={() => onEdit(item)}>
                 <Pencil className="h-4 w-4 mr-2" />
-                Éditer
+                {editLabel}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDelete(client)}
+                onClick={() => onDelete(item)}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
+                {deleteLabel}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

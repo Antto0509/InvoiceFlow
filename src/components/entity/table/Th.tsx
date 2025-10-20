@@ -3,26 +3,32 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function Th({
+type SortDir = "asc" | "desc";
+type ThProps<TCol extends string = string> = {
+  label: string;
+  column: TCol;                 // ex: "name" | "email" | "created_at"
+  sortKey?: TCol | string;
+  sortDir?: SortDir;
+  onSort: (col: TCol) => void;
+  className?: string;
+  align?: "left" | "center" | "right";
+};
+
+export function Th<TCol extends string = string>({
   label,
   column,
   sortKey,
-  sortDir,
+  sortDir = "asc",
   onSort,
   className,
-}: {
-  label: string;
-  column: "name" | "email" | "company" | "created_at";
-  sortKey: string;
-  sortDir: "asc" | "desc";
-  onSort: (col: string) => void;
-  className?: string;
-}) {
+  align = "left",
+}: ThProps<TCol>) {
   const isActive = sortKey === column;
   return (
     <th
       className={cn(
-        "text-left p-3 select-none cursor-pointer align-middle",
+        "p-3 select-none cursor-pointer align-middle",
+        align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left",
         className
       )}
       onClick={() => onSort(column)}

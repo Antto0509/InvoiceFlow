@@ -9,7 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-import { Menu } from "lucide-react";
+import { Menu, User } from "lucide-react";
 
 export default async function Topbar() {
   const user = await getUser();
@@ -37,9 +37,8 @@ export default async function Topbar() {
       <div className="ml-auto flex items-center gap-2">
         {user ? (
           <>
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {user.email}
-            </span>
+            <User className="hidden h-4 w-4 text-muted-foreground sm:inline-block" />
+            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <SignOutButton />
           </>
         ) : (

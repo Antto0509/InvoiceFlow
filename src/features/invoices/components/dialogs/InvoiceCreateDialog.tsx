@@ -33,7 +33,7 @@ export function InvoiceCreateDialog({
           onSubmit={async (values) => {
             try {
               setCreating(true);
-              const { items, pdf_url, subtotal, tax, total, ...invoice } = values;
+              const { items, ...invoice } = values;
               await createInvoice(invoice);
               await upsertItems(items);
               toast.success("Facture créée");

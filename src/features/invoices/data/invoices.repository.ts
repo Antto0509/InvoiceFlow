@@ -2,6 +2,8 @@ import { createResourceApi } from "@/data/createResourceApi";
 import type { InvoiceListParams, InvoiceListRow, Invoice } from "@/schemas/invoices.schema";
 import type { Item } from "@/schemas/items.schema";
 import { SORTABLE_INVOICES } from "@/lib/constants";
+import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
+import { createClient } from "@/data/supabase/client";
 
 // ---- Invoices API ----
 
@@ -68,6 +70,50 @@ export async function listInvoices(params: InvoiceListParams = {}, userId?: stri
   });
 
   return { rows: data as InvoiceListRow[], total };
+}
+
+export async function createInvoiceWithItems(
+  payload: Partial<Invoice & { items?: Item[] }>,
+  userId?: string
+) {
+  const sb = createClient();
+
+  // 1) insérer la facture sans champs générés ni items
+  const { items, ...rawInvoice } = payload || {};
+  const invoiceInsert = stripGenerated(rawInvoice as Record<string, unknown>);
+
+  // Multitenant selon ton schéma (si nécessaire)
+  const invoiceToInsert = userId ? { ...invoiceInsert, user_id: userId } : invoiceInsert;
+
+  const { data: inv, error: invErr } = await sb
+    .from("invoices")
+    .insert(invoiceToInsert)
+    .select("id")
+    .single();
+
+  if (invErr) throw invErr;
+
+  // 2) si pas d’items → terminé
+  if (!items?.length) return inv;
+
+  // 3) préparer et insérer les items
+  const itemsClean = stripGeneratedMany(items as Item[]).map((it: Item) => {
+    const itemUserId = (it as unknown as { user_id?: string }).user_id;
+    return {
+      ...it,
+      invoice_id: inv.id,
+      ...(userId ? { user_id: (itemUserId ?? userId) } : {}),
+    };
+  }) as Array<Item & { invoice_id: string; user_id?: string }>;
+
+  const { error: itemsErr } = await sb.from("items").insert(itemsClean).select("id");
+  if (itemsErr) {
+    // rollback manuel pour cohérence
+    await sb.from("invoices").delete().eq("id", inv.id);
+    throw itemsErr;
+  }
+
+  return inv;
 }
 
 // ---- CRUD Invoices

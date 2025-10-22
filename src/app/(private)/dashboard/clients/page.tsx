@@ -1,20 +1,23 @@
 "use client";
 import * as React from "react";
 import { ListPage } from "@/components/ListPage";
-import { ClientsTable } from "@/features/clients";
+import { ClientCreateDialog, ClientEditDialog, ClientDeleteDialog, ClientsTable } from "@/features/clients";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listClients } from "@/data/clients.repository";
-import type { ClientListParams, ClientListRow } from "@/schemas/clients.schema";
+import type { ClientListParams, ClientListRow, Client } from "@/schemas/clients.schema";
 import { toast, Toaster } from "sonner";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
 export default function ClientsPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
+  const [editClient, setEditClient] = React.useState<Client | null>(null);
+  const [updating, setUpdating] = React.useState(false);
+  const [deleteClient, setDeleteClient] = React.useState<Client | null>(null);
   const { data, total, loading, params, setParams } = useDataTable<ClientListRow, ClientListParams>(
     async (p) => {
       const res = await listClients({
@@ -34,6 +37,16 @@ export default function ClientsPage() {
       sort: { column: "name", dir: "asc" },
     }
   );
+
+  // Handlers envoyés à la table (RowActions les utilisera)
+  const handleEdit = (row: ClientListRow) => {
+    // si ClientListRow est compatible avec Client, sinon mappe ce qu’il faut
+    setEditClient(row as unknown as Client);
+  };
+
+  const handleDelete = (row: ClientListRow) => {
+    setDeleteClient(row as unknown as Client);
+  };
 
   return (
     <ListPage
@@ -69,6 +82,8 @@ export default function ClientsPage() {
         onRowClick={(id) => {
           toast.info(`Cliqué sur le client avec l'ID : ${id}`);
         }}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
       <Pagination
           total={total}
@@ -77,6 +92,29 @@ export default function ClientsPage() {
           onPageChange={(page) => setParams({ ...params, page })}
         />
       <Toaster richColors position="top-right" />
+
+      {/* Modales clients */}
+      <ClientCreateDialog
+        isCreateOpen={isCreateOpen}
+        setIsCreateOpen={setIsCreateOpen}
+        creating={creating}
+        setCreating={setCreating}
+        setParams={setParams}
+      />
+
+      <ClientEditDialog
+        editClient={editClient}
+        setEditClient={setEditClient}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+
+      <ClientDeleteDialog
+        deleteClient={deleteClient}
+        setDeleteClient={setDeleteClient}
+        setParams={setParams}
+      />
     </ListPage>
   );
 }

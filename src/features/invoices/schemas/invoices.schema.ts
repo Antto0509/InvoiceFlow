@@ -38,6 +38,7 @@ export const invoiceFormSchema = z.object({
   tax: z.coerce.number().min(0).optional(),
   total: z.coerce.number().min(0).optional(),
   pdf_url: z.url().optional().nullable(),
+  tax_rate: z.coerce.number().min(0).max(1).optional(),
 });
 
 /**
@@ -62,6 +63,7 @@ export type Invoice = {
   total: number | null;        // numeric
   pdf_url: string | null;
   created_at: string;          // timestamptz
+  tax_rate: number | null;     // numeric
 };
 
 /**
@@ -115,6 +117,8 @@ export interface InvoicesTableProps {
   onRowClick?: (id: string) => void;
   sort?: InvoiceSort;
   onSortChange?: (s: InvoiceSort) => void;
+  onEdit?: (item: InvoiceListRow) => void;
+  onDelete?: (item: InvoiceListRow) => void;
 }
 
 // --- Composants InvoiceModales ---

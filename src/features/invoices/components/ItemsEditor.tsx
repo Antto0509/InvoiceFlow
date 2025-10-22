@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useWatch } from "react-hook-form";
 import { useFieldArray, useFormContext, type Path } from "react-hook-form";
 import { Plus, Trash } from "lucide-react";
 import { InvoiceFormValues } from "@/schemas/invoices.schema";
@@ -28,6 +29,11 @@ export function ItemsEditor({
 }) {
   const form = useFormContext<InvoiceFormValues>();
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" });
+
+  const subtotal = useWatch({ control: form.control, name: "subtotal" }) ?? 0;
+  const tax      = useWatch({ control: form.control, name: "tax" }) ?? 0;
+  const total    = useWatch({ control: form.control, name: "total" }) ?? 0;
+
   const watchedItems = form.watch("items");
 
   return (
@@ -43,8 +49,7 @@ export function ItemsEditor({
               invoice_id: invoiceId,
               description: "",
               qty: 1,
-              unit_price: 0,
-              total: 0,
+              unit_price: 0
             } satisfies InvoiceFormValues["items"][number])
           }
         >
@@ -100,9 +105,10 @@ export function ItemsEditor({
                             <Input
                               type="number"
                               step="1"
-                              min={0}
+                              min={1}
+                              max={1000000000}
                               value={String(value ?? "")}
-                              onChange={onChange}
+                              onChange={(e) => onChange(e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber)}
                               onBlur={onBlur}
                               name={name}
                               className="text-right"
@@ -129,7 +135,7 @@ export function ItemsEditor({
                               step="0.01"
                               min={0}
                               value={String(value ?? "")}
-                              onChange={onChange}
+                              onChange={(e) => onChange(e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber)}
                               onBlur={onBlur}
                               name={name}
                               className="text-right"
@@ -162,9 +168,9 @@ export function ItemsEditor({
 
       <div className="flex justify-end">
         <TotalsCard
-          subtotal={form.getValues("subtotal") || 0}
-          tax={form.getValues("tax") || 0}
-          total={form.getValues("total") || 0}
+          subtotal={subtotal}
+          tax={tax}
+          total={total}
           className="w-full max-w-sm"
           currency={currency}
           taxRate={DEFAULT_TAX_RATE}

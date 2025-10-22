@@ -13,6 +13,8 @@ export function ClientsTable({
   onRowClick,
   sort,
   onSortChange,
+  onEdit,
+  onDelete,
 }: ClientsTableProps) {
   const columns = React.useMemo<ColumnDef<ClientListRow>[]>(() => {
     return [
@@ -89,15 +91,15 @@ export function ClientsTable({
         cell: ({ row }) => (
           <RowActions
             item={row.original}
-            onEdit={() => {}}
-            onDelete={() => {}}
+            onEdit={(item) => onEdit?.(item)}
+            onDelete={(item) => onDelete?.(item)}
             labels={{ edit: "Éditer", delete: "Supprimer" }}
           />
         ),
         size: 80,
       },
     ];
-  }, [sort, onSortChange]);
+  }, [sort, onSortChange, onEdit, onDelete]);
 
   return (
     <div className="border rounded-xl overflow-hidden">

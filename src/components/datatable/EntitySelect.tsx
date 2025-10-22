@@ -75,12 +75,9 @@ export function EntitySelect<T>({
         const data = await fetch({ search: debounced || undefined, limit, signal: controller.signal });
         setItems(data ?? []);
       } catch (e: unknown) {
-        if (e instanceof Error) {
-          if (e.name !== "AbortError") console.error(e);
-        } else {
-          // non-Error thrown values (log them)
-          console.error(e);
-        }
+        const name = (e as { name?: string })?.name;
+        if (name === "AbortError") return;
+        console.error(e);
       } finally {
         setLoading(false);
       }

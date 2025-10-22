@@ -50,7 +50,7 @@ export function RowActions<T>({
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => onEdit(item)}
+          onClick={(e) => { e.stopPropagation(); onEdit(item); }}
           className="flex items-center"
         >
           <Pencil className="h-4 w-4 mr-1" />
@@ -59,7 +59,7 @@ export function RowActions<T>({
         <Button
           size="sm"
           variant="destructive"
-          onClick={() => onDelete(item)}
+          onClick={(e) => { e.stopPropagation(); onDelete(item); }}
           className="flex items-center"
         >
           <Trash2 className="h-4 w-4 mr-1" />

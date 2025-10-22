@@ -15,6 +15,8 @@ export function InvoicesTable({
   onRowClick,
   sort,
   onSortChange,
+  onEdit,
+  onDelete,
 }: InvoicesTableProps) {
   const columns = React.useMemo<ColumnDef<InvoiceListRow>[]>(() => {
     return [
@@ -81,19 +83,17 @@ export function InvoicesTable({
         id: "actions",
         header: () => <span />,
         cell: ({ row }) => (
-          <RowActions<InvoiceListRow>
+          <RowActions
             item={row.original}
-            onEdit={(inv) => onRowClick?.(inv.id)} // ou ouvrir un menu
-            onDelete={() => {
-              /* open delete confirm */
-            }}
-            labels={{ edit: "Ouvrir", delete: "Supprimer" }}
+            onEdit={(item) => onEdit?.(item)}
+            onDelete={(item) => onDelete?.(item)}
+            labels={{ edit: "Éditer", delete: "Supprimer" }}
           />
         ),
         size: 60,
       },
     ];
-  }, [sort, onSortChange, onRowClick]);
+  }, [sort, onSortChange, onEdit, onDelete]);
 
   return (
     <div className="border rounded-xl overflow-hidden">

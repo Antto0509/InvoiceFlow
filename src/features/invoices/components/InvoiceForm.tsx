@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useWatch } from "react-hook-form";
 import { useEffect, useMemo, useRef } from "react";
-import { useForm, type Path, type Resolver } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InvoiceFormValues, invoiceFormSchema } from "@/schemas/invoices.schema";
 import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from "@/components/ui/form";
@@ -57,6 +58,7 @@ export function InvoiceForm({
       subtotal: defaultValues?.subtotal ?? 0,
       tax: defaultValues?.tax ?? 0,
       total: defaultValues?.total ?? 0,
+      tax_rate: defaultValues?.tax_rate ?? DEFAULT_TAX_RATE,
     } as unknown as InvoiceFormValues,
     mode: "onChange",
   });
@@ -67,6 +69,7 @@ export function InvoiceForm({
         ...form.getValues(),
         ...defaultValues,
         id: defaultValues.id ?? form.getValues("id") ?? initialInvoiceIdRef.current,
+        tax_rate: defaultValues.tax_rate ?? form.getValues("tax_rate") ?? DEFAULT_TAX_RATE,
         items:
           defaultValues.items && defaultValues.items.length > 0
             ? defaultValues.items
@@ -86,31 +89,24 @@ export function InvoiceForm({
   }, [defaultValues, form]);
 
   // Recalcul des totaux lorsque items changent
-  const items = form.watch("items");
-  const currency = form.watch("currency") || DEFAULT_CURRENCY;
+  const watchedItems = useWatch({ control: form.control, name: "items" });
+  const items = useMemo(() => watchedItems ?? [], [watchedItems]);
+  const taxRate = useWatch({ control: form.control, name: "tax_rate" }) ?? DEFAULT_TAX_RATE;
+  const currency = useWatch({ control: form.control, name: "currency" }) ?? DEFAULT_CURRENCY;
+
   useEffect(() => {
-    const subtotal = (items || []).reduce(
-      (acc, it) => acc + (Number(it?.qty) || 0) * (Number(it?.unit_price) || 0),
-      0
-    );
-    const tax = subtotal * DEFAULT_TAX_RATE;
-    const total = subtotal + tax;
-    if (form.getValues("subtotal") !== subtotal) form.setValue("subtotal", subtotal, { shouldValidate: true });
-    if (form.getValues("tax") !== tax) form.setValue("tax", tax, { shouldValidate: true });
-    if (form.getValues("total") !== total) form.setValue("total", total, { shouldValidate: true });
-    // also reflect per-line totals for UI convenience
-    (items || []).forEach((it, idx: number) => {
-      const lineTotal = (Number(it.qty) || 0) * (Number(it.unit_price) || 0);
-      const pathTotal = `items.${idx}.total` as unknown as Path<InvoiceFormValues>;
-      form.setValue(pathTotal, lineTotal as unknown as number, { shouldValidate: false });
-      // ensure invoice_id present to satisfy schema
-      const invId = form.getValues("id") ?? initialInvoiceIdRef.current;
-      if (!it.invoice_id && invId) {
-        const pathInv = `items.${idx}.invoice_id` as unknown as Path<InvoiceFormValues>;
-        form.setValue(pathInv, invId as unknown as string, { shouldValidate: false });
-      }
-    });
-  }, [items, form]);
+    const subtotal = items.reduce((acc, it) =>
+      acc + (Number(it?.qty) || 0) * (Number(it?.unit_price) || 0), 0);
+
+    const tax   = Math.round(subtotal * taxRate * 100) / 100;
+    const total = Math.round((subtotal + tax) * 100) / 100;
+
+    form.setValue("subtotal", subtotal, { shouldValidate: true });
+    form.setValue("tax",      tax,      { shouldValidate: true });
+    form.setValue("total",    total,    { shouldValidate: true });
+
+    form.setValue("tax_rate", taxRate,  { shouldValidate: false });
+  }, [items, taxRate, form]);
 
   return (
     <Form {...form}>
@@ -143,20 +139,6 @@ export function InvoiceForm({
                 <FormLabel>Devise</FormLabel>
                 <FormControl>
                   <Input placeholder={DEFAULT_CURRENCY} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Statut</FormLabel>
-                <FormControl>
-                  <Input placeholder="Statut" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

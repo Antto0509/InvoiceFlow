@@ -47,7 +47,7 @@ export function InvoiceEditDialog({
             onSubmit={async (values) => {
               try {
                 setUpdating?.(true);
-                const { items, pdf_url, subtotal, tax, total, id, ...invoice } = values;
+                const { items, ...invoice } = values;
                 if (!editInvoice?.id) return;
                 await updateInvoice(editInvoice.id, invoice);
                 await upsertItems(items);

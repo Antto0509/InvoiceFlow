@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { SortSpec } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,4 +24,41 @@ export function safeRandomUUID() {
     // ignore
   }
   return "00000000-0000-0000-0000-000000000000";
+}
+
+/** Échappe % et _ pour LIKE/ILIKE. */
+export function escapeLike(input: string) {
+  return input.replace(/[%_]/g, (m) => `\\${m}`);
+}
+
+/** Construit un OR ILIKE multi-colonnes. */
+export function buildOrIlike(columns: string[], raw: string) {
+  const term = escapeLike(raw.trim().replaceAll(",", " "));
+  if (!term) return undefined;
+  const pattern = `%${term}%`;
+  return columns.map((c) => `${c}.ilike.${pattern}`).join(",");
+}
+
+/** Valide une spec de tri contre la whitelist. */
+export function ensureSortable(sort?: SortSpec, whitelist: string[] = []): SortSpec | undefined {
+  if (!sort) return undefined;
+  if (!whitelist.includes(sort.column)) return undefined;
+  return {
+    column: sort.column,
+    dir: sort.dir ?? "asc",
+    foreignTable: sort.foreignTable,
+    nulls: sort.nulls,
+  };
+}
+
+export function stripGenerated<T extends Record<string, unknown>>(row: T) {
+  const { total: _total, subtotal: _subtotal, tax: _tax, ...rest } = row;
+  void _total;
+  void _subtotal;
+  void _tax;
+  return rest as Omit<T, "total" | "subtotal" | "tax">;
+}
+
+export function stripGeneratedMany<T extends Record<string, unknown>>(rows: T[]) {
+  return rows.map(stripGenerated);
 }

@@ -1,88 +1,8 @@
 import { createClient } from "@/data/supabase/client";
+import { escapeLike, buildOrIlike, ensureSortable, stripGenerated, stripGeneratedMany } from "@/lib/utils";
+import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/types";
 
 // --- API générique pour une ressource CRUD avec Supabase/PostgREST ---
-
-/** Résultats paginés. */
-export type Paginated<T> = {
-  data: T[];
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
-/** Spécification de tri. */
-export type SortSpec = {
-  column: string;
-  dir?: "asc" | "desc";
-  /** Tri sur une colonne d'une table liée (PostgREST: foreignTable) */
-  foreignTable?: string;
-  /** Position des NULLs, utile pour dates/numériques */
-  nulls?: "first" | "last";
-};
-
-/** Opérations de filtre supportées. */
-export type FilterOps =
-  | { op: "eq"; value: unknown }
-  | { op: "neq"; value: unknown }
-  | { op: "gt"; value: unknown }
-  | { op: "gte"; value: unknown }
-  | { op: "lt"; value: unknown }
-  | { op: "lte"; value: unknown }
-  | { op: "ilike"; value: string }
-  | { op: "in"; value: unknown[] };
-
-/** Paramètres pour une requête de liste. */
-export type ListQuery = {
-  page?: number; // 1-based
-  pageSize?: number;
-  sort?: SortSpec;
-  filters?: Record<string, FilterOps | undefined>;
-  search?: string;
-  /** Pour annuler une requête (ex: typeahead, debounce) */
-  signal?: AbortSignal;
-};
-
-/** Options pour créer une API ressource. */
-export type ResourceApiOptions<T> = {
-  table: string;
-  /** SELECT PostgREST : ex. "*, clients(name)" */
-  select?: string;
-  /** Colonnes autorisées pour le tri (sécurité) */
-  sortableColumns?: string[];
-  /** Colonnes utilisées pour la recherche ILIKE (OR) */
-  searchColumns?: string[];
-  /** Count mode: "exact" (par défaut) ou "estimated"/"planned" pour perfs */
-  countMode?: "exact" | "planned" | "estimated";
-  /** Transform optionnel pour post-traiter les rows */
-  mapRow?: (row: unknown) => T;
-  /** Filtres appliqués à TOUTES les listes (ex: multitenant user_id) */
-  defaultFilters?: Record<string, FilterOps>;
-};
-
-/** Échappe % et _ pour LIKE/ILIKE. */
-export function escapeLike(input: string) {
-  return input.replace(/[%_]/g, (m) => `\\${m}`);
-}
-
-/** Construit un OR ILIKE multi-colonnes. */
-export function buildOrIlike(columns: string[], raw: string) {
-  const term = escapeLike(raw.trim().replaceAll(",", " "));
-  if (!term) return undefined;
-  const pattern = `%${term}%`;
-  return columns.map((c) => `${c}.ilike.${pattern}`).join(",");
-}
-
-/** Valide une spec de tri contre la whitelist. */
-function ensureSortable(sort?: SortSpec, whitelist: string[] = []): SortSpec | undefined {
-  if (!sort) return undefined;
-  if (!whitelist.includes(sort.column)) return undefined;
-  return {
-    column: sort.column,
-    dir: sort.dir ?? "asc",
-    foreignTable: sort.foreignTable,
-    nulls: sort.nulls,
-  };
-}
 
 export function createResourceApi<T extends { id: string }>(opts: ResourceApiOptions<T>) {
   const supabase = createClient();
@@ -206,31 +126,29 @@ export function createResourceApi<T extends { id: string }>(opts: ResourceApiOpt
     },
 
     async create(payload: Partial<T>): Promise<T> {
-      const { data, error } = await supabase.from(table).insert(payload).select().single();
+      const clean = stripGenerated(payload as Record<string, unknown>);
+      const { data, error } = await supabase.from(table).insert(clean).select().single();
       if (error) throw error;
       return (mapRow ? mapRow(data) : data) as T;
     },
 
     async update(id: string, payload: Partial<T>): Promise<T> {
-      const { data, error } = await supabase
-        .from(table)
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
+      const clean = stripGenerated(payload as Record<string, unknown>);
+      const { data, error } = await supabase.from(table).update(clean).eq("id", id).select().single();
       if (error) throw error;
       return (mapRow ? mapRow(data) : data) as T;
+    },
+
+    async upsertMany(payloads: Partial<T>[]): Promise<T[]> {
+      const clean = stripGeneratedMany(payloads as Record<string, unknown>[]);
+      const { data, error } = await supabase.from(table).upsert(clean).select();
+      if (error) throw error;
+      return (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : (r as T))) as T[];
     },
 
     async remove(id: string): Promise<void> {
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
-    },
-
-    async upsertMany(payloads: Partial<T>[]): Promise<T[]> {
-      const { data, error } = await supabase.from(table).upsert(payloads).select();
-      if (error) throw error;
-      return (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : (r as T))) as T[];
     },
 
     /** Supprime en masse par id */

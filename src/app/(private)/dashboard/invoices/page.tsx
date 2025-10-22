@@ -10,13 +10,16 @@ import { Toaster, toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listInvoices } from "@/features/invoices";
 import { InvoicesFilters } from "@/features/invoices";
-import type { InvoiceListParams, InvoiceListRow } from "@/schemas/invoices.schema";
+import type { InvoiceListParams, InvoiceListRow, Invoice } from "@/schemas/invoices.schema";
 import { InvoiceDialogs } from "@/features/invoices";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
 export default function InvoicesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
+  const [editInvoice, setEditInvoice] = React.useState<Invoice | null>(null);
+  const [updating, setUpdating] = React.useState(false);
+  const [deleteInvoice, setDeleteInvoice] = React.useState<Invoice | null>(null);
   const { data, total, loading, params, setParams } = useDataTable<InvoiceListRow, InvoiceListParams>(
     async (p) => {
       const res = await listInvoices({
@@ -36,6 +39,16 @@ export default function InvoicesPage() {
       sort: { column: "issue_date", dir: "desc" },
     }
   );
+
+  // Handlers envoyés à la table (RowActions les utilisera)
+  const handleEdit = (row: InvoiceListRow) => {
+    // si InvoiceListRow est compatible avec Invoice, sinon mappe ce qu’il faut
+    setEditInvoice(row as unknown as Invoice);
+  };
+
+  const handleDelete = (row: InvoiceListRow) => {
+    setDeleteInvoice(row as unknown as Invoice);
+  };
 
   return (
     <ListPage
@@ -77,6 +90,8 @@ export default function InvoicesPage() {
         onRowClick={(id) => {
           toast.info(`Cliqué sur la facture avec l'ID : ${id}`);
         }}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
       <Pagination
         page={params.page ?? 1}
@@ -97,16 +112,16 @@ export default function InvoicesPage() {
       />
       <InvoiceDialogs
         mode="edit"
-        editInvoice={null}
-        setEditInvoice={() => {}}
-        updating={false}
-        setUpdating={() => {}}
+        editInvoice={editInvoice}
+        setEditInvoice={setEditInvoice}
+        updating={updating}
+        setUpdating={setUpdating}
         setParams={setParams}
       />
       <InvoiceDialogs
         mode="delete"
-        deleteInvoice={null}
-        setDeleteInvoice={() => {}}
+        deleteInvoice={deleteInvoice}
+        setDeleteInvoice={setDeleteInvoice}
         setParams={setParams}
       />
     </ListPage>

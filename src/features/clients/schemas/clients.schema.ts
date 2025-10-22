@@ -59,6 +59,8 @@ export type ClientsTableProps = {
   onRowClick?: (id: string) => void;
   sort?: ClientSort;
   onSortChange?: (sort: ClientSort) => void;
+  onEdit?: (item: ClientListRow) => void;
+  onDelete?: (item: ClientListRow) => void;
 };
 
 /**
@@ -80,3 +82,44 @@ export type ClientListParams = {
  * Type du tri pour les listes de clients.
  */
 export type ClientSort = { column: "name" | "email" | "company" | "phone" | "address" | "created_at" | "updated_at"; dir: "asc" | "desc" };
+
+// --- Dialogs Clients ---
+
+/**
+ * Type des props pour le composant ClientCreateDialog.
+ */
+export type ClientCreateProps = {
+  isCreateOpen: boolean;
+  setIsCreateOpen: (open: boolean) => void;
+  creating: boolean;
+  setCreating: (creating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
+};
+
+/**
+ * Type des props pour le composant ClientEditDialog.
+ */
+export type ClientEditProps = {
+  editClient: Client | null;
+  setEditClient: (client: Client | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
+};
+
+/**
+ * Type des props pour le composant ClientDeleteDialog.
+ */
+export type ClientDeleteProps = {
+  deleteClient: Client | null;
+  setDeleteClient: (client: Client | null) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
+};
+
+/**
+ * Type des props pour le composant ClientDialogs.
+ */
+export type ClientDialogsProps =
+  | ({ mode?: "create" } & ClientCreateProps)
+  | ({ mode: "edit" } & ClientEditProps)
+  | ({ mode: "delete" } & ClientDeleteProps);

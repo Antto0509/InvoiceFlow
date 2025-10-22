@@ -68,14 +68,34 @@ export function InvoicesTable({
         header: () => (
           <div className="flex items-center gap-1">
             <span>Statut</span>
-            <SortBtn col="status" sort={sort as InvoiceSort} onSortChange={(s) => onSortChange?.(s as InvoiceSort)} />
+            <SortBtn
+              col="status"
+              sort={sort as InvoiceSort}
+              onSortChange={(s) => onSortChange?.(s as InvoiceSort)}
+            />
           </div>
         ),
         cell: ({ row }) => {
-          const s = row.original.status;
-          const variant =
-            s === "paid" ? "default" : s === "overdue" ? "destructive" : "secondary";
-          return <Badge variant={variant as React.ComponentProps<typeof Badge>['variant']}>{s}</Badge>;
+          const status = row.original.status;
+
+          const labelMap: Record<string, string> = {
+            draft: "Brouillon",
+            sent: "Envoyée",
+            paid: "Payée",
+            overdue: "En retard",
+          };
+
+          const variantMap: Record<string, React.ComponentProps<typeof Badge>["variant"]> = {
+            paid: "default",
+            overdue: "destructive",
+            draft: "secondary",
+            sent: "outline",
+          };
+
+          const label = labelMap[status] ?? "–";
+          const variant = variantMap[status] ?? "secondary";
+
+          return <Badge variant={variant}>{label}</Badge>;
         },
         size: 120,
       },

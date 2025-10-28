@@ -5,19 +5,19 @@ import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
-import { InvoicesTable } from "@/features/invoices";
+import { getInvoiceDetail, InvoicesTable } from "@/features/invoices";
 import { Toaster, toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listInvoices } from "@/features/invoices";
 import { InvoicesFilters } from "@/features/invoices";
-import type { InvoiceListParams, InvoiceListRow, Invoice } from "@/schemas/invoices.schema";
+import type { InvoiceListParams, InvoiceListRow, Invoice, InvoiceDetail } from "@/schemas/invoices.schema";
 import { InvoiceDialogs } from "@/features/invoices";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
 export default function InvoicesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [editInvoice, setEditInvoice] = React.useState<Invoice | null>(null);
+  const [editInvoice, setEditInvoice] = React.useState<InvoiceDetail | null>(null);
   const [updating, setUpdating] = React.useState(false);
   const [deleteInvoice, setDeleteInvoice] = React.useState<Invoice | null>(null);
   const { data, total, loading, params, setParams } = useDataTable<InvoiceListRow, InvoiceListParams>(
@@ -41,13 +41,21 @@ export default function InvoicesPage() {
   );
 
   // Handlers envoyés à la table (RowActions les utilisera)
-  const handleEdit = (row: InvoiceListRow) => {
-    // si InvoiceListRow est compatible avec Invoice, sinon mappe ce qu’il faut
-    setEditInvoice(row as unknown as Invoice);
+  const handleEdit = async (row: InvoiceListRow) => {
+    try {
+      setUpdating(true);
+      const full = await getInvoiceDetail(row.id);
+      setEditInvoice(full);
+    } catch (e) {
+      toast.error("Impossible de charger la facture");
+      console.error(e);
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleDelete = (row: InvoiceListRow) => {
-    setDeleteInvoice(row as unknown as Invoice);
+    setDeleteInvoice({ id: row.id } as Invoice);
   };
 
   return (

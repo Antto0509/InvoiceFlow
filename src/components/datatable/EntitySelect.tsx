@@ -93,7 +93,7 @@ export function EntitySelect<T>({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-56 justify-between", buttonClassName)}
+          className={cn("w-full justify-between", buttonClassName)}
           disabled={disabled}
         >
           <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>
@@ -114,7 +114,13 @@ export function EntitySelect<T>({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="p-0 w-72">
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        /* largeur = largeur du trigger (Radix expose cette CSS var) */
+        className="p-0 w-[--radix-popper-anchor-width] min-w-60"
+      >
         <Command shouldFilter={false}>
           <CommandInput
             value={term}

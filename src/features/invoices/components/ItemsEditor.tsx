@@ -24,12 +24,12 @@ import { TotalsCard } from "./TotalsCard";
 import { DEFAULT_TAX_RATE } from "@/lib/constants";
 
 export function ItemsEditor({
-  currency,
+  currency_code,
   taxRate = DEFAULT_TAX_RATE,
   invoiceId,
   className,
 }: {
-  currency: string;
+  currency_code: string;
   taxRate?: number;
   invoiceId: string;
   className?: string;
@@ -150,7 +150,7 @@ export function ItemsEditor({
                     <div className="col-span-1 text-right font-medium tabular-nums">
                       {formatMoney(
                         (Number(watchedItems?.[index]?.qty) || 0) * (Number(watchedItems?.[index]?.unit_price) || 0),
-                        currency
+                        currency_code
                       )}
                     </div>
 
@@ -180,7 +180,7 @@ export function ItemsEditor({
           tax={tax}
           total={total}
           className="w-full max-w-sm"
-          currency={currency}
+          currency_code={currency_code}
           taxRate={taxRate}
         />
       </div>

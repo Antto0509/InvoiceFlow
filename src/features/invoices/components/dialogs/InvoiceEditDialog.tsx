@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { InvoiceForm } from "../InvoiceForm";
 import { updateInvoice } from "@/data/invoices.repository";
 import { upsertItems } from "@/data/items.repository";
-import type { Invoice, InvoiceListParams, InvoiceFormValues } from "@/schemas/invoices.schema";
+import type { Invoice, InvoiceListParams, InvoiceFormValues, InvoiceDetail } from "@/schemas/invoices.schema";
 
 export function InvoiceEditDialog({
   editInvoice,
@@ -16,7 +16,7 @@ export function InvoiceEditDialog({
   setParams,
 }: {
   editInvoice: Invoice | null;
-  setEditInvoice: (inv: Invoice | null) => void;
+  setEditInvoice: (inv: InvoiceDetail | null) => void;
   updating?: boolean;
   setUpdating?: (v: boolean) => void;
   setParams?: React.Dispatch<React.SetStateAction<InvoiceListParams>>;
@@ -37,12 +37,11 @@ export function InvoiceEditDialog({
               client_id: (editInvoice.client_id ?? undefined) as unknown as string,
               due_date: editInvoice.due_date ?? undefined,
               number: editInvoice.number ?? undefined,
-              currency: editInvoice.currency ?? undefined,
+              currency_code: editInvoice.currency_code ?? undefined,
               subtotal: editInvoice.subtotal ?? undefined,
               tax: editInvoice.tax ?? undefined,
               total: editInvoice.total ?? undefined,
               pdf_url: editInvoice.pdf_url ?? undefined,
-              // items: left undefined; ItemsEditor handles initial row
             }}
             onSubmit={async (values) => {
               try {

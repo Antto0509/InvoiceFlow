@@ -1,50 +1,103 @@
 import { z } from "zod";
-import { itemSchema } from "./items.schema";
+import { itemFormSchema } from "./items.schema";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { Item } from "./items.schema";
 
-// --- Factures (DB: public.invoices) ---
+// --- Enums & Form ---
 
-/**
- * Enumération des statuts de facture.
- */
 export const invoiceStatusEnum = z.enum(["draft", "sent", "paid", "overdue"] as const, {
   message: "Statut invalide",
 });
-
-/**
- * Type des statuts de facture.
- */
 export type InvoiceStatus = z.infer<typeof invoiceStatusEnum>;
 
-/**
- * Schéma de validation pour les formulaires de facture.
- */
+/** Schéma du formulaire (ce que RHF manipule) */
 export const invoiceFormSchema = z.object({
-  id: z.uuid().optional(),
-  client_id: z.uuid({ message: "Client invalide" }),
+  id: z.string().uuid().optional(),
+  client_id: z.string().uuid({ message: "Client invalide" }),
   number: z.string().optional().nullable(),
-  issue_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date d’émission invalide (YYYY-MM-DD)"),
-  due_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date d’échéance invalide (YYYY-MM-DD)")
-    .optional()
-    .nullable(),
-  currency: z.string().default(DEFAULT_CURRENCY),
+  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date d’émission invalide (YYYY-MM-DD)"),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/,"Date d’échéance invalide (YYYY-MM-DD)").optional().nullable(),
+  currency_code: z.string().default(DEFAULT_CURRENCY),
   status: invoiceStatusEnum.default("draft"),
-  items: z.array(itemSchema).min(1, "Ajoute au moins une ligne"),
+  items: z.array(itemFormSchema).min(1, "Ajoute au moins une ligne"),
   subtotal: z.coerce.number().min(0).optional(),
   tax: z.coerce.number().min(0).optional(),
   total: z.coerce.number().min(0).optional(),
-  pdf_url: z.url().optional().nullable(),
+  pdf_url: z.string().url().optional().nullable(),
   tax_rate: z.coerce.number().min(0).max(1).optional(),
 });
-
-/**
- * Type des valeurs du formulaire de facture.
- */
 export type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
+
+// --- DB (table invoices “brute”) ---
+
+export type InvoiceDb = {
+  id: string;
+  user_id: string | null;
+  client_id: string | null;
+  number: string | null;
+  status: InvoiceStatus;
+  issue_date: string;      // YYYY-MM-DD
+  due_date: string | null; // YYYY-MM-DD
+  currency_code: string | null; // default 'EUR'
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
+  pdf_url: string | null;
+  created_at: string;      // timestamptz
+  tax_rate: number | null;
+};
+
+// --- Pour la liste (table) ---
+
+export type InvoiceListRow = {
+  id: string;
+  number: string | null;
+  issue_date: string;
+  total: number | null;
+  status: InvoiceStatus;
+  currency_code: string | null;
+  /** nom du client (résolu via join), pratique pour l’affichage & tri */
+  client_name: string | null;
+};
+
+// --- Pour l’édition / détails ---
+
+export type InvoiceDetail = InvoiceDb & {
+  client?: { id: string; name: string | null } | null;
+  items: Item[];
+};
+
+// --- Params liste & tri ---
+
+export type InvoiceListParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: InvoiceStatus | "all";
+  sort?: InvoiceSort;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
+  clientId?: string;
+  signal?: AbortSignal;
+};
+
+/** On expose "client" côté UI, mais on le mappe vers `clients.name` côté requête */
+export type InvoiceSort = {
+  column: "client_name" | "issue_date" | "number" | "total" | "status";
+  dir: "asc" | "desc";
+};
+
+// --- Props UI inchangées (juste InvoicesTable) ---
+export interface InvoicesTableProps {
+  data?: InvoiceListRow[];
+  loading?: boolean;
+  onRowClick?: (id: string) => void;
+  sort?: InvoiceSort;
+  onSortChange?: (s: InvoiceSort) => void;
+  onEdit?: (item: InvoiceListRow) => void;
+  onDelete?: (item: InvoiceListRow) => void;
+}
+
 
 /**
  * Type des factures.
@@ -57,7 +110,7 @@ export type Invoice = {
   status: InvoiceStatus;       // DB CHECK (draft|sent|paid|overdue)
   issue_date: string;          // date → string "YYYY-MM-DD"
   due_date: string | null;
-  currency: string | null;     // default 'EUR'
+  currency_code: string | null;     // default 'EUR'
   subtotal: number | null;     // numeric
   tax: number | null;          // numeric
   total: number | null;        // numeric
@@ -65,40 +118,6 @@ export type Invoice = {
   created_at: string;          // timestamptz
   tax_rate: number | null;     // numeric
 };
-
-/**
- * Type des lignes de facture pour les listes.
- */
-export type InvoiceListRow = {
-  id: string;
-  number: string | null;
-  issue_date: string; // ISO "YYYY-MM-DD"
-  total: number | null;
-  status: InvoiceStatus;
-  clients: { name: string | null } | null;
-};
-
-/**
- * Paramètres pour la liste des factures.
- */
-export type InvoiceListParams = {
-  page?: number; // 1-based
-  pageSize?: number;
-  search?: string; // matches number or client name
-  status?: InvoiceStatus | "all";
-  sort?: InvoiceSort;
-  dateFrom?: string; // YYYY-MM-DD
-  dateTo?: string;   // YYYY-MM-DD
-  clientId?: string;
-  signal?: AbortSignal;
-};
-
-// --- Composants InvoicesTable ---
-
-/**
- * Type pour le tri des factures.
- */
-export type InvoiceSort = { column: "issue_date" | "number" | "total" | "status"; dir: "asc" | "desc" };
 
 // --- Composants InvoicesTables ---
 
@@ -150,8 +169,8 @@ export type InvoiceCreateProps = {
  * @property setParams - Fonction pour mettre à jour les paramètres de la liste des factures.
  */
 export type InvoiceEditProps = {
-  editInvoice: Invoice | null;
-  setEditInvoice: (inv: Invoice | null) => void;
+  editInvoice: InvoiceDetail | null;
+  setEditInvoice: (inv: InvoiceDetail | null) => void;
   updating?: boolean;
   setUpdating?: (v: boolean) => void;
   setParams?: React.Dispatch<React.SetStateAction<InvoiceListParams>>;

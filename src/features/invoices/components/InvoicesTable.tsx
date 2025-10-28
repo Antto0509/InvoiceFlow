@@ -32,9 +32,16 @@ export function InvoicesTable({
         size: 120,
       },
       {
-        id: "client",
-        header: () => <span>Client</span>,
-        cell: ({ row }) => <span>{row.original.clients?.name ?? "–"}</span>,
+        accessorKey: "client_name",
+        header: () => (
+          <div className="flex items-center gap-1">
+            <span>Client</span>
+            <SortBtn col="client_name" sort={sort as InvoiceSort} onSortChange={(s) => onSortChange?.(s as InvoiceSort)} />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span>{row.original.client_name ?? "–"}</span>
+        ),
       },
       {
         accessorKey: "issue_date",
@@ -58,7 +65,7 @@ export function InvoicesTable({
         ),
         cell: ({ row }) => (
           <span className="ml-auto block text-right">
-            {formatMoney(row.original.total ?? 0, DEFAULT_CURRENCY)}
+            {formatMoney(row.original.total ?? 0, row.original.currency_code ?? DEFAULT_CURRENCY)}
           </span>
         ),
         meta: { className: "text-right" },

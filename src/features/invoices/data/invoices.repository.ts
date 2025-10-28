@@ -1,25 +1,34 @@
 import { createResourceApi } from "@/data/createResourceApi";
-import type { InvoiceListParams, InvoiceListRow, Invoice } from "@/schemas/invoices.schema";
+import type { InvoiceListParams, InvoiceListRow, InvoiceDetail, InvoiceDb, InvoiceSort } from "@/schemas/invoices.schema";
 import type { Item } from "@/schemas/items.schema";
 import { SORTABLE_INVOICES } from "@/lib/constants";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
 import { createClient } from "@/data/supabase/client";
 
-// ---- Invoices API ----
+/** mapping du tri UI -> tri PostgREST */
+function mapSortForApi(sort?: InvoiceSort) {
+  if (!sort) return undefined;
+  if (sort.column === "client_name") {
+    // on cible la colonne liée
+    return { column: "client_name", dir: sort.dir, foreignTable: "clients" as const };
+  }
+  return sort;
+}
 
-/** API dédiée pour la liste (sélection + jointure client) */
+/** API pour la liste (avec jointure + alias client_name) */
 const makeInvoicesListApi = (userId?: string) =>
-  createResourceApi<InvoiceListRow>({
+  createResourceApi<InvoiceDb>({
     table: "invoices",
-    // jointure pour afficher le nom du client
-    select: "id, number, issue_date, total, status, clients!inner(name)",
-    sortableColumns: [...SORTABLE_INVOICES],
-    // recherche sur numéro ET nom client
-    searchColumns: ["number", "clients.name"],
+    // On récupère le nom du client et on l’ALIAS en client_name pour simplifier l’UI.
+    // Astuce PostgREST: on sélectionne l'objet puis on mappe en TS.
+    select: "id, number, issue_date, total, status, currency_code, clients(name)",
+    // IMPORTANT: autoriser tri sur la jointure
+    sortableColumns: [...SORTABLE_INVOICES, "client_name"],
+    searchColumns: ["number", "client_name"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
   });
 
-/** Recherche rapide (autocomplete) */
+  /** Recherche rapide (autocomplete) */
 export async function searchInvoices(
   { q, limit = 20, signal }: { q?: string; limit?: number; signal?: AbortSignal },
   userId?: string
@@ -39,7 +48,7 @@ export async function searchInvoices(
   }));
 }
 
-/** Liste paginée de factures (via API générique) */
+/** Liste paginée */
 export async function listInvoices(params: InvoiceListParams = {}, userId?: string) {
   const {
     page = 1,
@@ -59,7 +68,7 @@ export async function listInvoices(params: InvoiceListParams = {}, userId?: stri
     page,
     pageSize,
     search,
-    sort,
+    sort: mapSortForApi(sort), // <— mapping ici
     signal,
     filters: {
       ...(status && status !== "all" ? { status: { op: "eq", value: status } } : {}),
@@ -69,59 +78,84 @@ export async function listInvoices(params: InvoiceListParams = {}, userId?: stri
     },
   });
 
-  return { rows: data as InvoiceListRow[], total };
+  // TS-remap vers InvoiceListRow (aplatir le client)
+  type JoinedInvoice = InvoiceDb & { clients?: { name?: string } };
+  const rows: InvoiceListRow[] = (data as JoinedInvoice[]).map((r) => ({
+    id: r.id,
+    number: r.number,
+    issue_date: r.issue_date,
+    total: r.total,
+    status: r.status,
+    currency_code: r.currency_code,
+    client_name: r.clients?.name ?? null,
+  }));
+
+  return { rows, total };
 }
 
+/** Détail pour édition: facture + items + client */
+export async function getInvoiceDetail(id: string, userId?: string): Promise<InvoiceDetail> {
+  const sb = createClient();
+
+  // On prend la facture, ses items, et le client (id & name)
+  // PostgREST: "clients(id,name)" depuis invoices.client_id -> clients.id
+  const { data, error } = await sb
+    .from("invoices")
+    .select("*, items(*), clients:clients(id, name)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("Invoice not found");
+
+  // Sécurisation multi-tenant si nécessaire
+  if (userId && data.user_id && data.user_id !== userId) {
+    throw new Error("Forbidden");
+  }
+
+  const detail: InvoiceDetail = {
+    ...(data as InvoiceDb),
+    items: (data.items ?? []) as Item[],
+    client: data.clients ? { id: data.client_id, name: data.clients.name } : undefined,
+  };
+
+  return detail;
+}
+
+/** Création avec items (inchangé) */
 export async function createInvoiceWithItems(
-  payload: Partial<Invoice & { items?: Item[] }>,
+  payload: Partial<InvoiceDb & { items?: Item[] }>,
   userId?: string
 ) {
   const sb = createClient();
-
-  // 1) insérer la facture sans champs générés ni items
   const { items, ...rawInvoice } = payload || {};
   const invoiceInsert = stripGenerated(rawInvoice as Record<string, unknown>);
-
-  // Multitenant selon ton schéma (si nécessaire)
   const invoiceToInsert = userId ? { ...invoiceInsert, user_id: userId } : invoiceInsert;
 
-  const { data: inv, error: invErr } = await sb
-    .from("invoices")
-    .insert(invoiceToInsert)
-    .select("id")
-    .single();
-
+  const { data: inv, error: invErr } = await sb.from("invoices").insert(invoiceToInsert).select("id").single();
   if (invErr) throw invErr;
 
-  // 2) si pas d’items → terminé
   if (!items?.length) return inv;
 
-  // 3) préparer et insérer les items
-  const itemsClean = stripGeneratedMany(items as Item[]).map((it: Item) => {
-    const itemUserId = (it as unknown as { user_id?: string }).user_id;
-    return {
-      ...it,
-      invoice_id: inv.id,
-      ...(userId ? { user_id: (itemUserId ?? userId) } : {}),
-    };
-  }) as Array<Item & { invoice_id: string; user_id?: string }>;
+  const itemsClean = stripGeneratedMany(items as Item[]).map((it: Partial<Item> & { user_id?: string }) => ({
+    ...it,
+    invoice_id: inv.id,
+    ...(userId ? { user_id: it.user_id ?? userId } : {}),
+  })) as Array<Item & { invoice_id: string; user_id?: string }>;
 
   const { error: itemsErr } = await sb.from("items").insert(itemsClean).select("id");
   if (itemsErr) {
-    // rollback manuel pour cohérence
     await sb.from("invoices").delete().eq("id", inv.id);
     throw itemsErr;
   }
-
   return inv;
 }
 
-// ---- CRUD Invoices
+// CRUD simple
 export const getInvoices = (id: string, userId?: string) => makeInvoicesListApi(userId).get(id);
-export const createInvoice = (payload: Partial<Invoice & { items?: Item[] }>, userId?: string) =>
+export const createInvoice = (payload: Partial<InvoiceDb & { items?: Item[] }>, userId?: string) =>
   makeInvoicesListApi(userId).create(payload);
-export const updateInvoice = (id: string, payload: Partial<Invoice & { items?: Item[] }>, userId?: string) =>
+export const updateInvoice = (id: string, payload: Partial<InvoiceDb & { items?: Item[] }>, userId?: string) =>
   makeInvoicesListApi(userId).update(id, payload);
 export const removeInvoice = (id: string, userId?: string) => makeInvoicesListApi(userId).remove(id);
-export const bulkDeleteInvoices = (ids: string[], userId?: string) =>
-  makeInvoicesListApi(userId).bulkDelete(ids);
+export const bulkDeleteInvoices = (ids: string[], userId?: string) => makeInvoicesListApi(userId).bulkDelete(ids);

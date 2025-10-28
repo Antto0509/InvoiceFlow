@@ -13,15 +13,19 @@ export function FormShell({
   children: React.ReactNode;
 }) {
   return (
-    <form onSubmit={onSubmit} className="contents">
-      {children}
+    <form
+      onSubmit={onSubmit}
+      className="grid h-[calc(100dvh-8rem)] grid-rows-[1fr_auto]"
+    >
+      <div className="overflow-y-auto space-y-6 pr-1">
+        {children}
+      </div>
 
-      <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={loading} className="mt-4">
+      <div className="mt-4 border-t pt-4 flex justify-end bg-background">
+        <Button type="submit" disabled={loading}>
           {loading ? "Enregistrement..." : "Enregistrer"}
         </Button>
       </div>
     </form>
   );
 }
-

@@ -11,10 +11,11 @@ import { safeRandomUUID } from "@/lib/utils";
 import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { FormShell } from "@/components/forms/FormShell";
-import { SelectClient } from "@/features/clients";
+import { SelectClient } from "@/components/datatable/SelectClient";
+import { SelectCurrency } from "@/components/datatable/SelectCurrency";
 import { ItemsEditor } from "./ItemsEditor";
 import { usePrevious } from "@/hooks/usePrevious";
 import { toast } from "sonner";
@@ -208,17 +209,7 @@ export function InvoiceForm({
                 <FormItem>
                   <FormLabel>Devise</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={DEFAULT_CURRENCY} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EUR">EUR – Euro (€)</SelectItem>
-                        <SelectItem value="USD">USD – US Dollar ($)</SelectItem>
-                        <SelectItem value="GBP">GBP – Pound (£)</SelectItem>
-                        <SelectItem value="CHF">CHF – Swiss Franc</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <SelectCurrency value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -53,4 +53,8 @@ export type ResourceApiOptions<T> = {
   mapRow?: (row: unknown) => T;
   /** Filtres appliqués à TOUTES les listes (ex: multitenant user_id) */
   defaultFilters?: Record<string, FilterOps>;
+  /** Clé primaire de la table */
+  primaryKey?: keyof T & string;
+  /** Optionnel: cible de conflit pour les upserts */
+  conflictTarget?: string | string[];
 };

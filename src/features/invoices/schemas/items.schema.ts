@@ -24,6 +24,7 @@ export type ItemFormValues = z.infer<typeof itemFormSchema>;
  */
 export type Item = {
   id: string;
+  user_id: string;
   invoice_id: string;
   description: string;
   qty: number;
@@ -38,6 +39,7 @@ export type Item = {
  */
 export type ItemListRow = {
   id: string;
+  user_id: string;
   invoice_id: string;
   description: string;
   qty: number;

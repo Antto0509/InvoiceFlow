@@ -26,6 +26,7 @@ const makeInvoicesListApi = (userId?: string) =>
     sortableColumns: [...SORTABLE_INVOICES, "client_name"],
     searchColumns: ["number", "client_name"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
+    protectedColumns: ["user_id"],
   });
 
   /** Recherche rapide (autocomplete) */

@@ -13,6 +13,7 @@ export const makeClientsApi = (userId?: string) =>
     sortableColumns: [...SORTABLE_CLIENTS],
     searchColumns: ["name", "email", "company"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
+    protectedColumns: ["user_id"],
   });
 
 /** Recherche rapide (autocomplete) */

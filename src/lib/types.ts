@@ -57,4 +57,6 @@ export type ResourceApiOptions<T> = {
   primaryKey?: keyof T & string;
   /** Optionnel: cible de conflit pour les upserts */
   conflictTarget?: string | string[];
+  /** Colonnes protégées en écriture (ex: created_at, user_id) */
+  protectedColumns?: (keyof T & string)[];
 };

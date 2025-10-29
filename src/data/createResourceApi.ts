@@ -16,6 +16,7 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
     defaultFilters,
     primaryKey = "id" as keyof T & string,
     conflictTarget,
+    protectedColumns,
   } = opts;
 
   /** Primary key column name */
@@ -23,43 +24,51 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
 
   /** PostgREST-like filters */
   interface Filterable<TSelf> {
-    eq(col: string, val: unknown): TSelf;
-    neq(col: string, val: unknown): TSelf;
-    gt(col: string, val: unknown): TSelf;
-    gte(col: string, val: unknown): TSelf;
-    lt(col: string, val: unknown): TSelf;
-    lte(col: string, val: unknown): TSelf;
-    ilike(col: string, val: string): TSelf;
-    "in"(col: string, vals: unknown[]): TSelf;
-    or(expr: string): TSelf;
-    order(col: string, opts?: { ascending?: boolean; foreignTable?: string; nullsFirst?: boolean }): TSelf;
-    range(from: number, to: number): TSelf;
-    select(sel: string, opts?: { count?: "exact" | "planned" | "estimated"; head?: boolean }): TSelf;
-    abortSignal?(signal: AbortSignal): TSelf;
-    limit(n: number): TSelf;
+    eq(col: string, val: unknown): Filterable<TSelf>;
+    neq(col: string, val: unknown): Filterable<TSelf>;
+    gt(col: string, val: unknown): Filterable<TSelf>;
+    gte(col: string, val: unknown): Filterable<TSelf>;
+    lt(col: string, val: unknown): Filterable<TSelf>;
+    lte(col: string, val: unknown): Filterable<TSelf>;
+    ilike(col: string, val: string): Filterable<TSelf>;
+    "in"(col: string, vals: unknown[]): Filterable<TSelf>;
+    or(expr: string): Filterable<TSelf>;
+    order(col: string, opts?: { ascending?: boolean; foreignTable?: string; nullsFirst?: boolean }): Filterable<TSelf>;
+    range(from: number, to: number): Filterable<TSelf>;
+    select(sel: string, opts?: { count?: "exact" | "planned" | "estimated"; head?: boolean }): Filterable<TSelf>;
+    abortSignal?(signal: AbortSignal): Filterable<TSelf>;
+    limit(n: number): Filterable<TSelf>;
   }
 
-  function applyFilters<TReq extends Filterable<TReq>>(
+  function applyFilters<TReq>(
     req: TReq,
     filters?: Record<string, FilterOps | undefined>
   ): TReq {
     if (!filters) return req;
+    // Work on a typed view of the request to call PostgREST-like methods without using `any`.
+    let r = req as unknown as Filterable<TReq>;
     for (const [col, spec] of Object.entries(filters)) {
       if (!spec) continue;
       const { op, value } = spec as FilterOps & { value: unknown };
       if (value === undefined || value === null || value === "") continue;
       switch (op) {
-        case "eq":   req = req.eq(col, value); break;
-        case "neq":  req = req.neq(col, value); break;
-        case "gt":   req = req.gt(col, value); break;
-        case "gte":  req = req.gte(col, value); break;
-        case "lt":   req = req.lt(col, value); break;
-        case "lte":  req = req.lte(col, value); break;
-        case "ilike": req = req.ilike(col, `%${escapeLike(String(value))}%`); break;
-        case "in":   req = req["in"](col, value as unknown[]); break;
+        case "eq":    r = r.eq(col, value); break;
+        case "neq":   r = r.neq(col, value); break;
+        case "gt":    r = r.gt(col, value); break;
+        case "gte":   r = r.gte(col, value); break;
+        case "lt":    r = r.lt(col, value); break;
+        case "lte":   r = r.lte(col, value); break;
+        case "ilike": r = r.ilike(col, `%${escapeLike(String(value))}%`); break;
+        case "in":    r = r["in"](col, value as unknown[]); break;
       }
     }
-    return req;
+    return r as unknown as TReq;
+  }
+
+  function stripProtected(input: Record<string, unknown>) {
+    const protectedCols = protectedColumns ?? [];
+    for (const col of protectedCols) delete input[col];
+    return input;
   }
 
   return {
@@ -102,30 +111,23 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
     },
 
     async get(key: T[typeof primaryKey], customSelect?: string): Promise<T> {
-      const { data, error } = await supabase
-        .from(table)
-        .select(customSelect ?? select)
-        .eq(PK, key as unknown)
-        .single();
+      let req = supabase.from(table).select(customSelect ?? select).eq(PK, key as unknown);
+      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
+      const { data, error } = await req.single();
       if (error) throw error;
       return (mapRow ? mapRow(data) : data) as T;
     },
 
     async create(payload: Partial<T>): Promise<T> {
-      const clean = stripGenerated(payload as Record<string, unknown>);
+      const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
       const { data, error } = await supabase.from(table).insert(clean).select().single();
       if (error) throw error;
       return (mapRow ? mapRow(data) : data) as T;
     },
 
     async update(key: T[typeof primaryKey], payload: Partial<T>): Promise<T> {
-      const clean = stripGenerated(payload as Record<string, unknown>);
-      const { data, error } = await supabase
-        .from(table)
-        .update(clean)
-        .eq(PK, key as unknown)
-        .select()
-        .single();
+      const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
+      const { data, error } = await supabase.from(table).update(clean).eq(PK, key as unknown).select().single();
       if (error) throw error;
       return (mapRow ? mapRow(data) : data) as T;
     },
@@ -144,17 +146,17 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
     },
 
     async remove(key: T[typeof primaryKey]): Promise<void> {
-      const { error } = await supabase.from(table).delete().eq(PK, key as unknown);
+      let req = supabase.from(table).delete().eq(PK, key as unknown);
+      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
+      const { error } = await req;
       if (error) throw error;
     },
 
-    /** Bulk delete by PK values */
     async bulkDelete(keys: Array<T[typeof primaryKey]>): Promise<number> {
       if (!keys?.length) return 0;
-      const { count, error } = await supabase
-        .from(table)
-        .delete({ count: "exact" })
-        .in(PK, keys as unknown[]);
+      let req = supabase.from(table).delete({ count: "exact" }).in(PK, keys as unknown[]);
+      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
+      const { count, error } = await req;
       if (error) throw error;
       return count ?? 0;
     },

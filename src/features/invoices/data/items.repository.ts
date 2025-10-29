@@ -13,6 +13,7 @@ const makeItemsListApi = (userId?: string) =>
     sortableColumns: [...SORTABLE_ITEMS],
     searchColumns: ["name", "description"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
+    protectedColumns: ["user_id"],
   });
 
 /** Recherche rapide (autocomplete) */

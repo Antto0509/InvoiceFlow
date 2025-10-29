@@ -41,7 +41,7 @@ export type Client = {
  */
 export type ClientListRow = {
   id: string;
-  name: string;
+  name: string | null | undefined; // garde souplesse pour select partiels
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -123,3 +123,77 @@ export type ClientDialogsProps =
   | ({ mode?: "create" } & ClientCreateProps)
   | ({ mode: "edit" } & ClientEditProps)
   | ({ mode: "delete" } & ClientDeleteProps);
+
+// --- Client addresses (DB: public.client_addresses) ---
+
+/** ENUM côté front aligné avec DB: client_address_kind */
+export const clientAddressKindEnum = z.enum(["billing", "shipping", "other"]);
+
+/** Schéma des adresses client */
+export const clientAddressSchema = z.object({
+  id: z.uuid().optional(),
+  client_id: z.uuid(),
+  kind: clientAddressKindEnum,               // "billing" | "shipping" | "other"
+  line1: z.string().min(1, "L’adresse (ligne 1) est requise"),
+  line2: z.string().optional().nullable(),
+  postal_code: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  country: z.string().min(2).default("FR"),
+  created_at: z.string().optional(),         // timestamptz -> string
+  updated_at: z.string().optional(),         // timestamptz -> string
+});
+
+/** Schéma pour formulaire d’adresse client (pratique côté UI) */
+export const clientAddressFormSchema = clientAddressSchema.extend({
+  id: z.uuid().optional(),
+});
+
+/** Types associés */
+export type ClientAddressKind = z.infer<typeof clientAddressKindEnum>;
+export type ClientAddress = z.infer<typeof clientAddressSchema>;
+export type ClientAddressFormValues = z.infer<typeof clientAddressFormSchema>;
+
+// --- Client contacts (DB: public.client_contacts) ---
+
+/** Schéma des contacts client */
+export const clientContactSchema = z.object({
+  id: z.uuid().optional(),
+  client_id: z.uuid(),
+  full_name: z.string().min(2, "Nom trop court"),
+  email: z.email("Email invalide").optional().nullable(),
+  phone: z.string().optional().nullable(),
+  role: z.string().optional().nullable(),          // ex: "DAF", "Responsable achats", etc.
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+/** Schéma pour formulaire de contact client */
+export const clientContactFormSchema = clientContactSchema.extend({
+  id: z.uuid().optional(),
+});
+
+/** Types associés */
+export type ClientContact = z.infer<typeof clientContactSchema>;
+export type ClientContactFormValues = z.infer<typeof clientContactFormSchema>;
+
+// --- DTO pratique si tu charges un client avec ses détails (joins) ---
+
+export const clientWithDetailsSchema = z.object({
+  client: z.object({
+    id: z.string(),
+    user_id: z.string().nullable(),
+    name: z.string(),
+    email: z.string().nullable(),
+    address: z.string().nullable(),
+    company: z.string().nullable(),
+    phone: z.string().nullable(),
+    notes: z.string().nullable(),
+    created_at: z.string(),
+    updated_at: z.string(),
+  }),
+  addresses: z.array(clientAddressSchema),
+  contacts: z.array(clientContactSchema),
+});
+
+export type ClientWithDetails = z.infer<typeof clientWithDetailsSchema>;

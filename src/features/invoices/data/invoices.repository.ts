@@ -4,6 +4,7 @@ import type { Item } from "@/schemas/items.schema";
 import { SORTABLE_INVOICES } from "@/lib/constants";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
 import { createClient } from "@/data/supabase/client";
+import { ensurePdfForInvoice } from "../hooks/generateInvoicePdf";
 
 /** mapping du tri UI -> tri PostgREST */
 function mapSortForApi(sort?: InvoiceSort) {
@@ -16,7 +17,7 @@ function mapSortForApi(sort?: InvoiceSort) {
 }
 
 /** API pour la liste (avec jointure + alias client_name) */
-const makeInvoicesListApi = (userId?: string) =>
+export const makeInvoicesListApi = (userId?: string) =>
   createResourceApi<InvoiceDb>({
     table: "invoices",
     // On récupère le nom du client et on l’ALIAS en client_name pour simplifier l’UI.
@@ -102,7 +103,7 @@ export async function getInvoiceDetail(id: string, userId?: string): Promise<Inv
   // PostgREST: "clients(id,name)" depuis invoices.client_id -> clients.id
   const { data, error } = await sb
     .from("invoices")
-    .select("*, items(*), clients:clients(id, name)")
+    .select("*, items(*), clients:clients(id, name, address, company)")
     .eq("id", id)
     .maybeSingle();
 
@@ -117,7 +118,7 @@ export async function getInvoiceDetail(id: string, userId?: string): Promise<Inv
   const detail: InvoiceDetail = {
     ...(data as InvoiceDb),
     items: (data.items ?? []) as Item[],
-    client: data.clients ? { id: data.client_id, name: data.clients.name } : undefined,
+    client: data.clients ? { id: data.client_id, name: data.clients.name, address: data.clients.address, company: data.clients.company } : null,
   };
 
   return detail;
@@ -154,8 +155,26 @@ export async function createInvoiceWithItems(
 
 // CRUD simple
 export const getInvoices = (id: string, userId?: string) => makeInvoicesListApi(userId).get(id);
-export const createInvoice = (payload: Partial<InvoiceDb & { items?: Item[] }>, userId?: string) =>
-  makeInvoicesListApi(userId).create(payload);
+export const createInvoice = async (
+  payload: Partial<InvoiceDb & { items?: Item[] }>,
+  userId?: string
+) => {
+  const invoice = await makeInvoicesListApi(userId).create(payload);
+  if (!invoice?.id) throw new Error("Erreur lors de la création");
+
+  try {
+    const { path } = await ensurePdfForInvoice(invoice.id, { store: true });
+
+    if (path) {
+      await makeInvoicesListApi(userId).update(invoice.id, { pdf_url: path });
+      return { ...invoice, pdf_url: path };
+    }
+  } catch (e) {
+    console.error("PDF gen failed:", e);
+  }
+
+  return invoice;
+};
 export const updateInvoice = (id: string, payload: Partial<InvoiceDb & { items?: Item[] }>, userId?: string) =>
   makeInvoicesListApi(userId).update(id, payload);
 export const removeInvoice = (id: string, userId?: string) => makeInvoicesListApi(userId).remove(id);

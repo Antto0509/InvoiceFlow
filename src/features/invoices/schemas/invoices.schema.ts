@@ -12,8 +12,8 @@ export type InvoiceStatus = z.infer<typeof invoiceStatusEnum>;
 
 /** Schéma du formulaire (ce que RHF manipule) */
 export const invoiceFormSchema = z.object({
-  id: z.string().uuid().optional(),
-  client_id: z.string().uuid({ message: "Client invalide" }),
+  id: z.uuid().optional(),
+  client_id: z.uuid({ message: "Client invalide" }),
   number: z.string().optional().nullable(),
   issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date d’émission invalide (YYYY-MM-DD)"),
   due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/,"Date d’échéance invalide (YYYY-MM-DD)").optional().nullable(),
@@ -63,7 +63,7 @@ export type InvoiceListRow = {
 // --- Pour l’édition / détails ---
 
 export type InvoiceDetail = InvoiceDb & {
-  client?: { id: string; name: string | null } | null;
+  client?: { id: string; name: string | null; address: string | null; company: string | null } | null;
   items: Item[];
 };
 
@@ -199,3 +199,18 @@ export type InvoiceDialogsProps =
   | ({ mode?: "create" } & InvoiceCreateProps)
   | ({ mode: "edit" } & InvoiceEditProps)
   | ({ mode: "delete" } & InvoiceDeleteProps);
+
+/**
+ * Type des données nécessaires pour générer le PDF d'une facture.
+ */
+export type InvoicePdfData = {
+  number: string | null;
+  issue_date: string;           // ISO
+  due_date?: string | null;     // ISO
+  currency_code: string | null;
+  client: { name: string | null | undefined ; address?: string | null; company?: string | null };
+  items: Array<{ description: string | null; qty: number | null; unit_price: number | null }>;
+  subtotal: number | null;
+  tax?: number | null;          // montant TVA
+  total: number | null;
+};

@@ -1,9 +1,19 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { SortSpec } from "@/lib/types";
+import { format, Locale } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function formatDateSafe(date: string | Date | null | undefined, formatStr: string, locale?: Locale): string {
+  if (!date) return "–";
+  try {
+    return format(typeof date === "string" ? new Date(date) : date, formatStr, { locale });
+  } catch {
+    return "–";
+  }
 }
 
 export function formatMoney(value: number, currency: string) {

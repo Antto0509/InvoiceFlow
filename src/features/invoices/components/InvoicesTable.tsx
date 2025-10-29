@@ -8,6 +8,26 @@ import type { InvoiceListRow, InvoiceSort, InvoicesTableProps } from "@/schemas/
 import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { formatMoney } from "@/lib/utils";
 import { SortBtn } from "@/components/datatable/SortBtn";
+import { FileDown, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
+
+async function downloadInvoicePdf(id: string, force = false) {
+  const q = new URLSearchParams({ redirect: "0", ttl: "300" });
+  if (force) q.set("force", "1");
+
+  const res = await fetch(`/api/invoices/${id}/pdf?` + q.toString());
+  const body = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    toast.error("Échec du téléchargement du PDF");
+    return;
+  }
+  if (!body?.url) {
+    toast.error("URL signée manquante");
+    return;
+  }
+  window.location.assign(body.url);
+}
 
 export function InvoicesTable({
   data = [],
@@ -109,15 +129,35 @@ export function InvoicesTable({
       {
         id: "actions",
         header: () => <span />,
-        cell: ({ row }) => (
-          <RowActions
-            item={row.original}
-            onEdit={(item) => onEdit?.(item)}
-            onDelete={(item) => onDelete?.(item)}
-            labels={{ edit: "Éditer", delete: "Supprimer" }}
-          />
-        ),
-        size: 60,
+        cell: ({ row }) => {
+          const inv = row.original as { id: string; number?: string | null };
+          return (
+            <RowActions
+              item={row.original}
+              onEdit={(item) => onEdit?.(item)}
+              onDelete={(item) => onDelete?.(item)}
+              labels={{ edit: "Éditer", delete: "Supprimer" }}
+              actions={[
+                {
+                  label: "Télécharger PDF",
+                  icon: <FileDown className="h-4 w-4" />,
+                  onClick: () => downloadInvoicePdf(inv.id, false),
+                  variant: "secondary",
+                  separatorBefore: true,
+                },
+                {
+                  label: "Régénérer PDF",
+                  icon: <RefreshCcw className="h-4 w-4" />,
+                  onClick: async () => {
+                    await downloadInvoicePdf(inv.id, true);
+                  },
+                  variant: "ghost",
+                },
+              ]}
+            />
+          );
+        },
+        size: 140,
       },
     ];
   }, [sort, onSortChange, onEdit, onDelete]);

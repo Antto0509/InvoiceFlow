@@ -3,7 +3,7 @@
 import * as React from "react";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { DateRangePicker } from "@/components/datatable/toolbar/DateRangePicker";
-import { SelectClient } from "@/features/clients";
+import { SelectClient } from "@/components/datatable/SelectClient";
 import { SortSelect } from "@/components/datatable/toolbar/SortSelect";
 import { PageSizeSelect } from "@/components/datatable/toolbar/PageSizeSelect";
 

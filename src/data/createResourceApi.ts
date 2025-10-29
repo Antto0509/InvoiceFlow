@@ -24,14 +24,14 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
 
   /** PostgREST-like filters */
   interface Filterable<TSelf> {
-    eq(col: string, val: unknown): Filterable<TSelf>;
-    neq(col: string, val: unknown): Filterable<TSelf>;
-    gt(col: string, val: unknown): Filterable<TSelf>;
-    gte(col: string, val: unknown): Filterable<TSelf>;
-    lt(col: string, val: unknown): Filterable<TSelf>;
-    lte(col: string, val: unknown): Filterable<TSelf>;
-    ilike(col: string, val: string): Filterable<TSelf>;
-    "in"(col: string, vals: unknown[]): Filterable<TSelf>;
+    eq(col: string, val: unknown): Filterable<TSelf>;           // =
+    neq(col: string, val: unknown): Filterable<TSelf>;          // !=
+    gt(col: string, val: unknown): Filterable<TSelf>;           // >
+    gte(col: string, val: unknown): Filterable<TSelf>;          // >=
+    lt(col: string, val: unknown): Filterable<TSelf>;           // <
+    lte(col: string, val: unknown): Filterable<TSelf>;          // <=
+    ilike(col: string, val: string): Filterable<TSelf>;         // ILIKE
+    "in"(col: string, vals: unknown[]): Filterable<TSelf>;      // IN
     or(expr: string): Filterable<TSelf>;
     order(col: string, opts?: { ascending?: boolean; foreignTable?: string; nullsFirst?: boolean }): Filterable<TSelf>;
     range(from: number, to: number): Filterable<TSelf>;

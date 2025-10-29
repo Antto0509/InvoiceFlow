@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FileText, Box, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Box, Settings, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -10,6 +10,7 @@ const nav = [
   { href: "/dashboard/clients", label: "Clients", icon: Users },
   { href: "/dashboard/invoices", label: "Factures", icon: FileText },
   { href: "/dashboard/items", label: "Articles", icon: Box },
+  { href: "/dashboard/companies", label: "Entreprises", icon: Building },
   { href: "/dashboard/settings", label: "Paramètres", icon: Settings },
 ];
 

@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { SortSpec } from "@/lib/types";
 import { format, Locale } from "date-fns";
+import { Company } from "@/features/companies/schemas/companies.schema";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -71,4 +72,27 @@ export function stripGenerated<T extends Record<string, unknown>>(row: T) {
 
 export function stripGeneratedMany<T extends Record<string, unknown>>(rows: T[]) {
   return rows.map(stripGenerated);
+}
+
+
+export function fmtVatRegime(v?: Company["vat_regime"] | null) {
+  if (!v) return "—";
+  return v === "normal"
+    ? "Régime normal"
+    : v === "franchise_293B"
+    ? "Franchise en base (art. 293 B)"
+    : "Autre";
+}
+
+export function labelAddressKind(kind: string) {
+  switch (kind) {
+    case "headquarters":
+      return "Siège";
+    case "billing":
+      return "Facturation";
+    case "shipping":
+      return "Livraison";
+    default:
+      return "Autre";
+  }
 }

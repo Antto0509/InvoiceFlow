@@ -94,3 +94,77 @@ export type CompanyAddress = z.infer<typeof companyAddressSchema>;
 export type CompanyAddressKind = z.infer<typeof companyAddressKindEnum>;
 export type CompanyBankAccount = z.infer<typeof companyBankAccountSchema>;
 export type CompanyWithDetails = z.infer<typeof companyWithDetailsSchema>;
+
+// --- Types pour les lignes de listing ---
+
+export type CompanyListRow = Pick<
+  Company,
+  | "id"
+  | "name"
+  | "email"
+  | "phone"
+  | "website"
+  | "vat_number"
+  | "default_currency"
+  | "vat_regime"
+  | "created_at"
+>;
+
+// --- Types pour listing ---
+
+export type CompanySort = { column: "name" | "vat_number" | "default_currency" | "vat_regime" | "created_at"; dir: "asc" | "desc" };
+
+// --- Params pour listing ---
+
+export type CompanyListParams = {
+  page?: number;
+    pageSize?: number;
+    search?: string;
+    /** Filtres simples directement mappables sur la table companies */
+    vatRegime?: "normal" | "franchise_293B" | "other";
+    hasVatNumber?: boolean;
+    hasWebsite?: boolean;
+    hasEmail?: boolean;
+    dateFrom?: string; // ISO
+    dateTo?: string;   // ISO
+    signal?: AbortSignal;
+    sort?: CompanySort;
+};
+
+// --- Dialogs props ---
+
+/**
+ * Type des props pour le composant CompanyCreateDialog.
+ */
+export type CompanyCreateProps = {
+  isCreateOpen: boolean;
+  setIsCreateOpen: (open: boolean) => void;
+  creating: boolean;
+  setCreating: (creating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
+/**
+ * Type des props pour le composant CompanyEditDialog.
+ */
+export type CompanyEditProps = {
+  editCompany: Company | null;
+  setEditCompany: (company: Company | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
+/**
+ * Type des props pour le composant CompanyDeleteDialog.
+ */
+export type CompanyDeleteProps = {
+  deleteCompany: Company | null;
+  setDeleteCompany: (company: Company | null) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
+export type CompanyDialogsProps = 
+| ({ mode?: "create" } & CompanyCreateProps)
+  | ({ mode: "edit" } & CompanyEditProps)
+  | ({ mode: "delete" } & CompanyDeleteProps);

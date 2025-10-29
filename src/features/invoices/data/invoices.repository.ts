@@ -139,7 +139,7 @@ export async function createInvoiceWithItems(
 
   if (!items?.length) return inv;
 
-  const itemsClean = stripGeneratedMany(items as Item[]).map((it: Partial<Item> & { user_id?: string }) => ({
+  const itemsClean = stripGeneratedMany(items as Item[]).map((it: Omit<Item, "total" | "subtotal" | "tax"> & { user_id?: string | null }) => ({
     ...it,
     invoice_id: inv.id,
     ...(userId ? { user_id: it.user_id ?? userId } : {}),

@@ -58,5 +58,5 @@ export const createItem = (payload: Partial<Item & { user_id?: string }>, userId
 export const updateItem = (id: string, payload: Partial<Item & { user_id?: string }>, userId?: string) =>
   makeItemsListApi(userId).update(id, payload);
 export const removeItem = (id: string, userId?: string) => makeItemsListApi(userId).remove(id);
-export const bulkDeleteInvoices = (ids: string[], userId?: string) =>
+export const bulkDeleteItems = (ids: string[], userId?: string) =>
   makeItemsListApi(userId).bulkDelete(ids);

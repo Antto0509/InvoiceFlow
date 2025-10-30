@@ -11,7 +11,7 @@ import {
   listCompanies,
   getCompanyWithDetails,
 } from "@/data/companies.repository";
-import type { Company, CompanyWithDetails, CompanyListParams } from "@/schemas/companies.schema";
+import { type Company, type CompanyWithDetails, type CompanyListParams, type CompanyIdentity, type CompanyContactBranding, type CompanyBilling, type CompanyAddress, CompanyBankAccount } from "@/schemas/companies.schema";
 import EmptyState from "@/components/EmptyState";
 import EmptySkeleton from "@/components/EmptySkeleton";
 import CompanyHeaderRow from "@/features/companies/components/CompanyHeaderRow";
@@ -37,6 +37,11 @@ export default function CompaniesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [editCompany, setEditCompany] = React.useState<Company | null>(null);
+  const [editIdentityCompany, setEditIdentityCompany] = React.useState<CompanyIdentity | null>(null);
+  const [editCompanyContactBranding, setEditCompanyContactBranding] = React.useState<CompanyContactBranding | null>(null);
+  const [editCompanyBilling, setEditCompanyBilling] = React.useState<CompanyBilling | null>(null);
+  const [editCompanyAddresses, setEditCompanyAddresses] = React.useState<CompanyAddress[] | null>(null);
+  const [editCompanyBankAccounts, setEditCompanyBankAccounts] = React.useState<CompanyBankAccount[] | null>(null);
   const [updating, setUpdating] = React.useState(false);
   const [deleteCompany, setDeleteCompany] = React.useState<Company | null>(null);
 
@@ -131,17 +136,14 @@ export default function CompaniesPage() {
               />
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <IdentityCard
-                  company={c}
-                  onEdit={() => setEditCompany(c)}
-                />
-                <ContactBrandingCard company={c} onEdit={() => setEditCompany(c)} />
-                <BillingSettingsCard company={c} onEdit={() => setEditCompany(c)} />
+                <IdentityCard company={c} onEdit={() => setEditIdentityCompany(c as CompanyIdentity)} />
+                <ContactBrandingCard company={c} onEdit={() => setEditCompanyContactBranding(c as CompanyContactBranding)} />
+                <BillingSettingsCard company={c} onEdit={() => setEditCompanyBilling(c as CompanyBilling)} />
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <AddressesCard details={details[c.id!]} />
-                <BankAccountsCard details={details[c.id!]} />
+                <AddressesCard details={details[c.id!]} onEdit={() => setEditCompanyAddresses(details[c.id!]?.addresses ?? null)} />
+                <BankAccountsCard details={details[c.id!]} onEdit={() => setEditCompanyBankAccounts(details[c.id!]?.bank_accounts ?? null)} />
               </div>
 
               {c.legal_notes ? (
@@ -173,6 +175,53 @@ export default function CompaniesPage() {
         mode="edit"
         editCompany={editCompany}
         setEditCompany={setEditCompany}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+
+      <CompanyDialogs
+        mode="editIdentity"
+        editCompanyIdentity={editIdentityCompany}
+        setEditCompanyIdentity={setEditIdentityCompany}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+      
+      <CompanyDialogs
+        mode="editContactBranding"
+        editCompanyContactBranding={editCompanyContactBranding}
+        setEditCompanyContactBranding={setEditCompanyContactBranding}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+      
+      <CompanyDialogs
+        mode="editBilling"
+        editCompanyBilling={editCompanyBilling}
+        setEditCompanyBilling={setEditCompanyBilling}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+
+      <CompanyDialogs
+        mode="editAddresses"
+        company_id={activeId!}
+        editCompanyAddresses={editCompanyAddresses}
+        setEditCompanyAddresses={setEditCompanyAddresses}
+        updating={updating}
+        setUpdating={setUpdating}
+        setParams={setParams}
+      />
+
+      <CompanyDialogs
+        mode="editBankAccounts"
+        company_id={activeId!}
+        editCompanyBankAccounts={editCompanyBankAccounts}
+        setEditCompanyBankAccounts={setEditCompanyBankAccounts}
         updating={updating}
         setUpdating={setUpdating}
         setParams={setParams}

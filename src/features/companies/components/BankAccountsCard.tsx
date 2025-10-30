@@ -1,9 +1,10 @@
 import * as React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Pencil } from "lucide-react";
 import type { CompanyWithDetails } from "@/schemas/companies.schema";
+import { Button } from "@/components/ui/button";
 
-export default function BankAccountsCard({ details }: { details?: CompanyWithDetails }) {
+export default function BankAccountsCard({ details, onEdit }: { details?: CompanyWithDetails; onEdit: () => void }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -11,6 +12,9 @@ export default function BankAccountsCard({ details }: { details?: CompanyWithDet
           <CreditCard className="w-4 h-4" />
           <CardTitle>Comptes bancaires</CardTitle>
         </div>
+        <Button variant="ghost" size="sm" onClick={onEdit}>
+          <Pencil className="w-4 h-4 mr-1" /> Éditer
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {details?.bank_accounts?.length ? (

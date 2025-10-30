@@ -3,7 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CompanyForm } from "../CompanyForm";
+import { CompanyForm } from "../forms/CompanyForm";
 import { updateCompany } from "@/data/companies.repository";
 import type { Company, CompanyListParams } from "@/schemas/companies.schema";
 
@@ -57,9 +57,8 @@ export function CompanyEditDialog({
                                 toast.success("Société mise à jour");
                                 setEditCompany(null);
                                 setParams?.((p) => ({ ...p }));
-                            } catch (e) {
-                                console.error(e);
-                                toast.error("Erreur lors de la mise à jour");
+                            } catch {
+                                toast.error("Erreur lors de la mise à jour de la société");
                             } finally {
                                 setUpdating?.(false);
                             }

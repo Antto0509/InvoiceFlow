@@ -15,7 +15,7 @@ export function FormShell({
   return (
     <form
       onSubmit={onSubmit}
-      className="grid h-[calc(100dvh-8rem)] grid-rows-[1fr_auto]"
+      className="grid max-h-[80vh] grid-cols-1"
     >
       <div className="overflow-y-auto space-y-6 pr-1">
         {children}

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CompanyForm } from "../CompanyForm";
+import { CompanyForm } from "../forms/CompanyForm";
 import { createCompany } from "@/data/companies.repository";
 import type { CompanyListParams } from "@/schemas/companies.schema";
 

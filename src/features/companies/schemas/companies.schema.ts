@@ -52,6 +52,36 @@ export const companySchema = z.object({
   updated_at: z.string().optional(),
 });
 
+export const companyIdentitySchema = companySchema.pick({
+  id: true,
+  name: true,
+  siren: true,
+  siret: true,
+  legal_form: true,
+  rcs_city: true,
+  ape_naf: true,
+  share_capital: true,
+  vat_number: true,
+});
+
+export const companyContactBrandingSchema = companySchema.pick({
+  id: true,
+  website: true,
+  email: true,
+  phone: true,
+  logo_url: true,
+});
+
+export const companyBillingSchema = companySchema.pick({
+  id: true,
+  default_currency: true,
+  payment_terms: true,
+  penalty_rate: true,
+  recovery_fee_enabled: true,
+  vat_regime: true,
+  legal_notes: true,
+});
+
 /** Schéma des adresses d'entreprise */
 export const companyAddressSchema = z.object({
   id: z.uuid().optional(),
@@ -90,10 +120,19 @@ export const companyWithDetailsSchema = z.object({
  * Type TypeScript associé
  */
 export type Company = z.infer<typeof companySchema>;
+export type CompanyIdentity = z.infer<typeof companyIdentitySchema>;
+export type CompanyContactBranding = z.infer<typeof companyContactBrandingSchema>;
+export type CompanyBilling = z.infer<typeof companyBillingSchema>;
 export type CompanyAddress = z.infer<typeof companyAddressSchema>;
 export type CompanyAddressKind = z.infer<typeof companyAddressKindEnum>;
 export type CompanyBankAccount = z.infer<typeof companyBankAccountSchema>;
 export type CompanyWithDetails = z.infer<typeof companyWithDetailsSchema>;
+
+// --- Types pour les forms ---
+
+export type CompanyFormValues = z.infer<typeof companySchema>;
+export type CompanyAddressFormValues = z.infer<typeof companyAddressSchema>;
+export type CompanyBankAccountFormValues = z.infer<typeof companyBankAccountSchema>;
 
 // --- Types pour les lignes de listing ---
 
@@ -156,6 +195,63 @@ export type CompanyEditProps = {
 };
 
 /**
+ * Type des props pour le composant CompanyIdentityDialog.
+ */
+export type CompanyIdentityProps = {
+  editCompanyIdentity: CompanyIdentity | null;
+  setEditCompanyIdentity: (identity: CompanyIdentity | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
+/**
+ * Type des props pour le composant CompanyContactBrandingDialog.
+ */
+export type CompanyContactBrandingProps = {
+  editCompanyContactBranding: CompanyContactBranding | null;
+  setEditCompanyContactBranding: (contactBranding: CompanyContactBranding | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
+/**
+ * Type des props pour le composant CompanyBillingDialog.
+ */
+export type CompanyBillingProps = {
+  editCompanyBilling: CompanyBilling | null;
+  setEditCompanyBilling: (billing: CompanyBilling | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+}
+
+/**
+ * Type des props pour le composant CompanyAddressesDialog.
+ */
+export type CompanyAddressesProps = {
+  company_id: string;
+  editCompanyAddresses: CompanyAddress[] | null;
+  setEditCompanyAddresses: (address: CompanyAddress[] | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+}
+
+/**
+ * Type des props pour le composant CompanyBankAccountsDialog.
+ */
+export type CompanyBankAccountsProps = {
+  company_id: string;
+  editCompanyBankAccounts: CompanyBankAccount[] | null;
+  setEditCompanyBankAccounts: (bankAccounts: CompanyBankAccount[] | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+}
+
+/**
  * Type des props pour le composant CompanyDeleteDialog.
  */
 export type CompanyDeleteProps = {
@@ -165,6 +261,11 @@ export type CompanyDeleteProps = {
 };
 
 export type CompanyDialogsProps = 
-| ({ mode?: "create" } & CompanyCreateProps)
+  | ({ mode?: "create" } & CompanyCreateProps)
   | ({ mode: "edit" } & CompanyEditProps)
+  | ({ mode: "editIdentity" } & CompanyIdentityProps)
+  | ({ mode: "editContactBranding" } & CompanyContactBrandingProps)
+  | ({ mode: "editBilling" } & CompanyBillingProps)
+  | ({ mode: "editAddresses" } & CompanyAddressesProps)
+  | ({ mode: "editBankAccounts" } & CompanyBankAccountsProps)
   | ({ mode: "delete" } & CompanyDeleteProps);

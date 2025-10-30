@@ -1,6 +1,11 @@
 import * as React from "react";
 import { CompanyCreateDialog } from "./CompanyCreateDialog";
 import { CompanyEditDialog } from "./CompanyEditDialog";
+import { CompanyIdentityDialog } from "./CompanyIdentityDialog";
+import { CompanyContactBrandingDialog } from "./CompanyContactBrandingDialog";
+import { CompanyBillingDialog } from "./CompanyBillingDialog";
+import { CompanyAddressesDialog } from "./CompanyAddressesDialog";
+import { CompanyBankAccountsDialog } from "./CompanyBankAccountsDialog";
 import { CompanyDeleteDialog } from "./CompanyDeleteDialog";
 import type { CompanyDialogsProps } from "@/schemas/companies.schema";
 
@@ -13,6 +18,73 @@ export function CompanyDialogs(props: CompanyDialogsProps) {
             <CompanyEditDialog
                 editCompany={p.editCompany}
                 setEditCompany={p.setEditCompany}
+                updating={p.updating}
+                setUpdating={p.setUpdating}
+                setParams={p.setParams}
+            />
+        );
+    }
+
+    if (mode === "editIdentity") {
+        const p = props as Extract<CompanyDialogsProps, { mode: "editIdentity" }>;
+        return (
+            <CompanyIdentityDialog
+                editCompanyIdentity={p.editCompanyIdentity}
+                setEditCompanyIdentity={p.setEditCompanyIdentity}
+                updating={p.updating}
+                setUpdating={p.setUpdating}
+                setParams={p.setParams}
+            />
+        );
+    }
+
+    if (mode === "editContactBranding") {
+        const p = props as Extract<CompanyDialogsProps, { mode: "editContactBranding" }>;
+        return (
+            <CompanyContactBrandingDialog
+                editCompanyContactBranding={p.editCompanyContactBranding}
+                setEditCompanyContactBranding={p.setEditCompanyContactBranding}
+                updating={p.updating}
+                setUpdating={p.setUpdating}
+                setParams={p.setParams}
+            />
+        );
+    }
+
+    if (mode === "editBilling") {
+        const p = props as Extract<CompanyDialogsProps, { mode: "editBilling" }>;
+        return (
+            <CompanyBillingDialog
+                editCompanyBilling={p.editCompanyBilling}
+                setEditCompanyBilling={p.setEditCompanyBilling}
+                updating={p.updating}
+                setUpdating={p.setUpdating}
+                setParams={p.setParams}
+            />
+        );
+    }
+
+    if (mode === "editAddresses") {
+        const p = props as Extract<CompanyDialogsProps, { mode: "editAddresses" }>;
+        return (
+            <CompanyAddressesDialog
+                companyId={p.company_id}
+                editCompanyAddresses={p.editCompanyAddresses}
+                setEditCompanyAddresses={p.setEditCompanyAddresses}
+                updating={p.updating}
+                setUpdating={p.setUpdating}
+                setParams={p.setParams}
+            />
+        );
+    }
+
+    if (mode === "editBankAccounts") {
+        const p = props as Extract<CompanyDialogsProps, { mode: "editBankAccounts" }>;
+        return (
+            <CompanyBankAccountsDialog
+                companyId={p.company_id}
+                editCompanyBankAccounts={p.editCompanyBankAccounts}
+                setEditCompanyBankAccounts={p.setEditCompanyBankAccounts}
                 updating={p.updating}
                 setUpdating={p.setUpdating}
                 setParams={p.setParams}

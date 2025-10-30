@@ -6,12 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
-import { CompanyDialogs } from "@/features/companies/components/dialogs/CompanyDialogs";
+import { CompanyAllDialogs } from "@/features/companies/components/dialogs/CompanyAllDialogs";
 import {
   listCompanies,
   getCompanyWithDetails,
 } from "@/data/companies.repository";
-import { type Company, type CompanyWithDetails, type CompanyListParams, type CompanyIdentity, type CompanyContactBranding, type CompanyBilling, type CompanyAddress, CompanyBankAccount } from "@/schemas/companies.schema";
+import { 
+  type Company, 
+  type CompanyWithDetails, 
+  type CompanyListParams, 
+  type CompanyIdentity, 
+  type CompanyContactBranding, 
+  type CompanyBilling, 
+  type CompanyAddress, 
+  type CompanyBankAccount 
+} from "@/schemas/companies.schema";
 import EmptyState from "@/components/EmptyState";
 import EmptySkeleton from "@/components/EmptySkeleton";
 import CompanyHeaderRow from "@/features/companies/components/CompanyHeaderRow";
@@ -161,74 +170,26 @@ export default function CompaniesPage() {
         </Tabs>
       )}
 
-      {/* Modales CRUD */}
-      <CompanyDialogs
-        mode="create"
+      <CompanyAllDialogs
         isCreateOpen={isCreateOpen}
         setIsCreateOpen={setIsCreateOpen}
         creating={creating}
         setCreating={setCreating}
-        setParams={setParams}
-      />
-
-      <CompanyDialogs
-        mode="edit"
         editCompany={editCompany}
         setEditCompany={setEditCompany}
-        updating={updating}
-        setUpdating={setUpdating}
-        setParams={setParams}
-      />
-
-      <CompanyDialogs
-        mode="editIdentity"
-        editCompanyIdentity={editIdentityCompany}
-        setEditCompanyIdentity={setEditIdentityCompany}
-        updating={updating}
-        setUpdating={setUpdating}
-        setParams={setParams}
-      />
-      
-      <CompanyDialogs
-        mode="editContactBranding"
+        editIdentityCompany={editIdentityCompany}
+        setEditIdentityCompany={setEditIdentityCompany}
         editCompanyContactBranding={editCompanyContactBranding}
         setEditCompanyContactBranding={setEditCompanyContactBranding}
-        updating={updating}
-        setUpdating={setUpdating}
-        setParams={setParams}
-      />
-      
-      <CompanyDialogs
-        mode="editBilling"
         editCompanyBilling={editCompanyBilling}
         setEditCompanyBilling={setEditCompanyBilling}
-        updating={updating}
-        setUpdating={setUpdating}
-        setParams={setParams}
-      />
-
-      <CompanyDialogs
-        mode="editAddresses"
-        company_id={activeId!}
+        activeId={activeId}
         editCompanyAddresses={editCompanyAddresses}
         setEditCompanyAddresses={setEditCompanyAddresses}
-        updating={updating}
-        setUpdating={setUpdating}
-        setParams={setParams}
-      />
-
-      <CompanyDialogs
-        mode="editBankAccounts"
-        company_id={activeId!}
         editCompanyBankAccounts={editCompanyBankAccounts}
         setEditCompanyBankAccounts={setEditCompanyBankAccounts}
         updating={updating}
         setUpdating={setUpdating}
-        setParams={setParams}
-      />
-
-      <CompanyDialogs
-        mode="delete"
         deleteCompany={deleteCompany}
         setDeleteCompany={setDeleteCompany}
         setParams={setParams}

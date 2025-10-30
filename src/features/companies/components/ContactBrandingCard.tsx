@@ -15,10 +15,10 @@ export function ContactBrandingCard({ company, onEdit }: { company: Company; onE
         </Button>
       </CardHeader>
       <CardContent className="text-sm space-y-2">
-        <Row label="Site" value={company.website} />
-        <Row label="Email" value={company.email} />
-        <Row label="Téléphone" value={company.phone} />
-        <Row label="Logo" value={company.logo_url} />
+        <Row label="Site" type="link" value={company.website} />
+        <Row label="Email" type="mail" value={company.email} />
+        <Row label="Téléphone" type="phone" value={company.phone} />
+        <Row label="Logo" type="image" value={company.logo_url} />
       </CardContent>
     </Card>
   );

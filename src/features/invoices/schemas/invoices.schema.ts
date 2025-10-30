@@ -142,11 +142,11 @@ export type InvoiceDetail = InvoiceDb & {
 // --- Params liste & tri ---
 
 export type InvoiceListParams = {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  status?: InvoiceStatus | "all";
-  sort?: InvoiceSort;
+  page: number;
+  pageSize: number;
+  search: string;
+  status: InvoiceStatus | "all";
+  sort: InvoiceSort;
   dateFrom?: string; // YYYY-MM-DD
   dateTo?: string;   // YYYY-MM-DD
   clientId?: string;

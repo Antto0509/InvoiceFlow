@@ -10,7 +10,7 @@ import { Toaster, toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listInvoices } from "@/features/invoices";
 import { InvoicesFilters } from "@/features/invoices";
-import type { InvoiceListParams, InvoiceListRow, Invoice, InvoiceDetail } from "@/schemas/invoices.schema";
+import type { InvoiceListParams, InvoiceListRow, InvoiceDb, InvoiceDetail } from "@/schemas/invoices.schema";
 import { InvoiceDialogs } from "@/features/invoices";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
@@ -19,7 +19,7 @@ export default function InvoicesPage() {
   const [creating, setCreating] = React.useState(false);
   const [editInvoice, setEditInvoice] = React.useState<InvoiceDetail | null>(null);
   const [updating, setUpdating] = React.useState(false);
-  const [deleteInvoice, setDeleteInvoice] = React.useState<Invoice | null>(null);
+  const [deleteInvoice, setDeleteInvoice] = React.useState<InvoiceDb | null>(null);
   const { data, total, loading, params, setParams } = useDataTable<InvoiceListRow, InvoiceListParams>(
     async (p) => {
       const res = await listInvoices({
@@ -55,7 +55,7 @@ export default function InvoicesPage() {
   };
 
   const handleDelete = (row: InvoiceListRow) => {
-    setDeleteInvoice({ id: row.id } as Invoice);
+    setDeleteInvoice({ id: row.id } as InvoiceDb);
   };
 
   return (

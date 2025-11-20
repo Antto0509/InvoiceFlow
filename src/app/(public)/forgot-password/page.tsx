@@ -2,28 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/data/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
-
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    if (!trimmedEmail || !trimmedPassword) {
-      toast.error("Email et mot de passe sont obligatoires.");
+    if (!trimmedEmail) {
+      toast.error("Merci de renseigner ton email.");
       return;
     }
 
@@ -31,18 +24,18 @@ export default function LoginPage() {
     const supabase = createClient();
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: trimmedPassword,
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
-        toast.error(error.message || "Échec de la connexion.");
+        toast.error(error.message || "Impossible d’envoyer l’email.");
         return;
       }
 
-      toast.success("Connexion réussie, redirection…");
-      router.push(redirectTo);
+      toast.success(
+        "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé ✉️"
+      );
     } catch (err) {
       console.error(err);
       toast.error("Erreur inattendue. Réessaie dans un instant.");
@@ -56,10 +49,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6 bg-background/80 backdrop-blur border rounded-xl shadow-sm p-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Connexion
+            Mot de passe oublié
           </h1>
           <p className="text-sm text-muted-foreground">
-            Reprends là où tu t&apos;es arrêté sur InvoiceFlow.
+            On t’envoie un lien pour en définir un nouveau.
           </p>
         </div>
 
@@ -83,46 +76,22 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-foreground"
-              >
-                Mot de passe
-              </label>
-              <Link href="/forgot-password" className="text-xs text-muted-foreground hover:underline">
-                Mot de passe oublié ?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
-
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || !email || !password}
+            disabled={loading || !email}
           >
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? "Envoi..." : "Envoyer le lien"}
           </Button>
         </form>
 
         <p className="text-xs text-center text-muted-foreground">
-          Pas encore de compte ?{" "}
+          Tu te souviens finalement ?{" "}
           <Link
-            href="/register"
+            href="/login"
             className="font-medium underline underline-offset-4"
           >
-            Créer un compte
+            Revenir à la connexion
           </Link>
         </p>
       </div>

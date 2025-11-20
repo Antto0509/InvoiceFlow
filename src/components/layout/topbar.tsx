@@ -13,6 +13,7 @@ import { Menu, User } from "lucide-react";
 
 export default async function Topbar() {
   const user = await getUser();
+  const fullName = user ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}` : "";
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background px-2 md:px-4">
@@ -38,7 +39,7 @@ export default async function Topbar() {
         {user ? (
           <>
             <User className="hidden h-4 w-4 text-muted-foreground sm:inline-block" />
-            <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">{fullName ?? user.email}</span>
             <SignOutButton />
           </>
         ) : (

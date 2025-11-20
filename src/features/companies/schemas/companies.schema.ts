@@ -20,10 +20,10 @@ import {
   zIbanLike,
   zBicLike,
 } from "@/lib/zod";
-import { COMPANY_ADDRESS_KINDS } from "@/lib/constants";
+import { ADDRESS_KINDS } from "@/lib/constants";
 
 /** ENUM côté front aligné avec DB: address_kind */
-export const companyAddressKindEnum = z.enum(COMPANY_ADDRESS_KINDS).describe("Type d’adresse d’entreprise");
+export const companyAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’adresse d’entreprise");
 
 // ---------------------------------------------------------------------------
 // 2) Schéma de validation des entreprises

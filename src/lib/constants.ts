@@ -9,7 +9,7 @@ export const SORTABLE_ITEMS = ["name", "qty", "unit_price", "total", "created_at
 export const SORTABLE_COMPANIES = ["name", "vat_number", "default_currency", "vat_regime", "created_at"] as const;
 export const SORTABLE_DOCS = ["client_name", "issue_date", "number", "total", "status"] as const;
 
-export const COMPANY_ADDRESS_KINDS = ['headquarters', 'billing', 'shipping', 'other'] as const;
+export const ADDRESS_KINDS = ['headquarters', 'billing', 'shipping', 'other'] as const;
 export const DOC_KINDS = ['invoice', 'credit_note', 'quote', 'proforma'] as const;
 export const ITEM_KINDS = ['service', 'product'] as const;
 export const REMINDER_KINDS = ['before_due', 'on_due', 'after_due_1', 'after_due_2', 'custom'] as const;

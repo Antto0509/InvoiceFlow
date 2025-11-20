@@ -12,7 +12,7 @@ export const makeInvoicesListApi = (userId?: string) =>
     table: "invoices_with_client",
     select:
       "id, number, issue_date, total, status, currency_code, client_name, client_id, user_id",
-    sortableColumns: [...SORTABLE_INVOICES, "client_name"],
+    sortableColumns: [...SORTABLE_INVOICES],
     searchColumns: ["number", "client_name"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
     protectedColumns: ["user_id"],

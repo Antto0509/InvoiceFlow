@@ -2,13 +2,13 @@ import * as React from "react";
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog";
 import { InvoiceDeleteDialog } from "./InvoiceDeleteDialog";
 import { InvoiceEditDialog } from "./InvoiceEditDialog";
-import type { InvoiceDialogsProps } from "@/schemas/invoices.schema";
+import { DocumentDialogsProps } from "@/schemas/documents.schema";
 
-export function InvoiceDialogs(props: InvoiceDialogsProps) {
+export function InvoiceDialogs(props: DocumentDialogsProps) {
   const mode = ("mode" in props && props.mode) ? props.mode : "create";
 
   if (mode === "edit") {
-    const p = props as Extract<InvoiceDialogsProps, { mode: "edit" }>;
+    const p = props as Extract<DocumentDialogsProps, { mode: "edit" }>;
     return (
       <InvoiceEditDialog
         editInvoice={p.editInvoice}
@@ -21,7 +21,7 @@ export function InvoiceDialogs(props: InvoiceDialogsProps) {
   }
 
   if (mode === "delete") {
-    const p = props as Extract<InvoiceDialogsProps, { mode: "delete" }>;
+    const p = props as Extract<DocumentDialogsProps, { mode: "delete" }>;
     return (
       <InvoiceDeleteDialog
         deleteInvoice={p.deleteInvoice}
@@ -32,7 +32,7 @@ export function InvoiceDialogs(props: InvoiceDialogsProps) {
   }
 
   // Par défaut: création
-  const p = props as Extract<InvoiceDialogsProps, { mode?: "create" }>;
+  const p = props as Extract<DocumentDialogsProps, { mode?: "create" }>;
   return (
     <InvoiceCreateDialog
       isCreateOpen={p.isCreateOpen}

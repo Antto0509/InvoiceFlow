@@ -1,9 +1,14 @@
 import { createClient } from "@/data/supabase/client";
-import { escapeLike, buildOrIlike, ensureSortable, stripGenerated, stripGeneratedMany } from "@/lib/utils";
+import { buildOrIlike, ensureSortable, stripGenerated, stripGeneratedMany, applyFilters, stripProtected } from "@/lib/utils";
 import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/types";
 
 // --- API générique pour une ressource CRUD avec Supabase/PostgREST ---
 
+/**
+ * Crée une API CRUD pour une ressource donnée avec Supabase/PostgREST.
+ * @param opts Options de configuration de l'API.
+ * @returns Un objet contenant les méthodes CRUD pour la ressource.
+ */
 export function createResourceApi<T extends Record<string, unknown>>(opts: ResourceApiOptions<T>) {
   const supabase = createClient();
   const {
@@ -22,189 +27,210 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
   /** Primary key column name */
   const PK = String(primaryKey);
 
-  /** PostgREST-like filters */
-  interface Filterable<TSelf> {
-    eq(col: string, val: unknown): Filterable<TSelf>;           // =
-    neq(col: string, val: unknown): Filterable<TSelf>;          // !=
-    gt(col: string, val: unknown): Filterable<TSelf>;           // >
-    gte(col: string, val: unknown): Filterable<TSelf>;          // >=
-    lt(col: string, val: unknown): Filterable<TSelf>;           // <
-    lte(col: string, val: unknown): Filterable<TSelf>;          // <=
-    ilike(col: string, val: string): Filterable<TSelf>;         // ILIKE
-    "in"(col: string, vals: unknown[]): Filterable<TSelf>;      // IN
-    or(expr: string): Filterable<TSelf>;
-    order(col: string, opts?: { ascending?: boolean; foreignTable?: string; nullsFirst?: boolean }): Filterable<TSelf>;
-    range(from: number, to: number): Filterable<TSelf>;
-    select(sel: string, opts?: { count?: "exact" | "planned" | "estimated"; head?: boolean }): Filterable<TSelf>;
-    abortSignal?(signal: AbortSignal): Filterable<TSelf>;
-    limit(n: number): Filterable<TSelf>;
-  }
-
-  function applyFilters<TReq>(
-    req: TReq,
-    filters?: Record<string, FilterOps | undefined>
-  ): TReq {
-    if (!filters) return req;
-    // Work on a typed view of the request to call PostgREST-like methods without using `any`.
-    let r = req as unknown as Filterable<TReq>;
-    for (const [col, spec] of Object.entries(filters)) {
-      if (!spec) continue;
-      const { op, value } = spec as FilterOps & { value: unknown };
-      if (value === undefined || value === null || value === "") continue;
-      switch (op) {
-        case "eq":    r = r.eq(col, value); break;
-        case "neq":   r = r.neq(col, value); break;
-        case "gt":    r = r.gt(col, value); break;
-        case "gte":   r = r.gte(col, value); break;
-        case "lt":    r = r.lt(col, value); break;
-        case "lte":   r = r.lte(col, value); break;
-        case "ilike": r = r.ilike(col, `%${escapeLike(String(value))}%`); break;
-        case "in":    r = r["in"](col, value as unknown[]); break;
-      }
-    }
-    return r as unknown as TReq;
-  }
-
-  function stripProtected(input: Record<string, unknown>) {
-    const protectedCols = protectedColumns ?? [];
-    for (const col of protectedCols) delete input[col];
-    return input;
-  }
-
   return {
     /** List with pagination, filters, search and safe sorting */
     async list(q: ListQuery = {}): Promise<Paginated<T>> {
-      const page = q.page && q.page > 0 ? q.page : 1;
-      const pageSize = q.pageSize && q.pageSize > 0 ? q.pageSize : 20;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      try {
+        const page = q.page && q.page > 0 ? q.page : 1;
+        const pageSize = q.pageSize && q.pageSize > 0 ? q.pageSize : 20;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
 
-      let req = supabase.from(table).select(select, { count: countMode }).range(from, to);
+        let req = supabase.from(table).select(select, { count: countMode }).range(from, to);
 
-      // AbortSignal (supported in @supabase/postgrest-js ≥1.7)
-      if (q.signal && typeof (req as unknown as { abortSignal?: (signal: AbortSignal) => unknown }).abortSignal === "function") {
-        // cast abortSignal to a function returning the same request type and call it
-        req = ((req as unknown as { abortSignal: (signal: AbortSignal) => typeof req }).abortSignal)(q.signal);
+        if (q.signal && typeof (req as { abortSignal?: (signal: AbortSignal) => unknown }).abortSignal === "function") {
+          req = (req as { abortSignal?: (signal: AbortSignal) => unknown }).abortSignal!(q.signal) as unknown as typeof req;
+        }
+
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        if (q.filters) req = applyFilters(req, q.filters);
+
+        if (q.search && q.search.trim() && searchColumns.length > 0) {
+          const orExpr = buildOrIlike(searchColumns, q.search);
+          if (orExpr) req = req.or(orExpr);
+        }
+
+        const safeSort = ensureSortable(q.sort, sortableColumns);
+        if (safeSort) {
+          req = req.order(safeSort.column, {
+            ascending: safeSort.dir === "asc",
+            foreignTable: safeSort.foreignTable,
+            nullsFirst:
+              safeSort.nulls === "first" ? true : safeSort.nulls === "last" ? false : undefined,
+          });
+        }
+
+        const { data, count, error } = await req;
+        if (error) throw error;
+
+        const rows = (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : r));
+        return { data: rows, page, pageSize, total: count ?? 0 };
+      } catch (err) {
+        console.error(`[ResourceApi:list] table=${table}`, err);
+        throw err;
       }
-
-      if (defaultFilters) req = applyFilters(req, defaultFilters);
-      if (q.filters)       req = applyFilters(req, q.filters);
-
-      if (q.search && q.search.trim() && searchColumns.length > 0) {
-        const orExpr = buildOrIlike(searchColumns, q.search);
-        if (orExpr) req = req.or(orExpr);
-      }
-
-      const safeSort = ensureSortable(q.sort, sortableColumns);
-      if (safeSort) {
-        req = req.order(safeSort.column, {
-          ascending: safeSort.dir === "asc",
-          foreignTable: safeSort.foreignTable,
-          nullsFirst: safeSort.nulls === "first" ? true : safeSort.nulls === "last" ? false : undefined,
-        });
-      }
-
-      const { data, count, error } = await req;
-      if (error) throw error;
-      const rows = ((data ?? []) as unknown[]).map((r) => (mapRow ? mapRow(r) : (r as T)));
-      return { data: rows as T[], page, pageSize, total: count ?? 0 };
     },
 
+    /** Get single item by primary key */
     async get(key: T[typeof primaryKey], customSelect?: string): Promise<T> {
-      let req = supabase.from(table).select(customSelect ?? select).eq(PK, key as unknown);
-      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
-      const { data, error } = await req.single();
-      if (error) throw error;
-      return (mapRow ? mapRow(data) : data) as T;
+      try {
+        let req = supabase.from(table).select(customSelect ?? select).eq(PK, key as unknown);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        const { data, error } = await req.single();
+        if (error) throw error;
+        return (mapRow ? mapRow(data) : data) as T;
+      } catch (err) {
+        console.error(`[ResourceApi:get] table=${table} key=${key}`, err);
+        throw err;
+      }
     },
 
+    /** Create a new item */
     async create(payload: Partial<T>): Promise<T> {
-      const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
-      const { data, error } = await supabase.from(table).insert(clean).select().single();
-      if (error) throw error;
-      return (mapRow ? mapRow(data) : data) as T;
+      try {
+        const clean = stripProtected(stripGenerated(payload as Record<string, unknown>), protectedColumns);
+        const { data, error } = await supabase.from(table).insert(clean).select().single();
+        if (error) throw error;
+        return (mapRow ? mapRow(data) : data) as T;
+      } catch (err) {
+        console.error(`[ResourceApi:create] table=${table} payload=`, payload, err);
+        throw err;
+      }
     },
 
+    /** Update an existing item by primary key */
     async update(key: T[typeof primaryKey], payload: Partial<T>): Promise<T> {
-      const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
-      const { data, error } = await supabase.from(table).update(clean).eq(PK, key as unknown).select().single();
-      if (error) throw error;
-      return (mapRow ? mapRow(data) : data) as T;
+      try {
+        const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
+        const { data, error } = await supabase
+          .from(table)
+          .update(clean)
+          .eq(PK, key as unknown)
+          .select()
+          .single();
+        if (error) throw error;
+        return (mapRow ? mapRow(data) : data) as T;
+      } catch (err) {
+        console.error(`[ResourceApi:update] table=${table} key=${key} payload=`, payload, err);
+        throw err;
+      }
     },
 
+    /** Upsert (insert or update) an item */
     async upsertMany(payloads: Partial<T>[]): Promise<T[]> {
-      const clean = stripGeneratedMany(payloads as Record<string, unknown>[]);
-      const onConflict =
-        Array.isArray(conflictTarget)
+      try {
+        const clean = stripGeneratedMany(payloads as Record<string, unknown>[]);
+        const onConflict = Array.isArray(conflictTarget)
           ? conflictTarget.join(",")
           : conflictTarget ?? PK;
 
-      // NOTE: onConflict is important if your PK isn't a generated UUID
-      const { data, error } = await supabase.from(table).upsert(clean, { onConflict }).select();
-      if (error) throw error;
-      return (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : (r as T))) as T[];
+        const { data, error } = await supabase
+          .from(table)
+          .upsert(clean, { onConflict })
+          .select();
+
+        if (error) throw error;
+        return (data ?? []).map((r: Record<string, unknown>) => (mapRow ? mapRow(r) : r)) as T[];
+      } catch (err) {
+        console.error(`[ResourceApi:upsertMany] table=${table}`, payloads, err);
+        throw err;
+      }
     },
 
+    /** Delete an item by primary key */
     async remove(key: T[typeof primaryKey]): Promise<void> {
-      let req = supabase.from(table).delete().eq(PK, key as unknown);
-      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
-      const { error } = await req;
-      if (error) throw error;
+      try {
+        let req = supabase.from(table).delete().eq(PK, key as unknown);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        const { error } = await req;
+        if (error) throw error;
+      } catch (err) {
+        console.error(`[ResourceApi:remove] table=${table} key=${key}`, err);
+        throw err;
+      }
     },
 
+    /** Bulk delete by primary keys */
     async bulkDelete(keys: Array<T[typeof primaryKey]>): Promise<number> {
-      if (!keys?.length) return 0;
-      let req = supabase.from(table).delete({ count: "exact" }).in(PK, keys as unknown[]);
-      if (defaultFilters) req = applyFilters(req, defaultFilters); // <- AJOUT
-      const { count, error } = await req;
-      if (error) throw error;
-      return count ?? 0;
+      try {
+        if (!keys?.length) return 0;
+        let req = supabase.from(table).delete({ count: "exact" }).in(PK, keys as unknown[]);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        const { count, error } = await req;
+        if (error) throw error;
+        return count ?? 0;
+      } catch (err) {
+        console.error(`[ResourceApi:bulkDelete] table=${table}`, keys, err);
+        throw err;
+      }
     },
 
     /** Fast count with optional filters/search */
     async count(q?: { filters?: Record<string, FilterOps | undefined>; search?: string }) {
-      let req = supabase.from(table).select("*", { count: "exact", head: true });
-      if (defaultFilters) req = applyFilters(req, defaultFilters);
-      if (q?.filters)     req = applyFilters(req, q.filters);
-      if (q?.search && q.search.trim() && searchColumns.length > 0) {
-        const orExpr = buildOrIlike(searchColumns, q.search);
-        if (orExpr) req = req.or(orExpr);
+      try {
+        let req = supabase.from(table).select("*", { count: "exact", head: true });
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        if (q?.filters) req = applyFilters(req, q.filters);
+
+        if (q?.search && q.search.trim() && searchColumns.length > 0) {
+          const orExpr = buildOrIlike(searchColumns, q.search);
+          if (orExpr) req = req.or(orExpr);
+        }
+
+        const { count, error } = await req;
+        if (error) throw error;
+        return count ?? 0;
+      } catch (err) {
+        console.error(`[ResourceApi:count] table=${table}`, q, err);
+        throw err;
       }
-      const { count, error } = await req;
-      if (error) throw error;
-      return count ?? 0;
     },
 
     /** Existence check using arbitrary filters (selects PK for head request) */
     async exists(filters: Record<string, FilterOps | undefined>) {
-      let req = supabase.from(table).select(PK, { head: true, count: "exact" }).limit(1);
-      if (defaultFilters) req = applyFilters(req, defaultFilters);
-      req = applyFilters(req, filters);
-      const { count, error } = await req;
-      if (error) throw error;
-      return (count ?? 0) > 0;
+      try {
+        let req = supabase.from(table).select(PK, { head: true, count: "exact" }).limit(1);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        req = applyFilters(req, filters);
+        const { count, error } = await req;
+        if (error) throw error;
+        return (count ?? 0) > 0;
+      } catch (err) {
+        console.error(`[ResourceApi:exists] table=${table}`, filters, err);
+        throw err;
+      }
     },
 
     /** Unpaginated list (cap) with same query features as list() */
     async listAll(limit = 1000, q?: Omit<ListQuery, "page" | "pageSize">) {
-      let req = supabase.from(table).select(select).limit(limit);
-      if (defaultFilters) req = applyFilters(req, defaultFilters);
-      if (q?.filters)     req = applyFilters(req, q.filters);
-      if (q?.search && q.search.trim() && searchColumns.length > 0) {
-        const orExpr = buildOrIlike(searchColumns, q.search);
-        if (orExpr) req = req.or(orExpr);
+      try {
+        let req = supabase.from(table).select(select).limit(limit);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        if (q?.filters) req = applyFilters(req, q.filters);
+
+        if (q?.search && q.search.trim() && searchColumns.length > 0) {
+          const orExpr = buildOrIlike(searchColumns, q.search);
+          if (orExpr) req = req.or(orExpr);
+        }
+
+        const safeSort = ensureSortable(q?.sort, sortableColumns);
+        if (safeSort) {
+          req = req.order(safeSort.column, {
+            ascending: safeSort.dir === "asc",
+            foreignTable: safeSort.foreignTable,
+            nullsFirst:
+              safeSort.nulls === "first" ? true : safeSort.nulls === "last" ? false : undefined,
+          });
+        }
+
+        const { data, error } = await req;
+        if (error) throw error;
+
+        return (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : r)) as T[];
+      } catch (err) {
+        console.error(`[ResourceApi:listAll] table=${table}`, q, err);
+        throw err;
       }
-      const safeSort = ensureSortable(q?.sort, sortableColumns);
-      if (safeSort) {
-        req = req.order(safeSort.column, {
-          ascending: safeSort.dir === "asc",
-          foreignTable: safeSort.foreignTable,
-          nullsFirst: safeSort.nulls === "first" ? true : safeSort.nulls === "last" ? false : undefined,
-        });
-      }
-      const { data, error } = await req;
-      if (error) throw error;
-      return (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : (r as T))) as T[];
     },
   };
 }

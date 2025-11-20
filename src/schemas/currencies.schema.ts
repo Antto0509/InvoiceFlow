@@ -1,33 +1,62 @@
-import { z } from "zod";
+// ============================================================================
+// Currencies (InvoiceFlow) — Schémas Zod + Types TS
+// Organisation :
+//   1) Imports (Zod, helpers)
+//   2) Schéma de validation des devises
+//   3) Schéma de validation des taux de change
+//   4) Types TS dérivés des schémas Zod
+// ============================================================================
 
-// --- Devises (DB: public.currencies & public.currency_rates) ---
+import { z } from "zod";
+import {
+  zUuid,
+  zDateISO,
+  zCurrencyCode,
+  zNonEmptyString,
+} from "@/lib/zod";
+
+// ---------------------------------------------------------------------------
+// 2) Schéma de validation des devises
+// ---------------------------------------------------------------------------
 
 /**
- * Schéma de validation pour les devises.
+ * Schéma de validation pour les devises (DB: public.currencies)
  */
 export const currencySchema = z.object({
-    code: z.string().length(3, "Le code de la devise doit contenir exactement 3 caractères"),
-    name: z.string().min(1, "Le nom de la devise est requis"),
-    symbol: z.string().min(1, "Le symbole de la devise est requis"),
-    locale: z.string().min(1).optional().nullable(),
-    is_active: z.boolean().optional(),
-    created_at: z.string().optional(), // timestamptz -> string
-    updated_at: z.string().optional(), // timestamptz -> string
-});
+  code: zCurrencyCode.describe("Code devise ISO-4217 (3 lettres, ex: EUR)"),
+  name: zNonEmptyString.describe("Nom lisible de la devise (ex: Euro)"),
+  symbol: zNonEmptyString.describe("Symbole monétaire (ex: €)"),
+  locale: z.string().min(1).optional().nullable()
+    .describe("Code locale (ex: fr-FR), optionnel"),
+  is_active: z.boolean().optional()
+    .describe("Devise active dans l’app (pour listes de sélection)"),
+  created_at: zDateISO.optional()
+    .describe("Horodatage de création (ISO)"),
+  updated_at: zDateISO.optional()
+    .describe("Horodatage de dernière modification (ISO)"),
+}).describe("Devise monétaire (ex: EUR, USD, CHF)");
 
+// ---------------------------------------------------------------------------
+// 3) Schéma de validation des taux de change
+// ---------------------------------------------------------------------------
+
+/**
+ * Schéma des taux de change (DB: public.currency_rates)
+ */
 export const currencyRateSchema = z.object({
-    id: z.uuid().optional(),
-    currency_code: z.string().length(3, "Le code de la devise doit contenir exactement 3 caractères"),
-    valid_from: z.string(), // date -> string
-    eur_per_unit: z.number().positive("Le taux de change doit être un nombre positif"),
-});
+  id: zUuid.optional().describe("Identifiant du taux de change (UUID)"),
+  currency_code: zCurrencyCode.describe("Code devise concernée (ISO-4217)"),
+  valid_from: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Format attendu : YYYY-MM-DD")
+    .describe("Date d’entrée en vigueur du taux (YYYY-MM-DD)"),
+  eur_per_unit: z.number().positive("Le taux doit être strictement positif")
+    .describe("Nombre d’euros pour 1 unité de la devise (ex: 1 USD → 0.93 EUR)"),
+}).describe("Taux de change journalier pour une devise donnée");
 
-/**
- * Type des devises.
- */
+// ---------------------------------------------------------------------------
+// 4) Types dérivés des schémas Zod
+// ---------------------------------------------------------------------------
+
+// Types TS
 export type Currency = z.infer<typeof currencySchema>;
-
-/**
- * Type des taux de change des devises.
- */
 export type CurrencyRate = z.infer<typeof currencyRateSchema>;

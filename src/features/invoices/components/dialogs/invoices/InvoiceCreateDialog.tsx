@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { InvoiceForm } from "../InvoiceForm";
-import { createInvoice } from "@/data/invoices.repository";
-import { upsertItems } from "@/data/items.repository";
-import type { InvoiceListParams } from "@/schemas/invoices.schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DocumentForm } from "../../DocumentForm";
+
+import { createDocumentWithLines } from "@/data/documents.repository";
+import type { DocumentFormValues, DocumentCreateProps } from "@/schemas/documents.schema";
 
 export function InvoiceCreateDialog({
   isCreateOpen,
@@ -14,32 +14,26 @@ export function InvoiceCreateDialog({
   creating,
   setCreating,
   setParams,
-}: {
-  isCreateOpen: boolean;
-  setIsCreateOpen: (open: boolean) => void;
-  creating: boolean;
-  setCreating: (v: boolean) => void;
-  setParams: React.Dispatch<React.SetStateAction<InvoiceListParams>>;
-}) {
+}: DocumentCreateProps) {
   return (
     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-      <DialogTrigger asChild />
       <DialogContent className="sm:max-w-[900px]">
         <DialogHeader>
           <DialogTitle>Créer une facture</DialogTitle>
         </DialogHeader>
-        <InvoiceForm
+
+        <DocumentForm
+          kind="invoice"
           loading={creating}
           onSubmit={async (values) => {
             try {
               setCreating(true);
-              const { items, ...invoice } = values;
-              await createInvoice(invoice);
-              await upsertItems(items);
+
+              await createDocumentWithLines(values as DocumentFormValues);
+
               toast.success("Facture créée");
               setIsCreateOpen(false);
-              // refresh list
-              setParams((p) => ({ ...p }));
+              setParams((p) => ({ ...p })); // refresh liste
             } catch (e) {
               console.error(e);
               toast.error("Erreur lors de la création");
@@ -52,4 +46,3 @@ export function InvoiceCreateDialog({
     </Dialog>
   );
 }
-

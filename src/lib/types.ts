@@ -60,3 +60,21 @@ export type ResourceApiOptions<T> = {
   /** Colonnes protégées en écriture (ex: created_at, user_id) */
   protectedColumns?: (keyof T & string)[];
 };
+
+/** PostgREST-like filters */
+export interface Filterable<TSelf> {
+  eq(col: string, val: unknown): Filterable<TSelf>;           // =
+  neq(col: string, val: unknown): Filterable<TSelf>;          // !=
+  gt(col: string, val: unknown): Filterable<TSelf>;           // >
+  gte(col: string, val: unknown): Filterable<TSelf>;          // >=
+  lt(col: string, val: unknown): Filterable<TSelf>;           // <
+  lte(col: string, val: unknown): Filterable<TSelf>;          // <=
+  ilike(col: string, val: string): Filterable<TSelf>;         // ILIKE
+  "in"(col: string, vals: unknown[]): Filterable<TSelf>;      // IN
+  or(expr: string): Filterable<TSelf>;
+  order(col: string, opts?: { ascending?: boolean; foreignTable?: string; nullsFirst?: boolean }): Filterable<TSelf>;
+  range(from: number, to: number): Filterable<TSelf>;
+  select(sel: string, opts?: { count?: "exact" | "planned" | "estimated"; head?: boolean }): Filterable<TSelf>;
+  abortSignal?(signal: AbortSignal): Filterable<TSelf>;
+  limit(n: number): Filterable<TSelf>;
+}

@@ -1,46 +1,49 @@
 "use client";
 
 import * as React from "react";
-import { useWatch } from "react-hook-form";
-import { useFieldArray, useFormContext, type Path } from "react-hook-form";
+import { useWatch, useFieldArray, useFormContext, type Path } from "react-hook-form";
 import { Plus, Trash } from "lucide-react";
-import { InvoiceFormValues } from "@/schemas/invoices.schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  FormField,
-  FormItem,
-  FormMessage,
-  FormControl,
-} from "@/components/ui/form";
-import { Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { formatMoney } from "@/lib/utils";
+import { FormField, FormItem, FormMessage, FormControl } from "@/components/ui/form";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TotalsCard } from "./TotalsCard";
+import { formatMoney } from "@/lib/utils";
 import { DEFAULT_TAX_RATE } from "@/lib/constants";
 
-export function ItemsEditor({
+type LinesFormShape = {
+  lines: Array<{
+    id?: string;
+    description: string;
+    qty: number;
+    unit_price: number;
+    unit?: string | null;
+    discount_rate?: number | null;
+    discount_amount?: number | null;
+    tax_rate?: number | null;
+  }>;
+  subtotal?: number;
+  tax?: number;
+  total?: number;
+};
+
+export function LinesEditor({
   currency_code,
   taxRate = DEFAULT_TAX_RATE,
-  invoiceId,
   className,
 }: {
   currency_code: string;
   taxRate?: number;
-  invoiceId: string;
   className?: string;
 }) {
-  const form = useFormContext<InvoiceFormValues>();
-  const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" });
+  const form = useFormContext<LinesFormShape>();
+  const { fields, append, remove } = useFieldArray({ control: form.control, name: "lines" });
 
   const subtotal = useWatch({ control: form.control, name: "subtotal" }) ?? 0;
   const tax = useWatch({ control: form.control, name: "tax" }) ?? 0;
   const total = useWatch({ control: form.control, name: "total" }) ?? 0;
-  const watchedItems = form.watch("items");
+  const watchedLines = form.watch("lines");
 
   return (
     <div className={className}>
@@ -52,11 +55,10 @@ export function ItemsEditor({
           variant="secondary"
           onClick={() =>
             append({
-              invoice_id: invoiceId,
               description: "",
               qty: 1,
               unit_price: 0,
-            } satisfies InvoiceFormValues["items"][number])
+            } satisfies LinesFormShape["lines"][number])
           }
         >
           <Plus className="h-4 w-4 mr-1" /> Ajouter une ligne
@@ -65,7 +67,6 @@ export function ItemsEditor({
 
       <Card className="mt-3 overflow-hidden">
         <CardContent className="p-0">
-          {/* Scrollable on small screens */}
           <div className="w-full overflow-x-auto">
             <div className="min-w-[720px]">
               {/* Header */}
@@ -81,7 +82,7 @@ export function ItemsEditor({
               <div className="divide-y">
                 {fields.length === 0 && (
                   <div className="px-4 py-6 text-sm text-muted-foreground">
-                    Aucune ligne. Ajoutez un article pour commencer.
+                    Aucune ligne. Ajoute un article pour commencer.
                   </div>
                 )}
 
@@ -90,7 +91,7 @@ export function ItemsEditor({
                     <div className="col-span-6">
                       <FormField
                         control={form.control}
-                        name={`items.${index}.description` as Path<InvoiceFormValues>}
+                        name={`lines.${index}.description` as Path<LinesFormShape>}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <FormControl>
@@ -105,7 +106,7 @@ export function ItemsEditor({
                     <div className="col-span-2">
                       <FormField
                         control={form.control}
-                        name={`items.${index}.qty` as Path<InvoiceFormValues>}
+                        name={`lines.${index}.qty` as Path<LinesFormShape>}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <FormControl>
@@ -128,7 +129,7 @@ export function ItemsEditor({
                     <div className="col-span-2">
                       <FormField
                         control={form.control}
-                        name={`items.${index}.unit_price` as Path<InvoiceFormValues>}
+                        name={`lines.${index}.unit_price` as Path<LinesFormShape>}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <FormControl>
@@ -149,7 +150,7 @@ export function ItemsEditor({
 
                     <div className="col-span-1 text-right font-medium tabular-nums">
                       {formatMoney(
-                        (Number(watchedItems?.[index]?.qty) || 0) * (Number(watchedItems?.[index]?.unit_price) || 0),
+                        (Number(watchedLines?.[index]?.qty) || 0) * (Number(watchedLines?.[index]?.unit_price) || 0),
                         currency_code
                       )}
                     </div>

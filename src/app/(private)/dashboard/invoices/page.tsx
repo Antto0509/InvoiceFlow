@@ -5,29 +5,33 @@ import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
-import { getInvoiceDetail, InvoicesTable } from "@/features/invoices";
 import { Toaster, toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
-import { listInvoices } from "@/features/invoices";
-import { InvoicesFilters } from "@/features/invoices";
-import type { InvoiceListParams, InvoiceListRow, InvoiceDb, InvoiceDetail } from "@/schemas/invoices.schema";
-import { InvoiceDialogs } from "@/features/invoices";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
+
+import { DocumentsTable } from "@/features/invoices";
+import { listDocuments, getDocumentDetail } from "@/features/invoices";
+import type { Document, EditDoc, DocumentListRow, DocumentListParams, DocumentStatus } from "@/features/invoices";
+
+import { InvoicesFilters } from "@/features/invoices";
+import { InvoiceDialogs } from "@/features/invoices";
 
 export default function InvoicesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [editInvoice, setEditInvoice] = React.useState<InvoiceDetail | null>(null);
+  const [editInvoice, setEditInvoice] = React.useState<EditDoc | null>(null);
   const [updating, setUpdating] = React.useState(false);
-  const [deleteInvoice, setDeleteInvoice] = React.useState<InvoiceDb | null>(null);
-  const { data, total, loading, params, setParams } = useDataTable<InvoiceListRow, InvoiceListParams>(
+  const [deleteInvoice, setDeleteInvoice] = React.useState<Document | null>(null);
+
+  const { data, total, loading, params, setParams } = useDataTable<DocumentListRow, DocumentListParams>(
     async (p) => {
-      const res = await listInvoices({
+      const res = await listDocuments({
         page: p.page,
         pageSize: p.pageSize,
         search: p.search,
         status: p.status,
         sort: p.sort,
+        kind: "invoice",
       });
       return { rows: res.rows, total: res.total };
     },
@@ -35,17 +39,18 @@ export default function InvoicesPage() {
       page: 1,
       pageSize: 20,
       search: "",
-      status: "all" as InvoiceListParams["status"],
+      status: "all",
       sort: { column: "issue_date", dir: "desc" },
+      kind: "invoice",
     }
   );
 
-  // Handlers envoyés à la table (RowActions les utilisera)
-  const handleEdit = async (row: InvoiceListRow) => {
+  // Handlers pour la table
+  const handleEdit = async (row: DocumentListRow) => {
     try {
       setUpdating(true);
-      const full = await getInvoiceDetail(row.id);
-      setEditInvoice(full);
+      const full = await getDocumentDetail(row.id);
+      setEditInvoice(full as EditDoc);
     } catch (e) {
       toast.error("Impossible de charger la facture");
       console.error(e);
@@ -54,8 +59,8 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleDelete = (row: InvoiceListRow) => {
-    setDeleteInvoice({ id: row.id } as InvoiceDb);
+  const handleDelete = (row: DocumentListRow) => {
+    setDeleteInvoice({ id: row.id } as Document);
   };
 
   return (
@@ -74,7 +79,7 @@ export default function InvoicesPage() {
           onSearch={(v) => setParams({ ...params, page: 1, search: v })}
           left={
             <InvoicesFilters
-              status={params.status ?? "all"}
+              status={(params.status as DocumentStatus) ?? "all"}
               onStatusChange={(status) => setParams({ ...params, page: 1, status })}
             />
           }
@@ -90,7 +95,7 @@ export default function InvoicesPage() {
         />
       }
     >
-      <InvoicesTable
+      <DocumentsTable
         data={data}
         loading={loading}
         sort={params.sort}
@@ -100,39 +105,41 @@ export default function InvoicesPage() {
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        showKindColumn={false} // ici on n'affiche que des factures
       />
+
       <Pagination
         page={params.page ?? 1}
         pageSize={params.pageSize ?? 20}
         total={total}
         onPageChange={(p) => setParams({ ...params, page: p })}
       />
+
       <Toaster richColors position="top-right" />
 
-      {/* Modales invoices */}
+      {/* Modales (tes dialogs "invoice" sont déjà migrés vers documents en interne) */}
       <InvoiceDialogs
         mode="create"
         isCreateOpen={isCreateOpen}
         setIsCreateOpen={setIsCreateOpen}
         creating={creating}
         setCreating={setCreating}
-        setParams={setParams}
+        setParams={(p: DocumentListParams | ((prev: DocumentListParams) => DocumentListParams)) => setParams(p)}
       />
       <InvoiceDialogs
         mode="edit"
-        editInvoice={editInvoice}
+        editInvoice={editInvoice as EditDoc | null}
         setEditInvoice={setEditInvoice}
         updating={updating}
         setUpdating={setUpdating}
-        setParams={setParams}
+        setParams={(p: DocumentListParams | ((prev: DocumentListParams) => DocumentListParams)) => setParams(p)}
       />
       <InvoiceDialogs
         mode="delete"
-        deleteInvoice={deleteInvoice}
+        deleteInvoice={deleteInvoice as Document | null}
         setDeleteInvoice={setDeleteInvoice}
-        setParams={setParams}
+        setParams={(p: DocumentListParams | ((prev: DocumentListParams) => DocumentListParams)) => setParams(p)}
       />
     </ListPage>
   );
 }
-

@@ -1,28 +1,37 @@
+// ===========================================================================
+// Settings (InvoiceFlow) — Schéma Zod + Types TS
+// Organisation :
+//   1) Imports (Zod)
+//   2) Schéma de validation des paramètres utilisateur
+//   3) Types TS dérivés des schémas Zod
+// ============================================================================
+
 import { z } from "zod";
+import {
+  zUuid,
+  zDateISO,
+  zUrl,
+  zNonNegative
+} from "@/lib/zod";
 
-// --- Paramètres utilisateur (DB: public.settings) ---
+// ---------------------------------------------------------------------------
+// 2) Schéma de validation des paramètres utilisateur
+// ---------------------------------------------------------------------------
+
+export const settingsSchema = z.object({
+  user_id: zUuid.describe("Identifiant de l’utilisateur associé (UUID)"),
+  logo_url: zUrl.optional().describe("URL du logo de l’entreprise"),
+  legal_notes: z.string().optional().describe("Mentions légales à afficher sur les documents"),
+  bank_info: z.string().optional().describe("Informations bancaires de l’entreprise"),
+  tax_rate: zNonNegative.optional().describe("Taux de TVA par défaut (%)"),
+  updated_at: zDateISO.optional().describe("Date de dernière modification des paramètres"),
+}).describe("Paramètres utilisateur dans l’application InvoiceFlow");
+
+// ---------------------------------------------------------------------------
+// 3) Types dérivés des schémas Zod
+// ---------------------------------------------------------------------------
 
 /**
- * Schéma de validation pour les formulaires de paramètres utilisateur.
+ * Types TypeScript associés
  */
-export const settingsFormSchema = z.object({
-  user_id: z.uuid().optional(), // géré serveur
-  logo_url: z.url().optional().nullable(),
-  legal_notes: z.string().optional().nullable(),
-  bank_info: z.string().optional().nullable(),
-});
-
-/**
- * Type des valeurs du formulaire de paramètres utilisateur.
- */
-export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
-
-/**
- * Type des paramètres utilisateur.
- */
-export type Settings = {
-  user_id: string;
-  logo_url: string | null;
-  legal_notes: string | null;
-  bank_info: string | null;
-};
+export type Settings = z.infer<typeof settingsSchema>;

@@ -13,6 +13,8 @@ import {
   zDateISO,
   zCurrencyCode,
   zNonEmptyString,
+  zDateYMD,
+  zPositive,
 } from "@/lib/zod";
 
 // ---------------------------------------------------------------------------
@@ -46,10 +48,9 @@ export const currencySchema = z.object({
 export const currencyRateSchema = z.object({
   id: zUuid.optional().describe("Identifiant du taux de change (UUID)"),
   currency_code: zCurrencyCode.describe("Code devise concernée (ISO-4217)"),
-  valid_from: z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Format attendu : YYYY-MM-DD")
+  valid_from: zDateYMD
     .describe("Date d’entrée en vigueur du taux (YYYY-MM-DD)"),
-  eur_per_unit: z.number().positive("Le taux doit être strictement positif")
+  eur_per_unit: zPositive
     .describe("Nombre d’euros pour 1 unité de la devise (ex: 1 USD → 0.93 EUR)"),
 }).describe("Taux de change journalier pour une devise donnée");
 

@@ -35,6 +35,11 @@ export const zNonNegative = z
   .refine((n) => n >= 0, { error: "Doit être supérieur ou égal à 0" })
   .describe("Nombre supérieur ou égal à 0");
 
+export const zPositive = z
+  .coerce.number()
+  .refine((n) => n > 0, { error: "Doit être strictement supérieur à 0" })
+  .describe("Nombre strictement supérieur à 0");
+
 /** Chaîne de caractères non vide */
 export const zNonEmptyString = z
   .string()

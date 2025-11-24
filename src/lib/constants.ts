@@ -10,9 +10,14 @@ export const SORTABLE_COMPANIES = ["name", "vat_number", "default_currency", "va
 export const SORTABLE_DOCS = ["client_name", "issue_date", "number", "total", "status"] as const;
 
 export const ADDRESS_KINDS = ['headquarters', 'billing', 'shipping', 'other'] as const;
+export const CLIENT_ADDRESS_KINDS = ['billing', 'shipping', 'other'] as const;
 export const DOC_KINDS = ['invoice', 'credit_note', 'quote', 'proforma'] as const;
 export const ITEM_KINDS = ['service', 'product'] as const;
 export const REMINDER_KINDS = ['before_due', 'on_due', 'after_due_1', 'after_due_2', 'custom'] as const;
 
+export const MEMBERSHIP_ROLES = ['owner', 'admin', 'member', 'accountant'] as const;
+export const PAYMENT_METHODS = ['bank_transfer', 'card', 'cash', 'check', 'paypal', 'other'] as const;
+
+export const EMAIL_LOG_STATUSES = ['scheduled', 'sent', 'failed', 'skipped'] as const;
 export const DOC_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'paid', 'overdue', 'void'] as const;
 export const REMINDER_STATUSES = ['scheduled', 'sent', 'skipped', 'failed'] as const;

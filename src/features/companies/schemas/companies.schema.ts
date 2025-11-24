@@ -20,10 +20,11 @@ import {
   zIbanLike,
   zBicLike,
 } from "@/lib/zod";
-import { ADDRESS_KINDS } from "@/lib/constants";
+import { ADDRESS_KINDS, MEMBERSHIP_ROLES } from "@/lib/constants";
 
-/** ENUM côté front aligné avec DB: address_kind */
+/** ENUM côté front aligné avec DB: address_kind & membership_role */
 export const companyAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’adresse d’entreprise");
+export const companyMembershipRoleEnum = z.enum(MEMBERSHIP_ROLES).describe("Rôle au sein de l’entreprise");
 
 // ---------------------------------------------------------------------------
 // 2) Schéma de validation des entreprises
@@ -112,7 +113,7 @@ export const companyContactBrandingSchema = companySchema.pick({
 }).describe("Coordonnées et identité visuelle");
 
 // ---------------------------------------------------------------------------
-// 5) Schéma combiné entreprise + détails (addresses, bank_accounts)
+// 5) Schéma combiné entreprise + détails (addresses, bank_accounts, memberships)
 // ---------------------------------------------------------------------------
 
 /** Paramètres de facturation (sous-ensemble) */
@@ -156,11 +157,21 @@ export const companyBankAccountSchema = z.object({
   updated_at: zDateISO.optional().describe("Dernière modification (ISO)"),
 }).describe("Coordonnées bancaires d’entreprise");
 
-/** Entreprise + détails liés (addresses, bank_accounts) */
+export const companyMembershipSchema = z.object({
+  id: zUuid.optional().describe("Identifiant (UUID)"),
+  company_id: zUuid.describe("Entreprise liée (FK)"),
+  user_id: zUuid.describe("Utilisateur lié (FK)"),
+  role: companyMembershipRoleEnum.describe("Rôle au sein de l’entreprise"),
+  created_at: zDateISO.optional().describe("Création (ISO)"),
+  updated_at: zDateISO.optional().describe("Dernière modification (ISO)"),
+}).describe("Membre d’une entreprise");
+
+/** Entreprise + détails liés (addresses, bank_accounts, memberships) */
 export const companyWithDetailsSchema = z.object({
   company: companySchema.describe("Entreprise"),
   addresses: z.array(companyAddressSchema).describe("Adresses associées"),
   bank_accounts: z.array(companyBankAccountSchema).describe("Comptes bancaires associés"),
+  memberships: z.array(companyMembershipSchema).describe("Membres associés"),
 }).describe("Vue d’ensemble entreprise + détails");
 
 // -------------------- Types TS associés --------------------
@@ -172,6 +183,8 @@ export type CompanyBilling = z.infer<typeof companyBillingSchema>;
 export type CompanyAddress = z.infer<typeof companyAddressSchema>;
 export type CompanyAddressKind = z.infer<typeof companyAddressKindEnum>;
 export type CompanyBankAccount = z.infer<typeof companyBankAccountSchema>;
+export type CompanyMembership = z.infer<typeof companyMembershipSchema>;
+export type CompanyMembershipRole = z.infer<typeof companyMembershipRoleEnum>;
 export type CompanyWithDetails = z.infer<typeof companyWithDetailsSchema>;
 
 // -------------------- Types FORM --------------------
@@ -179,6 +192,7 @@ export type CompanyWithDetails = z.infer<typeof companyWithDetailsSchema>;
 export type CompanyFormValues = z.infer<typeof companySchema>;
 export type CompanyAddressFormValues = z.infer<typeof companyAddressSchema>;
 export type CompanyBankAccountFormValues = z.infer<typeof companyBankAccountSchema>;
+export type CompanyMembershipFormValues = z.infer<typeof companyMembershipSchema>;
 
 // -------------------- Types LISTING --------------------
 
@@ -286,6 +300,16 @@ export type CompanyBankAccountsProps = {
   setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
 };
 
+/** Props du composant CompanyMembershipsDialog */
+export type CompanyMembershipsProps = {
+  company_id: string;
+  editCompanyMemberships: CompanyMembership[] | null;
+  setEditCompanyMemberships: (memberships: CompanyMembership[] | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<CompanyListParams>>;
+};
+
 /** Props du composant CompanyDeleteDialog */
 export type CompanyDeleteProps = {
   deleteCompany: Company | null;
@@ -301,4 +325,5 @@ export type CompanyDialogsProps =
   | ({ mode: "editBilling" } & CompanyBillingProps)
   | ({ mode: "editAddresses" } & CompanyAddressesProps)
   | ({ mode: "editBankAccounts" } & CompanyBankAccountsProps)
+  | ({ mode: "editMemberships" } & CompanyMembershipsProps)
   | ({ mode: "delete" } & CompanyDeleteProps);

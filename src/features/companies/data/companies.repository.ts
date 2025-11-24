@@ -5,6 +5,7 @@ import type {
   CompanyBankAccount,
   CompanyWithDetails,
   CompanyListParams,
+  CompanyMembership,
 } from "@/schemas/companies.schema";
 import { SORTABLE_COMPANIES } from "@/lib/constants";
 
@@ -132,7 +133,7 @@ export const bulkDeleteCompanies = (ids: string[], userId?: string) =>
   makeCompaniesApi(userId).bulkDelete(ids);
 
 /* ---------------------------------- */
-/*   Company Addresses & Bank API     */
+/*   Company Addresses, Bank & Memberships API     */
 /* ---------------------------------- */
 
 export const makeCompanyAddressesApi = () =>
@@ -150,6 +151,14 @@ export const makeCompanyBankAccountsApi = () =>
     select: "id, company_id, label, iban, bic, display, created_at, updated_at",
     sortableColumns: ["label", "display", "created_at", "updated_at"],
     searchColumns: ["label", "iban", "bic"],
+  });
+
+export const makeCompanyMembershipsApi = () =>
+  createResourceApi<CompanyMembership>({
+    table: "company_memberships",
+    select: "id, company_id, user_id, role, created_at, updated_at",
+    sortableColumns: ["role", "created_at", "updated_at"],
+    searchColumns: ["role"],
   });
 
 // CRUD Addresses
@@ -193,29 +202,57 @@ export const updateCompanyBankAccount = (
 export const removeCompanyBankAccount = (id: string) =>
   makeCompanyBankAccountsApi().remove(id);
 
+// CRUD Memberships
+export const listCompanyMemberships = (companyId: string) =>
+  makeCompanyMembershipsApi().list({
+    page: 1,
+    pageSize: 100,
+    filters: { company_id: { op: "eq", value: companyId } },
+    sort: { column: "created_at", dir: "asc" },
+  });
+
+export const createCompanyMembership = (
+  payload: Partial<CompanyMembership>
+) => makeCompanyMembershipsApi().create(payload);
+
+export const updateCompanyMembership = (
+  id: string,
+  payload: Partial<CompanyMembership>
+) => makeCompanyMembershipsApi().update(id, payload);
+
+export const removeCompanyMembership = (id: string) =>
+  makeCompanyMembershipsApi().remove(id);
+
 /* ---------------------------------- */
 /*  Aggregation: company + détails    */
 /* ---------------------------------- */
 
 /**
- * Récupère une entreprise + adresses + comptes bancaires.
+ * Récupère une entreprise + adresses + comptes bancaires + membres.
  * Remonte un objet typé `CompanyWithDetails`.
+ * 
+ * @param id Identifiant de l’entreprise
+ * @param userId (optionnel) Filtrage par utilisateur propriétaire
+ * 
+ * @returns Détails de l’entreprise
  */
 export async function getCompanyWithDetails(
   id: string,
   userId?: string
 ): Promise<CompanyWithDetails> {
   try {
-    const [company, { data: addresses }, { data: bankAccounts }] = await Promise.all([
+    const [company, { data: addresses }, { data: bankAccounts }, { data: memberships }] = await Promise.all([
       getCompany(id, userId),
       listCompanyAddresses(id),
       listCompanyBankAccounts(id),
+      listCompanyMemberships(id),
     ]);
 
     return {
       company,
       addresses: addresses as CompanyAddress[],
       bank_accounts: bankAccounts as CompanyBankAccount[],
+      memberships: memberships as CompanyMembership[],
     };
   } catch (err) {
     console.error(

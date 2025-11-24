@@ -142,22 +142,3 @@ CREATE TRIGGER trg_document_lines_compute_total
 CREATE TRIGGER trg_document_lines_after_change
   AFTER INSERT OR UPDATE OR DELETE ON public.document_lines
   FOR EACH ROW EXECUTE FUNCTION public.document_lines_after_change_recalc();
-
-
-
--- =========================================================
--- 4. Vue invoices — INSTEAD OF triggers
--- =========================================================
--- Permet d'insérer / mettre à jour via public.invoices
--- en pilotant public.documents en dessous.
--- Les fonctions v_invoices_insert / v_invoices_update doivent
--- être définies dans functions.sql.
--- =========================================================
-
-CREATE TRIGGER trg_v_invoices_insert
-  INSTEAD OF INSERT ON public.invoices
-  FOR EACH ROW EXECUTE FUNCTION public.v_invoices_insert();
-
-CREATE TRIGGER trg_v_invoices_update
-  INSTEAD OF UPDATE ON public.invoices
-  FOR EACH ROW EXECUTE FUNCTION public.v_invoices_update();

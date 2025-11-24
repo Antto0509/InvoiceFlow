@@ -9,7 +9,7 @@ import { Plus, Upload } from "lucide-react";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listClients } from "@/data/clients.repository";
 import type { ClientListParams, ClientListRow, Client } from "@/schemas/clients.schema";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
 export default function ClientsPage() {
@@ -91,7 +91,6 @@ export default function ClientsPage() {
           pageSize={params.pageSize ?? 20}
           onPageChange={(page) => setParams({ ...params, page })}
         />
-      <Toaster richColors position="top-right" />
 
       {/* Modales clients */}
       <ClientCreateDialog

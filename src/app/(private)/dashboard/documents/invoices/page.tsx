@@ -5,7 +5,7 @@ import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
@@ -114,8 +114,6 @@ export default function InvoicesPage() {
         total={total}
         onPageChange={(p) => setParams({ ...params, page: p })}
       />
-
-      <Toaster richColors position="top-right" />
 
       {/* Modales (tes dialogs "invoice" sont déjà migrés vers documents en interne) */}
       <InvoiceDialogs

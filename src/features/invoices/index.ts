@@ -1,8 +1,4 @@
-export * from "./schemas/invoices.schema";
-export * from "./schemas/items.schema";
 export * from "./schemas/documents.schema";
-export * from "./data/invoices.repository";
-export * from "./data/items.repository";
 export * from "./data/documents.repository";
 export * from "./data/documentLines.repository";
 export { DocumentsTable } from "./components/DocumentsTable";

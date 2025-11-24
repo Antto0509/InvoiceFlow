@@ -1,19 +1,14 @@
+"use server";
+import "server-only";
+
 import { renderToBuffer, DocumentProps } from "@react-pdf/renderer";
 import React from "react";
+import InvoicePDF from "../components/pdf/InvoicePDF";
 import { InvoiceDetail, InvoicePdfData } from "@/schemas/invoices.schema";
-import { createClient as createServerClient } from "@/data/supabase/client";
-import { getInvoiceDetailServer } from "@/data/invoices.repository.server";
-import InvoicePDF from "@/features/invoices/components/pdf/InvoicePDF";
+import { createClient } from "@/data/supabase/server";
+import { getInvoiceDetailServer } from "../../documents/data/invoices.repository.server";
 
-/**
- * Récupère les données nécessaires à la génération du PDF d’une facture.
- * 
- * @param invoiceId 
- * @param userId 
- * @returns Les données formatées pour le PDF.
- */
 export async function fetchInvoicePdfData(invoiceId: string, userId: string): Promise<InvoicePdfData> {
-  // getInvoiceDetail doit s'exécuter avec RLS et la session serveur (cookies)
   const inv = await getInvoiceDetailServer(invoiceId);
   if (!inv) throw new Error("Not found");
 
@@ -44,25 +39,18 @@ export async function fetchInvoicePdfData(invoiceId: string, userId: string): Pr
   };
 }
 
-/**
- * Génère un buffer PDF à partir des données de la facture.
- * @param data Les données de la facture.
- * @returns Un buffer contenant le PDF généré.
- */
 export async function generateInvoicePdfBuffer(data: InvoicePdfData) {
-  const element = React.createElement(InvoicePDF, { data }) as unknown as React.ReactElement<DocumentProps>;
-  return await renderToBuffer(element);
+    try {
+        const element = React.createElement(InvoicePDF, { data }) as unknown as React.ReactElement<DocumentProps>;
+        const buffer = await renderToBuffer(element);
+        return buffer;
+    } catch (error) {
+        throw error;
+    }
 }
 
-/**
- * Upload le PDF de la facture dans Supabase Storage.
- * @param userId 
- * @param number 
- * @param buf 
- * @returns Le chemin de stockage du PDF.
- */
 export async function uploadInvoicePdf(userId: string, number: string, buf: Buffer) {
-  const supabase = createServerClient();
+  const supabase = createClient();
   const path = `${userId}/${number}.pdf`;
   const { error } = await supabase.storage.from("invoices").upload(path, buf, {
     contentType: "application/pdf",
@@ -72,19 +60,11 @@ export async function uploadInvoicePdf(userId: string, number: string, buf: Buff
   return path;
 }
 
-/**
- * Assure que le PDF de la facture existe.
- * @param invoiceId 
- * @param param1 
- * @returns Le buffer, le chemin de stockage (si stocké) et le nom de fichier.
- */
 export async function ensurePdfForInvoice(invoiceId: string, { store = false }: { store?: boolean } = {}) {
-  const supabase = createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
-
+    
   const data = await fetchInvoicePdfData(invoiceId, user.id);
   const buf = await generateInvoicePdfBuffer(data);
 

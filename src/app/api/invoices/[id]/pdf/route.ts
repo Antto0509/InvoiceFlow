@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateSignedInvoicePdfUrl } from "@/features/invoices/hooks/signInvoicePdf";
+import { getOrCreateSignedInvoicePdfUrl } from "@/features/documents/hooks/signInvoicePdf";
 
 export const runtime = "nodejs";
 

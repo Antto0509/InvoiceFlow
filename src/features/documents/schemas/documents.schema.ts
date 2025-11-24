@@ -274,6 +274,7 @@ export type EditDoc = Document & { lines?: DocumentLine[] | null };
 
 /** Props modale de création */
 export type DocumentCreateProps = {
+  kind: DocumentKind;
   isCreateOpen: boolean;
   setIsCreateOpen: (open: boolean) => void;
   creating: boolean;
@@ -283,8 +284,9 @@ export type DocumentCreateProps = {
 
 /** Props modale d’édition */
 export type DocumentEditProps = {
-  editInvoice: EditDoc | null;
-  setEditInvoice: (inv: EditDoc | null) => void;
+  kind: DocumentKind;
+  editDocument: EditDoc | null;
+  setEditDocument: (inv: EditDoc | null) => void;
   updating?: boolean;
   setUpdating?: (v: boolean) => void;
   setParams?: React.Dispatch<React.SetStateAction<DocumentListParams>>;
@@ -292,8 +294,9 @@ export type DocumentEditProps = {
 
 /** Props modale de suppression */
 export type DocumentDeleteProps = {
-  deleteInvoice: Document | null;
-  setDeleteInvoice: (inv: Document | null) => void;
+  kind: DocumentKind;
+  deleteDocument: Document | null;
+  setDeleteDocument: (inv: Document | null) => void;
   setParams?: React.Dispatch<React.SetStateAction<DocumentListParams>>;
 };
 
@@ -302,3 +305,7 @@ export type DocumentDialogsProps =
   | ({ mode?: "create" } & DocumentCreateProps)
   | ({ mode: "edit" } & DocumentEditProps)
   | ({ mode: "delete" } & DocumentDeleteProps);
+
+export type DocumentsComponentProps = {
+  kind: DocumentKind;
+};

@@ -8,7 +8,7 @@ import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { formatMoney, labelDocKind, labelDocStatus, getDocStatusVariant, downloadDocumentPdf } from "@/lib/utils";
 import { SortBtn } from "@/components/datatable/SortBtn";
 import { FileDown, RefreshCcw } from "lucide-react";
-import type { DocumentListRow, DocumentSort, DocumentsTableProps } from "@/schemas/documents.schema";
+import type { DocumentListRow, DocumentSort, DocumentsTableProps } from "@/features/documents/schemas/documents.schema";
 
 /** 
  * Table des documents (factures, devis, avoirs, proformas).

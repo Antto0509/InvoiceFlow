@@ -5,6 +5,7 @@ import { format, Locale } from "date-fns";
 import { toast } from "sonner";
 import { Company } from "@/features/companies/schemas/companies.schema";
 import { Filterable } from "@/lib/types";
+import { DocumentKind, DocumentStatus } from "@/features/documents";
 
 /** 
  * Combine des classes CSS avec clsx et tailwind-merge.
@@ -202,7 +203,7 @@ export function labelAddressKind(kind: string) {
  * @param kind Type de document
  * @returns Chaîne formatée
  */
-export function labelDocKind(kind: string) {
+export function labelDocKind(kind: DocumentKind | string) {
   switch (kind) {
     case "invoice":
       return "Facture";
@@ -212,12 +213,41 @@ export function labelDocKind(kind: string) {
       return "Devis";
     case "proforma":
       return "Proforma";
-    case "contract":
-      return "Contrat";
     default:
       return "Document";
   }
 }
+
+/** Map centrale des statuts possibles par type de document */
+export const DOC_STATUS_BY_KIND: Record<
+  DocumentKind, Partial<Record<DocumentStatus, string>>
+> = {
+  invoice: {
+    draft: "Brouillon",
+    sent: "Envoyée",
+    paid: "Payée",
+    overdue: "En retard",
+    void: "Annulée",
+  },
+  credit_note: {
+    draft: "Brouillon",
+    sent: "Envoyée",
+    void: "Annulée",
+  },
+  quote: {
+    draft: "Brouillon",
+    sent: "Envoyé",
+    accepted: "Accepté",
+    declined: "Refusé",
+    expired: "Expiré",
+    void: "Annulé",
+  },
+  proforma: {
+    draft: "Brouillon",
+    sent: "Envoyée",
+    void: "Annulée",
+  },
+};
 
 /** 
  * Formate le statut d'un document selon son type.
@@ -225,14 +255,8 @@ export function labelDocKind(kind: string) {
  * @param status Statut du document
  * @returns Chaîne formatée
  */
-export function labelDocStatus(kind: string, status: string) {
-  const statusLabelByKind: Record<string, Record<string, string>> = {
-    invoice: { draft: "Brouillon", sent: "Envoyée", paid: "Payée", overdue: "En retard", void: "Annulée" },
-    credit_note: { draft: "Brouillon", sent: "Envoyée", void: "Annulée" },
-    quote: { draft: "Brouillon", sent: "Envoyé", accepted: "Accepté", declined: "Refusé", expired: "Expiré", void: "Annulé" },
-    proforma: { draft: "Brouillon", sent: "Envoyée", void: "Annulée" }
-  };
-  return statusLabelByKind[kind]?.[status] ?? status;
+export function labelDocStatus(kind: DocumentKind | string, status: DocumentStatus | string) {
+  return (DOC_STATUS_BY_KIND as Record<string, Partial<Record<string, string>>>)[kind]?.[status] ?? status;
 }
 
 /** 
@@ -240,7 +264,7 @@ export function labelDocStatus(kind: string, status: string) {
  * @param status Statut du document
  * @returns Variante de bouton
  */
-export function getDocStatusVariant(status: string) {
+export function getDocStatusVariant(status: DocumentKind | string) {
   const statusVariant: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
     paid: "default",
     accepted: "default",
@@ -272,4 +296,18 @@ export async function downloadDocumentPdf(id: string, force = false) {
   if (!res.ok) return toast.error("Échec du téléchargement du PDF");
   if (!body?.url) return toast.error("URL signée manquante");
   window.location.assign(String((body as { url?: string }).url));
+}
+
+export function toastSuccessMessage(kind: string, action: string) {
+  const kindLabel = kind === "invoice"
+    ? "Facture"
+    : kind === "credit_note"
+    ? "Note de crédit"
+    : kind === "quote"
+    ? "Devis"
+    : kind === "proforma"
+    ? "Facture proforma"
+    : "Document";
+
+  toast.success(`${kindLabel} ${action} avec succès`);
 }

@@ -13,26 +13,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { removeDocument } from "@/data/documents.repository";
-import { listDocumentLines, deleteDocumentLines } from "@/data/documentLines.repository";
-import type { Document, DocumentListParams } from "@/schemas/documents.schema";
+import { removeDocument } from "@/features/documents/data/documents.repository";
+import { listDocumentLines, deleteDocumentLines } from "@/features/documents/data/documentLines.repository";
+import type { Document, DocumentDeleteProps } from "@/features/documents/schemas/documents.schema";
+import { toastSuccessMessage } from "@/lib/utils";
 
-export function InvoiceDeleteDialog({
-  deleteInvoice,
-  setDeleteInvoice,
+export function DocumentDeleteDialog({
+  kind,
+  deleteDocument,
+  setDeleteDocument,
   setParams,
-}: {
-  deleteInvoice: Document | null; // ex-Invoice
-  setDeleteInvoice: (inv: Document | null) => void;
-  setParams?: React.Dispatch<React.SetStateAction<DocumentListParams>>;
-}) {
+}: DocumentDeleteProps) {
   const handleConfirm = async () => {
     try {
-      if (!deleteInvoice?.id) return;
+      if (!deleteDocument?.id) return;
 
       // 1) Tentative simple : supprime le document
       try {
-        await removeDocument(deleteInvoice.id);
+        await removeDocument(deleteDocument.id);
       } catch (err: unknown) {
         // 2) Si contrainte FK (pas de CASCADE), on supprime d’abord les lignes puis on ré-essaie
         const getErrorInfo = (e: unknown): { code?: string; message?: string } => {
@@ -60,15 +58,16 @@ export function InvoiceDeleteDialog({
           /foreign key/i.test(message ?? "");
         if (!isFk) throw err;
 
-        const lines = await listDocumentLines(deleteInvoice.id);
+        const lines = await listDocumentLines(deleteDocument.id);
         if (lines.length) {
           await deleteDocumentLines(lines.map((l) => l.id));
         }
-        await removeDocument(deleteInvoice.id);
+        await removeDocument(deleteDocument.id);
       }
 
-      toast.success("Facture supprimée");
-      setDeleteInvoice(null);
+      toastSuccessMessage(kind, "supprimé");
+
+      setDeleteDocument(null);
       setParams?.((p) => ({ ...p })); // refresh liste
     } catch (e) {
       console.error(e);
@@ -76,14 +75,24 @@ export function InvoiceDeleteDialog({
     }
   };
 
-  const displayNumber = deleteInvoice?.number ?? (deleteInvoice as Document)?.number_readonly ?? null;
+  const displayNumber = deleteDocument?.number ?? (deleteDocument as Document)?.number_readonly ?? null;
+  let dispKind = "le document";
+  if ( kind === "invoice") {
+    dispKind = "la facture";
+  } else if ( kind === "quote") {
+    dispKind = "le devis";
+  } else if ( kind === "credit_note") {
+    dispKind = "la note de crédit";
+  } else if ( kind === "proforma") {
+    dispKind = "la proforma";
+  }
 
   return (
-    <AlertDialog open={!!deleteInvoice} onOpenChange={(o) => { if (!o) setDeleteInvoice(null); }}>
+    <AlertDialog open={!!deleteDocument} onOpenChange={(o) => { if (!o) setDeleteDocument(null); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Supprimer {displayNumber ? `la facture « ${displayNumber} »` : "cette facture"} ?
+            Supprimer {displayNumber ? `${dispKind} « ${displayNumber} »` : `ce ${dispKind}`} ?
           </AlertDialogTitle>
           <AlertDialogDescription>
             Cette action est irréversible.

@@ -20,7 +20,7 @@ import { SelectCurrency } from "@/components/datatable/SelectCurrency";
 import { safeRandomUUID } from "@/lib/utils";
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE } from "@/lib/constants";
 
-import { DocumentFormValues, DocumentFormSchema, DocumentKind, DocumentStatus } from "@/schemas/documents.schema";
+import { DocumentFormValues, DocumentFormSchema, DocumentKind, DocumentStatus } from "@/features/documents/schemas/documents.schema";
 
 import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
 import { SelectCompany } from "@/components/datatable/SelectCompany";
@@ -56,12 +56,12 @@ const kindConfig: Record<
 };
 
 export function DocumentForm({
-  kind = "invoice",
+  kind,
   defaultValues,
   onSubmit,
   loading,
 }: {
-  kind?: DocumentKind;
+  kind: DocumentKind;
   defaultValues?: Partial<DocumentFormValues>;
   onSubmit: (values: DocumentFormValues) => Promise<void> | void;
   loading?: boolean;

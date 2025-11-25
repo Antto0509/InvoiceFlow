@@ -7,17 +7,25 @@ import { RouteLoadingProvider } from "@/components/layout/route-loading";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <RouteLoadingProvider>
-      <div className="grid min-h-dvh grid-rows-[auto_1fr] md:grid-cols-[240px_1fr] md:grid-rows-1">
+      <div className="min-h-dvh bg-background">
         {/* Sidebar desktop */}
-        <aside className="hidden border-r md:block">
+        <aside className="fixed inset-y-0 left-0 hidden w-[240px] border-r bg-background md:block">
           <Sidebar />
         </aside>
 
-        <div className="flex min-w-0 flex-col">
-          {/* Topbar (serveur, avec supabase) */}
-          <Topbar />
-          {/* Contenu */}
-          <main className="p-4 md:p-6">{children}</main>
+        {/* Contenu (décalé sur desktop) */}
+        <div
+          className="flex min-h-dvh flex-col ml-0"
+        >
+          {/* Sur desktop, on décale le contenu */}
+          <div className="md:ml-[240px] flex min-h-dvh flex-col">
+            <Topbar />
+
+            {/* Contenu */}
+            <main className="flex-1 p-4 md:p-6">
+              {children}
+            </main>
+          </div>
         </div>
 
         <Toaster richColors position="top-right" />

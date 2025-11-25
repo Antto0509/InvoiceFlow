@@ -50,8 +50,6 @@ export async function getOrCreateSignedDocumentPdfUrl(
 
     pdfPath = path;
 
-    console.log("PDF généré et stocké à :", pdfPath);
-
     // On persiste le chemin dans documents.pdf_url
     const { error: updErr } = await supabase
       .from("documents")

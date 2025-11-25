@@ -21,7 +21,7 @@ import {
   type DocumentListRow,
   type DocumentListParams,
 } from "@/features/documents";
-import { DOC_STATUS_BY_KIND } from "@/lib/utils";
+import { DOC_STATUS_BY_KIND, formatMoney } from "@/lib/utils";
 
 import {
   ChartContainer,
@@ -217,11 +217,7 @@ export default function DashboardHome(): React.ReactElement {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalPaid.toLocaleString("fr-FR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{" "}
-              {currency}
+              {formatMoney(totalPaid, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               Total des factures payées (données chargées)
@@ -238,11 +234,7 @@ export default function DashboardHome(): React.ReactElement {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalOverdue.toLocaleString("fr-FR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{" "}
-              {currency}
+              {formatMoney(totalOverdue, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               Montant des factures en retard
@@ -290,10 +282,7 @@ export default function DashboardHome(): React.ReactElement {
                       <ChartTooltipContent
                         hideLabel
                         formatter={(value) =>
-                          `${(value as number).toLocaleString("fr-FR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })} ${currency}`
+                          formatMoney(value as number, currency)
                         }
                       />
                     }
@@ -348,10 +337,7 @@ export default function DashboardHome(): React.ReactElement {
                       <ChartTooltipContent
                         hideLabel
                         formatter={(value) =>
-                          `${(value as number).toLocaleString("fr-FR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })} ${currency}`
+                          formatMoney(value as number, currency)
                         }
                       />
                     }

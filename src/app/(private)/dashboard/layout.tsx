@@ -1,24 +1,27 @@
+import type { ReactNode } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { Toaster } from "@/components/ui/sonner";
+import { RouteLoadingProvider } from "@/components/layout/route-loading";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr] md:grid-cols-[240px_1fr] md:grid-rows-1">
-      {/* Sidebar desktop */}
-      <aside className="hidden border-r md:block">
-        <Sidebar />
-      </aside>
+    <RouteLoadingProvider>
+      <div className="grid min-h-dvh grid-rows-[auto_1fr] md:grid-cols-[240px_1fr] md:grid-rows-1">
+        {/* Sidebar desktop */}
+        <aside className="hidden border-r md:block">
+          <Sidebar />
+        </aside>
 
-      <div className="flex min-w-0 flex-col">
-        {/* Topbar (avec burger pour mobile) */}
-        <Topbar />
-        {/* Contenu */}
-        <main className="p-4 md:p-6">{children}</main>
+        <div className="flex min-w-0 flex-col">
+          {/* Topbar (serveur, avec supabase) */}
+          <Topbar />
+          {/* Contenu */}
+          <main className="p-4 md:p-6">{children}</main>
+        </div>
+
+        <Toaster richColors position="top-right" />
       </div>
-
-      <Toaster richColors position="top-right" />
-    </div>
+    </RouteLoadingProvider>
   );
 }
-

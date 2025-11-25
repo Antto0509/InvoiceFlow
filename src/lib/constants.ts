@@ -1,3 +1,6 @@
+export const VERSION = "0.1.0";
+
+export const DEFAULT_LANGUAGE = "fr";
 export const DEFAULT_CURRENCY = "EUR";
 export const DEFAULT_TAX_RATE = 0.2; // 20%
 

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useRouteLoading } from "@/components/layout/route-loading";
+import { VERSION } from "@/lib/constants";
 
 type NavChild = {
   href: string;
@@ -96,10 +98,14 @@ const nav: NavItem[] = [
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [openSection, setOpenSection] = React.useState<string | null>(null);
+  const { startLoading } = useRouteLoading();
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="p-4 border-b font-semibold">InvoiceFlow</div>
+      <div className="border-b px-4 py-3 font-bold flex items-center justify-between">
+        <div className="text-lg">InvoiceFlow</div>
+        <div className="text-xs text-muted-foreground">{VERSION}</div>
+      </div>
 
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
         {nav.map((item) => {
@@ -150,7 +156,10 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               ) : (
                 <Link
                   href={item.href}
-                  onClick={onNavigate}
+                  onClick={() => {
+                    startLoading();
+                    onNavigate?.();
+                  }}
                   className={cn(
                     "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
                     active
@@ -183,7 +192,10 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                           <Link
                             key={child.href}
                             href={child.href}
-                            onClick={onNavigate}
+                            onClick={() => {
+                              startLoading();
+                              onNavigate?.();
+                            }}
                             className={cn(
                               "block rounded-md px-2 py-1 text-sm transition-colors",
                               childActive
@@ -203,8 +215,6 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
-
-      <div className="p-3 text-xs text-muted-foreground">v0.1.0</div>
     </div>
   );
 }

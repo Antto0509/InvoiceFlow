@@ -96,10 +96,11 @@ export const DocumentDbSchema = z.object({
   notes_public: z.string().nullable().optional().describe("Notes visibles (PDF)"),
   notes_private: z.string().nullable().optional().describe("Notes internes (non visibles)"),
   pdf_url: z
-    .url()
+    .string()
+    .min(1, "Chemin du PDF invalide")
     .nullable()
     .optional()
-    .describe("URL du PDF généré/signé"),
+    .describe("Chemin du fichier PDF dans le bucket Supabase (ex: userId/FAC-2025-001.pdf)"),
 
   // On garde string ISO pour rester aligné avec Supabase (text/timestamptz -> string)
   created_at: z

@@ -32,6 +32,15 @@ export function formatDateSafe(date: string | Date | null | undefined, formatStr
   }
 }
 
+export function formatDateYMD(dateYmd: string | null | undefined, locale?: Locale): string {
+  if (!dateYmd) return "";
+  // YYYY-MM-DD -> format fr
+  const [y, m, d] = dateYmd.split("-").map((s) => Number(s));
+  if (!y || !m || !d) return dateYmd;
+  const jsDate = new Date(Date.UTC(y, m - 1, d));
+  return format(jsDate, "dd/MM/yyyy", { locale });
+}
+
 /** 
  * Formate une valeur monétaire selon la locale et la devise.
  * @param value Valeur numérique
@@ -281,8 +290,8 @@ export function getDocStatusVariant(status: DocumentKind | string) {
 /**
  * Télécharge le PDF d'un document.
  * @param id Identifiant du document
- * @param force Forcer le téléchargement du PDF
- * @returns Promise résolue une fois le téléchargement initié
+ * @param force Forcer la régénération du PDF
+ * @returns Promise résolue une fois l'ouverture initiée
  */
 export async function downloadDocumentPdf(id: string, force = false) {
   const q = new URLSearchParams({ redirect: "0", ttl: "300" });
@@ -291,13 +300,34 @@ export async function downloadDocumentPdf(id: string, force = false) {
   const res = await fetch(`/api/documents/${id}/pdf?` + q.toString());
 
   type PdfResponse = { url?: string } | Record<string, unknown>;
-  const body = (await res.json().catch((): PdfResponse => ({}))) as PdfResponse;
 
-  if (!res.ok) return toast.error("Échec du téléchargement du PDF");
-  if (!body?.url) return toast.error("URL signée manquante");
-  window.location.assign(String((body as { url?: string }).url));
+  let body: PdfResponse = {};
+  try {
+    body = (await res.json()) as PdfResponse;
+  } catch {
+    body = {};
+  }
+
+  if (!res.ok) {
+    toast.error("Échec du téléchargement du PDF");
+    return;
+  }
+
+  const url = (body as { url?: string }).url;
+  if (!url || typeof url !== "string") {
+    toast.error("URL signée manquante");
+    return;
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
+
+/** 
+ * Affiche un message de succès toasté pour une action sur un document.
+ * @param kind Type de document
+ * @param action Action réalisée
+ */
 export function toastSuccessMessage(kind: string, action: string) {
   const kindLabel = kind === "invoice"
     ? "Facture"

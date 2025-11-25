@@ -1,6 +1,6 @@
 import { createClient } from "@/data/supabase/client";
 import { stripGeneratedMany } from "@/lib/utils";
-import type { DocumentLine } from "@/features/documents/schemas/documents.schema";
+import type { DocumentLine } from "@/schemas/documents.schema";
 
 /**
  * Récupérer les lignes d'un document

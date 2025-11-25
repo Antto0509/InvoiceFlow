@@ -103,13 +103,9 @@ export const DocumentDbSchema = z.object({
     .describe("Chemin du fichier PDF dans le bucket Supabase (ex: userId/FAC-2025-001.pdf)"),
 
   // On garde string ISO pour rester aligné avec Supabase (text/timestamptz -> string)
-  created_at: z
-    .string()
-    .default(new Date().toISOString())
+  created_at: zDateISO
     .describe("Horodatage de création (ISO)"),
-  updated_at: z
-    .string()
-    .default(new Date().toISOString())
+  updated_at: zDateISO
     .describe("Horodatage de dernière modification (ISO)"),
 }).describe("Document principal (facture, devis, avoir, proforma)");
 

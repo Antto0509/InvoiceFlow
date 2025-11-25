@@ -21,3 +21,8 @@ export const PAYMENT_METHODS = ['bank_transfer', 'card', 'cash', 'check', 'paypa
 export const EMAIL_LOG_STATUSES = ['scheduled', 'sent', 'failed', 'skipped'] as const;
 export const DOC_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'paid', 'overdue', 'void'] as const;
 export const REMINDER_STATUSES = ['scheduled', 'sent', 'skipped', 'failed'] as const;
+
+export const FILE_TARGETS = ['document', 'client', 'company', 'other'] as const;
+export const SUPPORTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
+export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_FILES_PER_TARGET = 10;

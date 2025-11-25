@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Helpers Zod (validation générique et descriptions)
@@ -73,3 +74,19 @@ export const zBicLike = z
     "Doit ressembler à un BIC/SWIFT (8 ou 11 caractères)"
   )
   .describe("Code BIC/SWIFT");
+
+/** Type MIME valide */
+export const zMimeType = z
+  .string()
+  .refine((val) => (SUPPORTED_FILE_TYPES as readonly string[]).includes(val), {
+    message: `Type MIME non supporté. Types supportés : ${SUPPORTED_FILE_TYPES.join(", ")}`,
+  })
+  .describe("Type MIME valide");
+
+/** Taille de fichier en octets (max: 5 MB) */
+export const zFileSize = z
+  .number()
+  .refine((size) => size > 0 && size <= MAX_FILE_SIZE_BYTES, {
+    message: `Taille de fichier invalide. Taille maximale : ${MAX_FILE_SIZE_BYTES} octets.`,
+  })
+  .describe("Taille de fichier en octets (max 5 MB)");

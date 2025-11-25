@@ -24,8 +24,8 @@
       "@/features/*": ["features/*"],
       "@/components/*": ["components/*"],
       "@/ui/*": ["components/ui/*"],
-      "@/data/*": ["data/*", "features/clients/data/*", "features/invoices/data/*", "features/companies/data/*"],
-      "@/schemas/*": ["schemas/*", "features/clients/schemas/*", "features/invoices/schemas/*", "features/companies/schemas/*"],
+      "@/data/*": ["data/*", "features/clients/data/*", "features/documents/data/*", "features/companies/data/*"],
+      "@/schemas/*": ["schemas/*", "features/clients/schemas/*", "features/documents/schemas/*", "features/companies/schemas/*"],
       "@/hooks/*": ["hooks/*"],
       "@/lib/*": ["lib/*"]
     }

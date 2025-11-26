@@ -5,7 +5,7 @@ import { z } from "zod";
 import React from "react";
 import { DocumentProps, renderToBuffer } from "@react-pdf/renderer";
 
-import { createClient } from "@/data/supabase/server";
+import { createClientServer } from "@/data/supabase/server";
 import {
   documentPdfSourceSchema,
   mapDocumentPdfSourceToPdfData,
@@ -61,7 +61,7 @@ async function fetchDocumentPdfSource(
   documentId: string,
   userId: string
 ) {
-  const sb = createClient();
+  const sb = createClientServer();
 
   try {
     // 1) Document principal
@@ -247,7 +247,7 @@ export async function uploadDocumentPdf(
   number: string | null,
   buf: Buffer
 ) {
-  const sb = createClient();
+  const sb = createClientServer();
   const safeNumber = number || `doc-${Date.now()}`;
   const path = `${userId}/${safeNumber}.pdf`;
 
@@ -279,7 +279,7 @@ export async function uploadDocumentPdf(
  * @returns Enregistrement du fichier
  */
 async function persistPdfFileRecord(
-  sb: ReturnType<typeof createClient>,
+  sb: ReturnType<typeof createClientServer>,
   params: {
     user_id: string;
     documentId: string;
@@ -335,7 +335,7 @@ export async function ensurePdfForDocument(
   documentId: string,
   { store = false }: { store?: boolean } = {}
 ) {
-  const sb = createClient();
+  const sb = createClientServer();
 
   try {
     const {

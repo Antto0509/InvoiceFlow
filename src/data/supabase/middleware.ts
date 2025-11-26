@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { supabaseUrl, supabaseKey } from "./const";
 
-export const createClient = (request: NextRequest) => {
+export const createClientMiddleware = (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({
     request: {
       headers: new Headers(request.headers),

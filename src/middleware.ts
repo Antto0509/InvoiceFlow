@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/data/supabase/middleware";
+import { createClientMiddleware } from "@/data/supabase/middleware";
 
 export async function middleware(req: NextRequest) {
-  const { supabase, supabaseResponse } = createClient(req);
+  const { supabase, supabaseResponse } = createClientMiddleware(req);
   const { pathname, search } = req.nextUrl;
 
   // On récupère l'utilisateur une seule fois

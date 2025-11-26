@@ -1,7 +1,7 @@
 "use server";
 
 import "server-only";
-import { createClient } from "@/data/supabase/server";
+import { createClientServer } from "@/data/supabase/server";
 import { ensurePdfForDocument } from "./generateDocumentPdf.server";
 
 type SignOptions = {
@@ -17,7 +17,7 @@ export async function getOrCreateSignedDocumentPdfUrl(
   documentId: string,
   { expiresIn = 300, force = false }: SignOptions = {}
 ): Promise<string> {
-  const supabase = createClient();
+  const supabase = createClientServer();
 
   // 1) Auth
   const {

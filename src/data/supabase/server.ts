@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { supabaseUrl, supabaseKey } from "./const";
 
-export const createClient = cache(() => {
+export const createClientServer = cache(() => {
   const cookieStorePromise = cookies();
   return createServerClient(
     supabaseUrl!,

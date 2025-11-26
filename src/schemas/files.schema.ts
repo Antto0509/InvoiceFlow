@@ -86,3 +86,24 @@ export type FileForm = z.infer<typeof fileFormSchema>;
 export type FileTarget = z.infer<typeof fileTargetSchema>;
 export type FileTargetType = z.infer<typeof fileTargetEnum>;
 export type FileWithDetail = z.infer<typeof fileWithDetailSchema>;
+
+/* ---------------------------------- */
+/*        Recherche / Listing         */
+/* ---------------------------------- */
+
+export type FileSort = {
+  column: "bucket" | "path" | "mime_type" | "size_bytes" | "created_at";
+  dir: "asc" | "desc";
+};
+
+export type FileListParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  bucket?: string;
+  mimeType?: string;
+  dateFrom?: string; // ISO
+  dateTo?: string;   // ISO
+  sort?: FileSort;
+  signal?: AbortSignal;
+};

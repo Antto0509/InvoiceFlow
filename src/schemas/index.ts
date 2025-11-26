@@ -3,3 +3,4 @@ export * from "./settings.schema";
 export * from "./currencies.schema";
 export * from "./payments.schema";
 export * from "./users.schema";
+export * from "./files.schema";

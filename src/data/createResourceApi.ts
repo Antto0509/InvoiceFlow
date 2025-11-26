@@ -1,5 +1,12 @@
 import { createClient } from "@/data/supabase/client";
-import { buildOrIlike, ensureSortable, stripGenerated, stripGeneratedMany, applyFilters, stripProtected } from "@/lib/utils";
+import {
+  buildOrIlike,
+  ensureSortable,
+  stripGenerated,
+  stripGeneratedMany,
+  applyFilters,
+  stripProtected,
+} from "@/lib/utils";
 import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/types";
 
 // --- API générique pour une ressource CRUD avec Supabase/PostgREST ---
@@ -19,16 +26,53 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
     countMode = "exact",
     mapRow,
     defaultFilters,
-    primaryKey = "id" as keyof T & string,
+    primaryKey = "id" as keyof T & string | (keyof T & string)[],
     conflictTarget,
     protectedColumns,
   } = opts;
 
-  /** Primary key column name */
-  const PK = String(primaryKey);
+  /** Helper : est-ce une PK composite ? */
+  const isCompositePk = Array.isArray(primaryKey);
+  const pkColumns = (Array.isArray(primaryKey) ? primaryKey : [primaryKey]) as string[];
+
+  /**
+   * Helper : applique les conditions de PK à une requête Supabase
+   * @param req Requête Supabase en cours de construction
+   * @param key Valeur(s) de la clé primaire
+   * @returns Requête Supabase avec les conditions de PK appliquées
+   */
+  function applyPkFilter<Query extends { eq(column: string, value: unknown): Query }>(
+    req: Query,
+    key: unknown
+  ): Query {
+    if (isCompositePk) {
+      const keyArray = Array.isArray(key) ? key : [];
+      if (keyArray.length !== pkColumns.length) {
+        throw new Error(
+          `[ResourceApi] Composite PK for table=${table} attend un array de ${pkColumns.length} valeurs`
+        );
+      }
+
+      let q = req;
+      pkColumns.forEach((col, idx) => {
+        q = q.eq(col, keyArray[idx] as unknown);
+      });
+      return q;
+    }
+
+    // PK simple
+    return req.eq(pkColumns[0], key as unknown);
+  }
+
+  /** Colonnes à sélectionner quand on veut juste la PK (exists) */
+  const pkSelect = pkColumns.join(",");
 
   return {
-    /** List with pagination, filters, search and safe sorting */
+    /** 
+     * Liste paginée avec filtres, recherche, tri sécurisé
+     * @param q Paramètres de la requête
+     * @returns Résultats paginés
+     */
     async list(q: ListQuery = {}): Promise<Paginated<T>> {
       try {
         const page = q.page && q.page > 0 ? q.page : 1;
@@ -64,28 +108,37 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
         if (error) throw error;
 
         const rows = (data ?? []).map((r: unknown) => (mapRow ? mapRow(r) : r));
-        return { data: rows, page, pageSize, total: count ?? 0 };
+        return { data: rows as T[], page, pageSize, total: count ?? 0 };
       } catch (err) {
         console.error(`[ResourceApi:list] table=${table}`, err);
         throw err;
       }
     },
 
-    /** Get single item by primary key */
-    async get(key: T[typeof primaryKey], customSelect?: string): Promise<T> {
+    /** 
+     * Récupère un item unique par clé primaire (simple ou composite) 
+     * @param key Valeur(s) de la clé primaire
+     * @param customSelect Optionnel: SELECT personnalisé
+     * @returns L'item correspondant
+     */
+    async get(key: unknown, customSelect?: string): Promise<T> {
       try {
-        let req = supabase.from(table).select(customSelect ?? select).eq(PK, key as unknown);
+        let req = supabase.from(table).select(customSelect ?? select);
+        req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { data, error } = await req.single();
         if (error) throw error;
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
-        console.error(`[ResourceApi:get] table=${table} key=${key}`, err);
+        console.error(`[ResourceApi:get] table=${table} key=${JSON.stringify(key)}`, err);
         throw err;
       }
     },
 
-    /** Create a new item */
+    /** Crée un nouvel item 
+     * @param payload Données de l'item à créer
+     * @returns L'item créé
+     */
     async create(payload: Partial<T>): Promise<T> {
       try {
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>), protectedColumns);
@@ -98,31 +151,42 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** Update an existing item by primary key */
-    async update(key: T[typeof primaryKey], payload: Partial<T>): Promise<T> {
+    /** 
+     * Met à jour un item existant par clé primaire (simple ou composite) 
+     * @param key Valeur(s) de la clé primaire
+     * @param payload Données à mettre à jour
+     * @returns L'item mis à jour
+     */
+    async update(key: unknown, payload: Partial<T>): Promise<T> {
       try {
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
-        const { data, error } = await supabase
-          .from(table)
-          .update(clean)
-          .eq(PK, key as unknown)
-          .select()
-          .single();
+        let req = supabase.from(table).update(clean);
+        req = applyPkFilter(req, key);
+        if (defaultFilters) req = applyFilters(req, defaultFilters);
+        const { data, error } = await req.select().single();
         if (error) throw error;
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
-        console.error(`[ResourceApi:update] table=${table} key=${key} payload=`, payload, err);
+        console.error(
+          `[ResourceApi:update] table=${table} key=${JSON.stringify(key)} payload=`,
+          payload,
+          err
+        );
         throw err;
       }
     },
 
-    /** Upsert (insert or update) an item */
+    /** 
+     * Upsert (insert ou update) plusieurs items en une seule opération
+     * @param payloads Liste des items à upserter
+     * @returns Liste des items upsertés
+     */
     async upsertMany(payloads: Partial<T>[]): Promise<T[]> {
       try {
         const clean = stripGeneratedMany(payloads as Record<string, unknown>[]);
         const onConflict = Array.isArray(conflictTarget)
           ? conflictTarget.join(",")
-          : conflictTarget ?? PK;
+          : conflictTarget ?? pkSelect;
 
         const { data, error } = await supabase
           .from(table)
@@ -137,24 +201,40 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** Delete an item by primary key */
-    async remove(key: T[typeof primaryKey]): Promise<void> {
+    /** 
+     * Supprime un item par clé primaire (simple ou composite) 
+     * @param key Valeur(s) de la clé primaire
+     */
+    async remove(key: unknown): Promise<void> {
       try {
-        let req = supabase.from(table).delete().eq(PK, key as unknown);
+        let req = supabase.from(table).delete();
+        req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { error } = await req;
         if (error) throw error;
       } catch (err) {
-        console.error(`[ResourceApi:remove] table=${table} key=${key}`, err);
+        console.error(`[ResourceApi:remove] table=${table} key=${JSON.stringify(key)}`, err);
         throw err;
       }
     },
 
-    /** Bulk delete by primary keys */
-    async bulkDelete(keys: Array<T[typeof primaryKey]>): Promise<number> {
+    /** 
+     * Bulk delete par PK → uniquement si PK simple
+     * @param keys Liste des valeurs de la clé primaire
+     * @returns Nombre d'items supprimés
+     */
+    async bulkDelete(keys: unknown[]): Promise<number> {
       try {
         if (!keys?.length) return 0;
-        let req = supabase.from(table).delete({ count: "exact" }).in(PK, keys as unknown[]);
+        if (isCompositePk) {
+          throw new Error(
+            `[ResourceApi:bulkDelete] table=${table} ne supporte pas bulkDelete avec PK composite`
+          );
+        }
+        let req = supabase
+          .from(table)
+          .delete({ count: "exact" })
+          .in(pkColumns[0], keys as unknown[]);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { count, error } = await req;
         if (error) throw error;
@@ -165,7 +245,11 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** Fast count with optional filters/search */
+    /** 
+     * Compte les items avec filtres et recherche optionnels
+     * @param q Paramètres de la requête
+     * @returns Nombre total d'items correspondant
+     */
     async count(q?: { filters?: Record<string, FilterOps | undefined>; search?: string }) {
       try {
         let req = supabase.from(table).select("*", { count: "exact", head: true });
@@ -186,10 +270,18 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** Existence check using arbitrary filters (selects PK for head request) */
+    /** 
+     * Vérifie l'existence d'items correspondant à des filtres arbitraires 
+     * (sélectionne la clé primaire pour une requête head)
+     * @param filters Filtres à appliquer
+     * @returns true si au moins un item correspond, false sinon 
+     */
     async exists(filters: Record<string, FilterOps | undefined>) {
       try {
-        let req = supabase.from(table).select(PK, { head: true, count: "exact" }).limit(1);
+        let req = supabase
+          .from(table)
+          .select(pkSelect, { head: true, count: "exact" })
+          .limit(1);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         req = applyFilters(req, filters);
         const { count, error } = await req;
@@ -201,7 +293,11 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** Unpaginated list (cap) with same query features as list() */
+    /** Liste non paginée (cap) avec mêmes fonctionnalités de requête que list() 
+     * @param limit Nombre maximum d'items à récupérer
+     * @param q Paramètres de la requête (sans page ni pageSize)
+     * @returns Liste des items correspondant
+     */
     async listAll(limit = 1000, q?: Omit<ListQuery, "page" | "pageSize">) {
       try {
         let req = supabase.from(table).select(select).limit(limit);

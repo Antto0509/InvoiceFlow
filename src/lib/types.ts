@@ -54,7 +54,7 @@ export type ResourceApiOptions<T> = {
   /** Filtres appliqués à TOUTES les listes (ex: multitenant user_id) */
   defaultFilters?: Record<string, FilterOps>;
   /** Clé primaire de la table */
-  primaryKey?: keyof T & string;
+  primaryKey?: keyof T & string | (keyof T & string)[];
   /** Optionnel: cible de conflit pour les upserts */
   conflictTarget?: string | string[];
   /** Colonnes protégées en écriture (ex: created_at, user_id) */

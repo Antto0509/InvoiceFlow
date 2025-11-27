@@ -1,26 +1,44 @@
 "use client";
+
 import * as React from "react";
 import { ListPage } from "@/components/ListPage";
-import { ClientsTable, ClientDialogs } from "@/features/clients";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
 import { useDataTable } from "@/hooks/useDataTable";
-import { listClients } from "@/data/clients.repository";
-import type { ClientListParams, ClientListRow, Client } from "@/schemas/clients.schema";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
-export default function ClientsPage() {
+import { listClientAddresses } from "@/data/clients.repository";
+import type { ClientAddress, ClientAddressListParams, ClientAddressSort } from "@/schemas/clients.schema";
+
+import { ClientAddressesTable, ClientDialogs } from "@/features/clients";
+
+export default function ClientAddressesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [editClient, setEditClient] = React.useState<Client | null>(null);
+  const [editClientAddress, setEditClientAddress] = React.useState<ClientAddress | null>(
+    null
+  );
   const [updating, setUpdating] = React.useState(false);
-  const [deleteClient, setDeleteClient] = React.useState<Client | null>(null);
-  const { data, total, loading, params, setParams } = useDataTable<ClientListRow, ClientListParams>(
+  const [deleteClientAddress, setDeleteClientAddress] =
+    React.useState<ClientAddress | null>(null);
+
+  const {
+    data,
+    total,
+    loading,
+    params,
+    setParams,
+  } = useDataTable<ClientAddress, ClientAddressListParams>(
     async (p) => {
-      const res = await listClients({
+      const res = await (listClientAddresses as unknown as (args: {
+        page: number;
+        pageSize: number;
+        search?: string;
+        sort: ClientAddressSort;
+      }) => Promise<{ rows: ClientAddress[]; total: number }>)({
         page: p.page,
         pageSize: p.pageSize,
         search: p.search,
@@ -32,34 +50,30 @@ export default function ClientsPage() {
       page: 1,
       pageSize: 20,
       search: "",
-      company: "all" as ClientListParams["company"],
-      hasEmail: "all" as unknown as ClientListParams["hasEmail"],
-      sort: { column: "name", dir: "asc" },
+      sort: { column: "city", dir: "asc" },
     }
   );
 
-  // Handlers envoyés à la table (RowActions les utilisera)
-  const handleEdit = (row: ClientListRow) => {
-    // si ClientListRow est compatible avec Client, sinon mappe ce qu’il faut
-    setEditClient(row as unknown as Client);
+  const handleEdit = (row: ClientAddress) => {
+    setEditClientAddress(row);
   };
 
-  const handleDelete = (row: ClientListRow) => {
-    setDeleteClient(row as unknown as Client);
+  const handleDelete = (row: ClientAddress) => {
+    setDeleteClientAddress(row);
   };
 
   return (
     <ListPage
-      title="Clients"
-      description="Gère tes clients : ajouter, éditer, supprimer."
+      title="Adresses clients"
+      description="Centralise et gère toutes les adresses de tes clients."
       actions={
         <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> Nouveau client
+          <Plus className="h-4 w-4" /> Nouvelle adresse
         </Button>
       }
       toolbar={
         <DataToolbar
-          placeholder="Rechercher un client (nom, email, téléphone)."
+          placeholder="Rechercher une adresse (rue, ville, code postal)."
           search={params.search ?? ""}
           onSearch={(v) => setParams({ ...params, page: 1, search: v })}
           right={
@@ -74,27 +88,28 @@ export default function ClientsPage() {
         />
       }
     >
-      <ClientsTable
+      <ClientAddressesTable
         data={data}
         loading={loading}
         sort={params.sort}
-        onSortChange={(sort) => setParams({ ...params, sort })}
-        onRowClick={(id) => {
-          toast.info(`Cliqué sur le client avec l'ID : ${id}`);
+        onSortChange={(sort: ClientAddressSort) => setParams({ ...params, sort })}
+        onRowClick={(id: string) => {
+          toast.info(`Cliqué sur l'adresse avec l'ID : ${id}`);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-      <Pagination
-          total={total}
-          page={params.page ?? 1}
-          pageSize={params.pageSize ?? 20}
-          onPageChange={(page) => setParams({ ...params, page })}
-        />
 
-      {/* Modales clients */}
+      <Pagination
+        total={total}
+        page={params.page ?? 1}
+        pageSize={params.pageSize ?? 20}
+        onPageChange={(page) => setParams({ ...params, page })}
+      />
+
+      {/* Modales adresses */}
       <ClientDialogs
-        mode="create"
+        mode="createAddress"
         isCreateOpen={isCreateOpen}
         setIsCreateOpen={setIsCreateOpen}
         creating={creating}
@@ -103,21 +118,20 @@ export default function ClientsPage() {
       />
 
       <ClientDialogs
-        mode="edit"
-        editClient={editClient}
-        setEditClient={setEditClient}
+        mode="editAddress"
+        editClientAddress={editClientAddress}
+        setEditClientAddress={setEditClientAddress}
         updating={updating}
         setUpdating={setUpdating}
         setParams={setParams}
       />
 
       <ClientDialogs
-        mode="delete"
-        deleteClient={deleteClient}
-        setDeleteClient={setDeleteClient}
+        mode="deleteAddress"
+        deleteClientAddress={deleteClientAddress}
+        setDeleteClientAddress={setDeleteClientAddress}
         setParams={setParams}
       />
     </ListPage>
   );
 }
-

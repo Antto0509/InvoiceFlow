@@ -45,15 +45,9 @@ export const clientDbSchema = z.object({
  * Schéma formulaire client (UI)
  * Plus permissif sur id et timestamps; mêmes labels côté UI.
  */
-export const clientFormSchema = z.object({
-  id: zUuid.optional().describe("UUID (optionnel en création)"),
-  name: zNonEmptyString.min(2, "Nom trop court").describe("Nom du client"),
-  email: zEmail.nullable().optional().describe("Email du client"),
-  company: z.string().nullable().optional().describe("Société du client"),
-  phone: z.string().nullable().optional().describe("Téléphone"),
-  address: z.string().nullable().optional().describe("Adresse"),
-  notes: z.string().nullable().optional().describe("Notes internes"),
-}).describe("Formulaire de création/édition de client");
+export const clientFormSchema = clientDbSchema
+  .omit({ user_id: true, created_at: true, updated_at: true })
+  .describe("Formulaire de création/édition de client");
 
 // Types TS
 export type Client = z.infer<typeof clientDbSchema>;
@@ -80,9 +74,8 @@ export const clientAddressSchema = z.object({
 
 /** Schéma formulaire d’adresse client (UI) */
 export const clientAddressFormSchema = clientAddressSchema
-  .extend({
-    id: zUuid.optional().describe("UUID (optionnel)"),
-  })
+  .omit({ id: true, created_at: true, updated_at: true })
+  .extend({ country: z.string().min(2) })
   .describe("Formulaire d’adresse client");
 
 // Types TS
@@ -108,9 +101,7 @@ export const clientContactSchema = z.object({
 
 /** Schéma formulaire de contact client (UI) */
 export const clientContactFormSchema = clientContactSchema
-  .extend({
-    id: zUuid.optional().describe("UUID (optionnel)"),
-  })
+  .omit({ created_at: true, updated_at: true })
   .describe("Formulaire de contact client");
 
 // Types TS
@@ -133,7 +124,7 @@ export type ClientWithDetails = z.infer<typeof clientWithDetailsSchema>;
 // 6) Listing / Table / Params / Sort
 // ---------------------------------------------------------------------------
 
-/** Projection “liste” pour tableau (SELECT partiel possible) */
+/** Liste des clients pour tableau */
 export type ClientListRow = {
   id: string;
   name: string | null | undefined; // souple si SELECT partiel
@@ -158,6 +149,18 @@ export type ClientSort = {
   dir: "asc" | "desc";
 };
 
+/** Tri des listes d'adresses clients */
+export type ClientAddressSort = {
+  column: keyof ClientAddress;
+  dir: "asc" | "desc";
+};
+
+/** Tri des listes de contacts clients */
+export type ClientContactSort = {
+  column: keyof ClientContact;
+  dir: "asc" | "desc";
+};
+
 /** Paramètres des listes de clients */
 export type ClientListParams = {
   page: number;
@@ -171,6 +174,28 @@ export type ClientListParams = {
   dateTo?: string;   // YYYY-MM-DD
 };
 
+/** Paramètres des listes d'adresses clients */
+export type ClientAddressListParams = {
+  page: number;
+  pageSize: number;
+  search?: string;
+  sort: {
+    column: keyof ClientAddress;
+    dir: "asc" | "desc";
+  };
+};
+
+/** Paramètres des listes de contacts clients */
+export type ClientContactListParams = {
+  page: number;
+  pageSize: number;
+  search?: string;
+  sort: {
+    column: keyof ClientContact;
+    dir: "asc" | "desc";
+  };
+};
+
 /** Props du composant ClientsTable */
 export type ClientsTableProps = {
   data?: ClientListRow[];
@@ -180,6 +205,28 @@ export type ClientsTableProps = {
   onSortChange?: (sort: ClientSort) => void;
   onEdit?: (item: ClientListRow) => void;
   onDelete?: (item: ClientListRow) => void;
+};
+
+/** Props du composant ClientAddressesTable */
+export type ClientAddressesTableProps = {
+  data?: ClientAddress[];
+  loading?: boolean;
+  onRowClick?: (id: string) => void;
+  sort?: ClientAddressSort;
+  onSortChange?: (sort: ClientAddressSort) => void;
+  onEdit?: (item: ClientAddress) => void;
+  onDelete?: (item: ClientAddress) => void;
+};
+
+/** Props du composant ClientContactsTable */
+export type ClientContactsTableProps = {
+  data?: ClientContact[];
+  loading?: boolean;
+  onRowClick?: (id: string) => void;
+  sort?: ClientContactSort;
+  onSortChange?: (sort: ClientContactSort) => void;
+  onEdit?: (item: ClientContact) => void;
+  onDelete?: (item: ClientContact) => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -195,6 +242,24 @@ export type ClientCreateProps = {
   setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
 };
 
+/** Props du composant ClientAddressCreateDialog */
+export type ClientAddressCreateProps = {
+  isCreateOpen: boolean;
+  setIsCreateOpen: (open: boolean) => void;
+  creating: boolean;
+  setCreating: (creating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientAddressListParams>>;
+};
+
+/** Props du composant ClientContactCreateDialog */
+export type ClientContactCreateProps = {
+  isCreateOpen: boolean;
+  setIsCreateOpen: (open: boolean) => void;
+  creating: boolean;
+  setCreating: (creating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientContactListParams>>;
+};
+
 /** Props du composant ClientEditDialog */
 export type ClientEditProps = {
   editClient: Client | null;
@@ -204,6 +269,24 @@ export type ClientEditProps = {
   setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
 };
 
+/** Props du composant ClientAddressEditDialog */
+export type ClientAddressEditProps = {
+  editClientAddress: ClientAddress | null;
+  setEditClientAddress: (clientAddress: ClientAddress | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientAddressListParams>>;
+};
+
+/** Props du composant ClientContactEditDialog */
+export type ClientContactEditProps = {
+  editClientContact: ClientContact | null;
+  setEditClientContact: (clientContact: ClientContact | null) => void;
+  updating: boolean;
+  setUpdating: (updating: boolean) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientContactListParams>>;
+};
+
 /** Props du composant ClientDeleteDialog */
 export type ClientDeleteProps = {
   deleteClient: Client | null;
@@ -211,8 +294,28 @@ export type ClientDeleteProps = {
   setParams: React.Dispatch<React.SetStateAction<ClientListParams>>;
 };
 
+/** Props du composant ClientAddressDeleteDialog */
+export type ClientAddressDeleteProps = {
+  deleteClientAddress: ClientAddress | null;
+  setDeleteClientAddress: (clientAddress: ClientAddress | null) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientAddressListParams>>;
+};
+
+/** Props du composant ClientContactDeleteDialog */
+export type ClientContactDeleteProps = {
+  deleteClientContact: ClientContact | null;
+  setDeleteClientContact: (clientContact: ClientContact | null) => void;
+  setParams: React.Dispatch<React.SetStateAction<ClientContactListParams>>;
+};
+
 /** Props du composant ClientDialogs */
 export type ClientDialogsProps =
   | ({ mode?: "create" } & ClientCreateProps)
+  | ({ mode: "createAddress" } & ClientAddressCreateProps)
+  | ({ mode: "createContact" } & ClientContactCreateProps)
   | ({ mode: "edit" } & ClientEditProps)
-  | ({ mode: "delete" } & ClientDeleteProps);
+  | ({ mode: "editAddress" } & ClientAddressEditProps)
+  | ({ mode: "editContact" } & ClientContactEditProps)
+  | ({ mode: "delete" } & ClientDeleteProps)
+  | ({ mode: "deleteAddress" } & ClientAddressDeleteProps)
+  | ({ mode: "deleteContact" } & ClientContactDeleteProps);

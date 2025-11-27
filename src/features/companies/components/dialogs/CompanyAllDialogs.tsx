@@ -88,15 +88,6 @@ export function CompanyAllDialogs({
             />
 
             <CompanyDialogs
-                mode="edit"
-                editCompany={editCompany}
-                setEditCompany={setEditCompany}
-                updating={updating}
-                setUpdating={setUpdating}
-                setParams={setParams}
-            />
-
-            <CompanyDialogs
                 mode="editIdentity"
                 editCompanyIdentity={editIdentityCompany}
                 setEditCompanyIdentity={setEditIdentityCompany}

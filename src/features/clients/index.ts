@@ -1,11 +1,13 @@
 export * from "./schemas/clients.schema";
 export * from "./data/clients.repository";
 export * from "./data/clients.csv";
-export { ClientForm } from "./components/ClientForm";
-export { ClientsTable } from "./components/ClientsTable";
+export { ClientForm } from "./components/forms/ClientForm";
+export { ClientContactForm } from "./components/forms/ClientContactForm";
+export { ClientAddressForm } from "./components/forms/ClientAddressForm";
+export { ClientsTable } from "./components/tables/ClientsTable";
+export { ClientContactsTable } from "./components/tables/ClientContactsTable";
+export { ClientAddressesTable } from "./components/tables/ClientAddressesTable";
 export { ClientCard } from "./components/ClientCard";
-export { ClientCreateDialog } from "./components/dialogs/ClientCreateDialog";
-export { ClientEditDialog } from "./components/dialogs/ClientEditDialog";
-export { ClientDeleteDialog } from "./components/dialogs/ClientDeleteDialog";
+export { ClientDialogs } from "./components/dialogs/ClientDialogs";
 export { useClientsTable } from "./hooks/useClientsTable";
 

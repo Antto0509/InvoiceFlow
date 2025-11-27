@@ -3,23 +3,22 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ClientForm } from "../ClientForm";
+import { ClientForm } from "../forms/ClientForm";
 import { updateClient } from "@/data/clients.repository";
-import type { Client, ClientListParams, ClientFormValues } from "@/schemas/clients.schema";
+import type { ClientFormValues, ClientEditProps } from "@/schemas/clients.schema";
 
+/**
+ * Composant de dialogue de modification de client
+ * @param param0 Props spécifiques au dialogue de modification de client
+ * @returns Composant de dialogue de modification de client
+ */
 export function ClientEditDialog({
   editClient,
   setEditClient,
   updating,
   setUpdating,
   setParams,
-}: {
-  editClient: Client | null;
-  setEditClient: (client: Client | null) => void;
-  updating?: boolean;
-  setUpdating?: (v: boolean) => void;
-  setParams?: React.Dispatch<React.SetStateAction<ClientListParams>>;
-}) {
+}: ClientEditProps) {
   const loading = !!updating;
 
   return (

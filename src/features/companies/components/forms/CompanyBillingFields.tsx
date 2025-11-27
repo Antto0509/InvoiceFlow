@@ -14,7 +14,7 @@ import type { CompanyFormValues } from "@/schemas/companies.schema";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SelectCurrency } from "@/components/datatable/SelectCurrency";
+import { SelectCurrency } from "@/components/datatable/select/SelectCurrency";
 
 export function CompanyBillingFields({
   form,

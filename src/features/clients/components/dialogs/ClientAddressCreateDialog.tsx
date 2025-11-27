@@ -3,43 +3,44 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ClientForm } from "../forms/ClientForm";
-import { createClient } from "@/data/clients.repository";
-import type { ClientCreateProps } from "@/schemas/clients.schema";
+import { ClientAddressForm } from "../forms/ClientAddressForm";
+import { createClientAddress } from "@/data/clients.repository";
+import type { ClientAddressCreateProps } from "@/schemas/clients.schema";
 
 /**
- * Composant de dialogue de création de client
- * @param param0 Props spécifiques au dialogue de création de client
- * @returns Composant de dialogue de création de client
+ * Composant de dialogue de création d’adresse client
+ * @param param0 Props spécifiques au dialogue de création d’adresse client
+ * @returns Composant de dialogue de création d’adresse client
  */
-export function ClientCreateDialog({
+export function ClientAddressCreateDialog({
     isCreateOpen,
     setIsCreateOpen,
     creating,
     setCreating,
     setParams,
-}: ClientCreateProps) {
+}: ClientAddressCreateProps) {
     return (
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild />
             <DialogContent className="sm:max-w-[900px]">
                 <DialogHeader>
-                    <DialogTitle>Créer un client</DialogTitle>
+                    <DialogTitle>Créer une adresse client</DialogTitle>
                 </DialogHeader>
-                <ClientForm
+                <ClientAddressForm
                     loading={creating}
                     onSubmit={async (values) => {
                         try {
                             setCreating(true);
-                            await createClient(values);
-                            toast.success("Client créé");
+                            await createClientAddress(values);
+                            toast.success("Adresse client créée");
                             setIsCreateOpen(false);
                             // refresh list
                             setParams((p) => ({ ...p }));
                         } catch (e) {
                             console.error(e);
                             toast.error("Erreur lors de la création");
-                        } finally {
+                        }
+                        finally {
                             setCreating(false);
                         }
                     }}

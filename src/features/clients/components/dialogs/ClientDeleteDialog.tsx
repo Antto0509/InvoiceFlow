@@ -13,17 +13,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { removeClient } from "@/data/clients.repository";
-import type { Client, ClientListParams } from "@/schemas/clients.schema";
+import type { ClientDeleteProps } from "@/schemas/clients.schema";
 
 export function ClientDeleteDialog({
   deleteClient,
   setDeleteClient,
   setParams,
-}: {
-  deleteClient: Client | null;
-  setDeleteClient: (client: Client | null) => void;
-  setParams?: React.Dispatch<React.SetStateAction<ClientListParams>>;
-}) {
+}: ClientDeleteProps) {
   const handleConfirm = async () => {
     try {
       if (!deleteClient?.id) return;

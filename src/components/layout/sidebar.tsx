@@ -113,15 +113,26 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           const hasChildren = !!item.children?.length;
 
           const isExact = pathname === item.href;
-          const isChildActive = item.children?.some((child) =>
-            pathname === child.href || pathname.startsWith(child.href + "/")
-          );
+
+          // 1) On cherche les enfants qui matchent le pathname
+          const matchingChildren = hasChildren
+            ? item.children!.filter((child) =>
+                pathname === child.href || pathname.startsWith(child.href + "/")
+              )
+            : [];
+
+          // 2) On garde le plus spécifique (href le plus long)
+          const activeChildHref =
+            matchingChildren.sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+          const isChildActive = !!activeChildHref;
+
           const active =
             item.href === "/dashboard"
               ? isExact
-              : isExact || !!isChildActive || pathname.startsWith(item.href + "/");
+              : isExact || isChildActive || pathname.startsWith(item.href + "/");
 
-          const isOpen = hasChildren && (openSection === item.href || !!isChildActive);
+          const isOpen = hasChildren && (openSection === item.href || isChildActive);
 
           const toggle = () => {
             setOpenSection((prev) => (prev === item.href ? null : item.href));
@@ -174,44 +185,43 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
               {/* Sous-pages animées */}
               <AnimatePresence initial={false}>
-                {hasChildren && isOpen && (
-                  <motion.div
-                    key={item.href}
-                    initial={{ height: 0, opacity: 0, y: -4 }}
-                    animate={{ height: "auto", opacity: 1, y: 0 }}
-                    exit={{ height: 0, opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="mt-1 overflow-hidden pl-9"
-                  >
-                    <div className="space-y-1 pb-1">
-                      {item.children!.map((child) => {
-                        const childActive =
-                          pathname === child.href ||
-                          pathname.startsWith(child.href + "/");
-                        return (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            onClick={() => {
-                              startLoading();
-                              onNavigate?.();
-                            }}
-                            className={cn(
-                              "block rounded-md px-2 py-1 text-sm transition-colors",
-                              childActive
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            )}
-                          >
-                            {child.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {hasChildren && isOpen && (
+                <motion.div
+                  key={item.href}
+                  initial={{ height: 0, opacity: 0, y: -4 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="mt-1 overflow-hidden pl-9"
+                >
+                  <div className="space-y-1 pb-1">
+                    {item.children!.map((child) => {
+                      const childActive = child.href === activeChildHref;
+
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => {
+                            startLoading();
+                            onNavigate?.();
+                          }}
+                          className={cn(
+                            "block rounded-md px-2 py-1 text-sm transition-colors",
+                            childActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           );
         })}
       </nav>

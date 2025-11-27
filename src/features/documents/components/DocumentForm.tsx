@@ -14,8 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { FormShell } from "@/components/forms/FormShell";
 import { LinesEditor } from "./LinesEditor";
 
-import { SelectClient } from "@/components/datatable/SelectClient";
-import { SelectCurrency } from "@/components/datatable/SelectCurrency";
+import { SelectClient } from "@/components/datatable/select/SelectClient";
+import { SelectCurrency } from "@/components/datatable/select/SelectCurrency";
 
 import { safeRandomUUID } from "@/lib/utils";
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE } from "@/lib/constants";
@@ -23,7 +23,7 @@ import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE } from "@/lib/constants";
 import { DocumentFormValues, DocumentFormSchema, DocumentKind, DocumentStatus } from "@/features/documents/schemas/documents.schema";
 
 import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
-import { SelectCompany } from "@/components/datatable/SelectCompany";
+import { SelectCompany } from "@/components/datatable/select/SelectCompany";
 
 const kindConfig: Record<
     DocumentKind,

@@ -1,38 +1,36 @@
-"use client";
-
 import * as React from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ClientForm } from "../forms/ClientForm";
-import { createClient } from "@/data/clients.repository";
-import type { ClientCreateProps } from "@/schemas/clients.schema";
+import { ClientContactForm } from "../forms/ClientContactForm";
+import { createClientContact } from "@/data/clients.repository";
+import type { ClientContactCreateProps } from "@/schemas/clients.schema";
 
 /**
- * Composant de dialogue de création de client
- * @param param0 Props spécifiques au dialogue de création de client
- * @returns Composant de dialogue de création de client
+ * Composant de dialogue de création de contact client
+ * @param param0 Props spécifiques au dialogue de création de contact client
+ * @return Composant de dialogue de création de contact client
  */
-export function ClientCreateDialog({
+export function ClientContactCreateDialog({
     isCreateOpen,
     setIsCreateOpen,
     creating,
     setCreating,
     setParams,
-}: ClientCreateProps) {
+}: ClientContactCreateProps) {
     return (
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild />
             <DialogContent className="sm:max-w-[900px]">
                 <DialogHeader>
-                    <DialogTitle>Créer un client</DialogTitle>
+                    <DialogTitle>Créer un contact client</DialogTitle>
                 </DialogHeader>
-                <ClientForm
+                <ClientContactForm
                     loading={creating}
                     onSubmit={async (values) => {
                         try {
                             setCreating(true);
-                            await createClient(values);
-                            toast.success("Client créé");
+                            await createClientContact(values);
+                            toast.success("Contact client créé");
                             setIsCreateOpen(false);
                             // refresh list
                             setParams((p) => ({ ...p }));

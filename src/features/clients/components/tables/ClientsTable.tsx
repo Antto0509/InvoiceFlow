@@ -57,7 +57,23 @@ export function ClientsTable({
             <SortBtn col="email" sort={sort as ClientSort} onSortChange={(s) => onSortChange?.(s as ClientSort)} />
           </div>
         ),
-        cell: ({ row }) => <span className="hidden md:inline">{row.original.email ?? "—"}</span>,
+        cell: ({ row }) => {
+          const email = row.original.email;
+
+          if (!email) {
+            return <span className="hidden md:inline">—</span>;
+          }
+
+          return (
+            <a
+              href={`mailto:${email}`}
+              onClick={(e) => e.stopPropagation()}
+              className="hidden md:inline text-primary hover:underline"
+            >
+              {email}
+            </a>
+          );
+        },
       },
       {
         accessorKey: "company",

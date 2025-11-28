@@ -15,9 +15,9 @@ export function ContactBrandingCard({ company, onEdit }: { company: Company; onE
         </Button>
       </CardHeader>
       <CardContent className="text-sm space-y-2">
-        <Row label="Site" type="link" value={company.website} />
-        <Row label="Email" type="mail" value={company.email} />
-        <Row label="Téléphone" type="phone" value={company.phone} />
+        <Row label="Site" type="link" value={company.website} copyable />
+        <Row label="Email" type="mail" value={company.email} copyable />
+        <Row label="Téléphone" type="phone" value={company.phone} copyable />
         <Row label="Logo" type="image" value={company.logo_url} />
       </CardContent>
     </Card>

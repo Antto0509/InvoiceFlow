@@ -17,9 +17,9 @@ export default function IdentityCard({ company, onEdit }: { company: Company; on
       <CardContent className="text-sm space-y-2">
         <Row label="Forme juridique" value={company.legal_form} />
         <Row label="RCS" value={company.rcs_city} />
-        <Row label="APE/NAF" value={company.ape_naf} />
+        <Row label="APE/NAF" value={company.ape_naf} copyable />
         <Row label="Capital social" value={company.share_capital} />
-        <Row label="TVA intracom." value={company.vat_number} />
+        <Row label="TVA intracom." value={company.vat_number} copyable />
       </CardContent>
     </Card>
   );

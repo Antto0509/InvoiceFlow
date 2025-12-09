@@ -67,12 +67,18 @@ npm run dev
 
 ```text
 InvoiceFlow/
-├── app/                # Pages Next.js (App Router)
-├── components/         # UI Components (formulaires, boutons, tables)
-├── lib/                # Fonctions utilitaires (Supabase, Stripe, mail)
-├── public/             # Logos, images
-├── styles/             # Fichiers Tailwind et CSS globaux
+├── public/             # Fichiers statiques (images, favicon)
+├── src/
+│   ├── app/               # Pages Next.js (App Router)
+│   ├── components/        # UI Components (formulaires, boutons, tables)
+│   ├── lib/               # Fonctions utilitaires (Supabase, Stripe, mail)
+│   └── middleware.ts      # Middleware (auth, logging)
 ├── .env.local          # Variables d'environnement
+├── package.json        # Dépendances & scripts npm
+├── tailwind.config.js  # Configuration TailwindCSS
+├── tsconfig.json       # Configuration TypeScript
+├── CONTRIBUTING.md     # Guide de contribution
+├── LICENSE             # Licence MIT
 └── README.md
 ```
 
@@ -176,6 +182,7 @@ Si tu veux aider à améliorer **InvoiceFlow**, voici comment faire 👇
   - ✨ feature: ajout de ...
   - 🐛 fix: correction de ...
   - 🧹 refactor: nettoyage / simplification
+  - 📚 docs: mise à jour de la documentation
 
 ---
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Lexend } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"; 
+import { Suspense } from "react";
 
 // --- Fonts configuration ---
 const inter = Inter({
@@ -37,8 +38,10 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} ${lexend.variable}`}>
       <body className="font-sans bg-background text-foreground antialiased">
-        {children}
-        <Toaster richColors position="top-right" />
+        <Suspense>
+          {children}
+          <Toaster richColors position="top-right" />
+        </Suspense>
       </body>
     </html>
   );

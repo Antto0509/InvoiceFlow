@@ -1,14 +1,14 @@
 // Api Clients
 import { createResourceApi } from "@/data/createResourceApi";
-import type { 
-  Client, 
+import type {
+  Client,
   ClientAddress,
   ClientContact,
   ClientWithDetails,
-  ClientListParams, 
-  ClientListRow, 
+  ClientListParams,
+  ClientListRow,
   ClientContactSort,
-  ClientAddressSort
+  ClientAddressSort,
 } from "@/schemas/clients.schema";
 import { SORTABLE_CLIENTS } from "@/lib/constants";
 
@@ -16,30 +16,31 @@ import { SORTABLE_CLIENTS } from "@/lib/constants";
 /*             Clients API            */
 /* ---------------------------------- */
 
-export const makeClientsApi = (membershipId?: string) =>
+export const makeClientsApi = (companyId?: string) =>
   createResourceApi<Client>({
     table: "clients",
     select:
       "id, company_id, membership_id, name, email, company, phone, address, notes, created_at, updated_at",
     sortableColumns: [...SORTABLE_CLIENTS],
     searchColumns: ["name", "email", "company"],
-    defaultFilters: membershipId ? { membership_id: { op: "eq", value: membershipId } } : undefined,
+    // ✅ scope multi-tenant par company_id (pas membership_id)
+    defaultFilters: companyId ? { company_id: { op: "eq", value: companyId } } : undefined,
     protectedColumns: [],
   });
 
-/** 
- * Recherche rapide (autocomplete) 
+/**
+ * Recherche rapide (autocomplete)
  * @param q Terme de recherche
  * @param limit Nombre max de résultats
  * @param signal Signal d’abandon (optionnel)
- * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param companyId UUID de l’entreprise (optionnel, pour multi-tenant)
  * @returns Liste des clients trouvés
  */
 export async function searchClients(
   { q, limit = 20, signal }: { q?: string; limit?: number; signal?: AbortSignal },
-  membershipId?: string
+  companyId?: string
 ): Promise<Array<{ id: string; name: string; email?: string | null }>> {
-  const api = makeClientsApi(membershipId);
+  const api = makeClientsApi(companyId);
 
   try {
     const { data } = await api.list({
@@ -51,31 +52,21 @@ export async function searchClients(
     });
 
     return data
-      .filter(
-        (c): c is Client & { id: string } =>
-          typeof c.id === "string"
-      )
+      .filter((c): c is Client & { id: string } => typeof c.id === "string")
       .map((c) => ({ id: c.id, name: c.name, email: c.email ?? null }));
   } catch (err) {
-    console.error(
-      "[ClientsApi:searchClients] Failed",
-      { q, limit, membershipId },
-      err
-    );
+    console.error("[ClientsApi:searchClients] Failed", { q, limit, companyId }, err);
     throw err;
   }
 }
 
-/** 
- * Liste paginée avec filtres 
+/**
+ * Liste paginée avec filtres
  * @param params ClientListParams partiels
- * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param companyId UUID de l’entreprise (optionnel, pour multi-tenant)
  * @returns Liste paginée des clients
  */
-export async function listClients(
-  params: Partial<ClientListParams> = {},
-  membershipId?: string
-) {
+export async function listClients(params: Partial<ClientListParams> = {}, companyId?: string) {
   const {
     page = 1,
     pageSize = 20,
@@ -88,7 +79,7 @@ export async function listClients(
     dateTo,
   } = params;
 
-  const api = makeClientsApi(membershipId);
+  const api = makeClientsApi(companyId);
 
   try {
     const { data, total } = await api.list({
@@ -98,9 +89,9 @@ export async function listClients(
       sort,
       signal,
       filters: {
-        ...(company
-          ? { company: { op: "ilike", value: company } } // ou `%${company}%` selon ton createResourceApi
-          : {}),
+        ...(company ? { company: { op: "ilike", value: company } } : {}),
+        // ⚠️ si ton applyFilters ne gère pas "neq null" correctement,
+        // remplace par un op dédié (is/isnot). Je laisse tel quel pour ne pas casser ton infra.
         ...(hasEmail != null
           ? hasEmail
             ? { email: { op: "neq", value: null } }
@@ -113,11 +104,7 @@ export async function listClients(
 
     return { rows: data as ClientListRow[], total };
   } catch (err) {
-    console.error(
-      "[ClientsApi:listClients] Failed",
-      { params, membershipId },
-      err
-    );
+    console.error("[ClientsApi:listClients] Failed", { params, companyId }, err);
     throw err;
   }
 }
@@ -126,20 +113,19 @@ export async function listClients(
 /*          CRUD Client Ops           */
 /* ---------------------------------- */
 
-export const getClient = (id: string, membershipId?: string) =>
-  makeClientsApi(membershipId).get(id);
+// ✅ Tous les CRUD prennent désormais companyId (tenant scope)
+export const getClient = (id: string, companyId?: string) => makeClientsApi(companyId).get(id);
 
-export const createClient = (payload: Partial<Client>, membershipId?: string) =>
-  makeClientsApi(membershipId).create(payload);
+export const createClient = (payload: Partial<Client>, companyId?: string) =>
+  makeClientsApi(companyId).create(payload);
 
-export const updateClient = (id: string, payload: Partial<Client>, membershipId?: string) =>
-  makeClientsApi(membershipId).update(id, payload);
+export const updateClient = (id: string, payload: Partial<Client>, companyId?: string) =>
+  makeClientsApi(companyId).update(id, payload);
 
-export const removeClient = (id: string, membershipId?: string) =>
-  makeClientsApi(membershipId).remove(id);
+export const removeClient = (id: string, companyId?: string) => makeClientsApi(companyId).remove(id);
 
-export const bulkDeleteClients = (ids: string[], membershipId?: string) =>
-  makeClientsApi(membershipId).bulkDelete(ids);
+export const bulkDeleteClients = (ids: string[], companyId?: string) =>
+  makeClientsApi(companyId).bulkDelete(ids);
 
 /* ---------------------------------- */
 /*        Additional Client Data      */
@@ -157,8 +143,7 @@ export const makeClientAddressesApi = () =>
 export const makeClientContactsApi = () =>
   createResourceApi<ClientContact>({
     table: "client_contacts",
-    select:
-      "id, client_id, full_name, email, phone, role, created_at, updated_at",
+    select: "id, client_id, full_name, email, phone, role, created_at, updated_at",
     sortableColumns: ["full_name", "email", "phone", "role", "created_at", "updated_at"],
     searchColumns: ["full_name", "email", "phone", "role"],
   });
@@ -177,13 +162,10 @@ export const listClientAddresses = (clientId: string) =>
 export const createClientAddress = (payload: Partial<ClientAddress>) =>
   makeClientAddressesApi().create(payload);
 
-export const updateClientAddress = (
-  id: string,
-  payload: Partial<ClientAddress>
-) => makeClientAddressesApi().update(id, payload);
+export const updateClientAddress = (id: string, payload: Partial<ClientAddress>) =>
+  makeClientAddressesApi().update(id, payload);
 
-export const removeClientAddress = (id: string) =>
-  makeClientAddressesApi().remove(id);
+export const removeClientAddress = (id: string) => makeClientAddressesApi().remove(id);
 
 // CRUD Contacts (par client)
 export const listClientContacts = (clientId: string) =>
@@ -191,37 +173,34 @@ export const listClientContacts = (clientId: string) =>
     page: 1,
     pageSize: 100,
     filters: { client_id: { op: "eq", value: clientId } },
-    sort: { column: "created_at", dir: "asc" } as ClientContactSort
+    sort: { column: "created_at", dir: "asc" } as ClientContactSort,
   });
 
 export const createClientContact = (payload: Partial<ClientContact>) =>
   makeClientContactsApi().create(payload);
 
-export const updateClientContact = (
-  id: string,
-  payload: Partial<ClientContact>
-) => makeClientContactsApi().update(id, payload);
+export const updateClientContact = (id: string, payload: Partial<ClientContact>) =>
+  makeClientContactsApi().update(id, payload);
 
-export const removeClientContact = (id: string) =>
-  makeClientContactsApi().remove(id);
+export const removeClientContact = (id: string) => makeClientContactsApi().remove(id);
 
 /* ---------------------------------- */
 /*        Client With Details         */
 /* ---------------------------------- */
 
-/** 
- * Récupère un client avec ses adresses et contacts 
+/**
+ * Récupère un client avec ses adresses et contacts
  * @param id UUID du client
- * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param companyId UUID de l’entreprise (optionnel, pour multi-tenant)
  * @returns ClientWithDetails
  */
 export async function getClientWithDetails(
   id: string,
-  membershipId?: string
+  companyId?: string
 ): Promise<ClientWithDetails> {
   try {
     const [client, { data: addresses }, { data: contacts }] = await Promise.all([
-      getClient(id, membershipId),
+      getClient(id, companyId),
       listClientAddresses(id),
       listClientContacts(id),
     ]);
@@ -232,11 +211,7 @@ export async function getClientWithDetails(
       contacts: contacts as ClientContact[],
     };
   } catch (err) {
-    console.error(
-      "[ClientsApi:getClientWithDetails] Failed",
-      { id, membershipId },
-      err
-    );
+    console.error("[ClientsApi:getClientWithDetails] Failed", { id, companyId }, err);
     throw err;
   }
 }

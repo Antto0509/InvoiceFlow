@@ -17,6 +17,19 @@ import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/
  * @returns Un objet contenant les méthodes CRUD pour la ressource.
  */
 export function createResourceApi<T extends Record<string, unknown>>(opts: ResourceApiOptions<T>) {
+  console.log("[ResourceApi] Initializing", { 
+    opts: {
+      table: opts.table,
+      select: opts.select,
+      sortableColumns: opts.sortableColumns,
+      searchColumns: opts.searchColumns,
+      countMode: opts.countMode,
+      primaryKey: opts.primaryKey,
+      conflictTarget: opts.conflictTarget,
+      protectedColumns: opts.protectedColumns,
+    }
+  });
+
   const supabase = createClient();
   const {
     table,
@@ -45,6 +58,9 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
     req: Query,
     key: unknown
   ): Query {
+    console.log("[ResourceApi:applyPkFilter] key", { table, key });
+
+    // PK composite
     if (isCompositePk) {
       const keyArray = Array.isArray(key) ? key : [];
       if (keyArray.length !== pkColumns.length) {
@@ -75,6 +91,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async list(q: ListQuery = {}): Promise<Paginated<T>> {
       try {
+        console.log("[ResourceApi:list] query", { table, q });
+
         const page = q.page && q.page > 0 ? q.page : 1;
         const pageSize = q.pageSize && q.pageSize > 0 ? q.pageSize : 20;
         const from = (page - 1) * pageSize;
@@ -123,6 +141,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async get(key: unknown, customSelect?: string): Promise<T> {
       try {
+        console.log("[ResourceApi:get] key", { table, key });
+
         let req = supabase.from(table).select(customSelect ?? select);
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
@@ -141,6 +161,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async create(payload: Partial<T>): Promise<T> {
       try {
+        console.log("[ResourceApi:create] payload", { table, payload });
+
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>), protectedColumns);
         const { data, error } = await supabase.from(table).insert(clean).select().single();
         if (error) throw error;
@@ -159,6 +181,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async update(key: unknown, payload: Partial<T>): Promise<T> {
       try {
+        console.log("[ResourceApi:update] key", { table, key });
+
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>));
         let req = supabase.from(table).update(clean);
         req = applyPkFilter(req, key);
@@ -183,6 +207,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async upsertMany(payloads: Partial<T>[]): Promise<T[]> {
       try {
+        console.log("[ResourceApi:upsertMany] payloads", { table, payloads });
+
         const clean = stripGeneratedMany(payloads as Record<string, unknown>[]);
         const onConflict = Array.isArray(conflictTarget)
           ? conflictTarget.join(",")
@@ -207,6 +233,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async remove(key: unknown): Promise<void> {
       try {
+        console.log("[ResourceApi:remove] key", { table, key });
+
         let req = supabase.from(table).delete();
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
@@ -225,6 +253,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async bulkDelete(keys: unknown[]): Promise<number> {
       try {
+        console.log("[ResourceApi:bulkDelete] keys", { table, keys });
+
         if (!keys?.length) return 0;
         if (isCompositePk) {
           throw new Error(
@@ -252,6 +282,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async count(q?: { filters?: Record<string, FilterOps | undefined>; search?: string }) {
       try {
+        console.log("[ResourceApi:count] query", { table, q });
+
         let req = supabase.from(table).select("*", { count: "exact", head: true });
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         if (q?.filters) req = applyFilters(req, q.filters);
@@ -278,6 +310,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async exists(filters: Record<string, FilterOps | undefined>) {
       try {
+        console.log("[ResourceApi:exists] filters", { table, filters });
+
         let req = supabase
           .from(table)
           .select(pkSelect, { head: true, count: "exact" })
@@ -300,6 +334,8 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
      */
     async listAll(limit = 1000, q?: Omit<ListQuery, "page" | "pageSize">) {
       try {
+        console.log("[ResourceApi:listAll] query", { table, q, limit });
+
         let req = supabase.from(table).select(select).limit(limit);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         if (q?.filters) req = applyFilters(req, q.filters);

@@ -181,10 +181,13 @@ export type ClientAddressListParams = {
   page: number;
   pageSize: number;
   search?: string;
-  sort: {
-    column: keyof ClientAddress;
-    dir: "asc" | "desc";
-  };
+  kind?: ClientAddressKind | "all";
+  city?: string;
+  country?: string;
+  sort: ClientAddressSort;
+  signal?: AbortSignal;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
 };
 
 /** Paramètres des listes de contacts clients */
@@ -192,10 +195,12 @@ export type ClientContactListParams = {
   page: number;
   pageSize: number;
   search?: string;
-  sort: {
-    column: keyof ClientContact;
-    dir: "asc" | "desc";
-  };
+  role?: string;
+  hasEmail?: boolean | "all";
+  sort: ClientContactSort;
+  signal?: AbortSignal;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
 };
 
 /** Props du composant ClientsTable */

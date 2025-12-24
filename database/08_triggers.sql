@@ -142,3 +142,30 @@ CREATE TRIGGER trg_document_lines_compute_total
 CREATE TRIGGER trg_document_lines_after_change
   AFTER INSERT OR UPDATE OR DELETE ON public.document_lines
   FOR EACH ROW EXECUTE FUNCTION public.document_lines_after_change_recalc();
+
+
+
+-- =========================================================
+-- 4. Companies — create owner membership + prevent last owner delete
+-- =========================================================
+
+-- Création automatique de la company_membership "owner" lors de la création d'une company
+CREATE TRIGGER trg_companies_create_owner_membership
+  AFTER INSERT ON public.companies
+  FOR EACH ROW
+  EXECUTE FUNCTION public.companies_ai_create_owner_membership();
+
+-- Empêche la suppression de la dernière membership "owner" d'une company
+CREATE TRIGGER trg_company_memberships_prevent_last_owner_delete
+  BEFORE DELETE ON public.company_memberships
+  FOR EACH ROW
+  EXECUTE FUNCTION public.company_memberships_bd_prevent_last_owner_delete();
+
+
+-- =========================================================
+-- 5. Clients — sync company_id from membership_id
+-- =========================================================
+CREATE TRIGGER trg_clients_sync_company_from_membership
+BEFORE INSERT OR UPDATE OF membership_id ON public.clients
+FOR EACH ROW
+EXECUTE FUNCTION public.clients_bi_sync_company_from_membership();

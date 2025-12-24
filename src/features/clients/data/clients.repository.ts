@@ -16,15 +16,15 @@ import { SORTABLE_CLIENTS } from "@/lib/constants";
 /*             Clients API            */
 /* ---------------------------------- */
 
-export const makeClientsApi = (userId?: string) =>
+export const makeClientsApi = (membershipId?: string) =>
   createResourceApi<Client>({
     table: "clients",
     select:
-      "id, user_id, name, email, company, phone, address, notes, created_at, updated_at",
+      "id, company_id, membership_id, name, email, company, phone, address, notes, created_at, updated_at",
     sortableColumns: [...SORTABLE_CLIENTS],
     searchColumns: ["name", "email", "company"],
-    defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
-    protectedColumns: ["user_id"],
+    defaultFilters: membershipId ? { membership_id: { op: "eq", value: membershipId } } : undefined,
+    protectedColumns: [],
   });
 
 /** 
@@ -32,14 +32,14 @@ export const makeClientsApi = (userId?: string) =>
  * @param q Terme de recherche
  * @param limit Nombre max de résultats
  * @param signal Signal d’abandon (optionnel)
- * @param userId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
  * @returns Liste des clients trouvés
  */
 export async function searchClients(
   { q, limit = 20, signal }: { q?: string; limit?: number; signal?: AbortSignal },
-  userId?: string
+  membershipId?: string
 ): Promise<Array<{ id: string; name: string; email?: string | null }>> {
-  const api = makeClientsApi(userId);
+  const api = makeClientsApi(membershipId);
 
   try {
     const { data } = await api.list({
@@ -59,7 +59,7 @@ export async function searchClients(
   } catch (err) {
     console.error(
       "[ClientsApi:searchClients] Failed",
-      { q, limit, userId },
+      { q, limit, membershipId },
       err
     );
     throw err;
@@ -69,12 +69,12 @@ export async function searchClients(
 /** 
  * Liste paginée avec filtres 
  * @param params ClientListParams partiels
- * @param userId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
  * @returns Liste paginée des clients
  */
 export async function listClients(
   params: Partial<ClientListParams> = {},
-  userId?: string
+  membershipId?: string
 ) {
   const {
     page = 1,
@@ -88,7 +88,7 @@ export async function listClients(
     dateTo,
   } = params;
 
-  const api = makeClientsApi(userId);
+  const api = makeClientsApi(membershipId);
 
   try {
     const { data, total } = await api.list({
@@ -115,7 +115,7 @@ export async function listClients(
   } catch (err) {
     console.error(
       "[ClientsApi:listClients] Failed",
-      { params, userId },
+      { params, membershipId },
       err
     );
     throw err;
@@ -126,20 +126,20 @@ export async function listClients(
 /*          CRUD Client Ops           */
 /* ---------------------------------- */
 
-export const getClient = (id: string, userId?: string) =>
-  makeClientsApi(userId).get(id);
+export const getClient = (id: string, membershipId?: string) =>
+  makeClientsApi(membershipId).get(id);
 
-export const createClient = (payload: Partial<Client>, userId?: string) =>
-  makeClientsApi(userId).create(payload);
+export const createClient = (payload: Partial<Client>, membershipId?: string) =>
+  makeClientsApi(membershipId).create(payload);
 
-export const updateClient = (id: string, payload: Partial<Client>, userId?: string) =>
-  makeClientsApi(userId).update(id, payload);
+export const updateClient = (id: string, payload: Partial<Client>, membershipId?: string) =>
+  makeClientsApi(membershipId).update(id, payload);
 
-export const removeClient = (id: string, userId?: string) =>
-  makeClientsApi(userId).remove(id);
+export const removeClient = (id: string, membershipId?: string) =>
+  makeClientsApi(membershipId).remove(id);
 
-export const bulkDeleteClients = (ids: string[], userId?: string) =>
-  makeClientsApi(userId).bulkDelete(ids);
+export const bulkDeleteClients = (ids: string[], membershipId?: string) =>
+  makeClientsApi(membershipId).bulkDelete(ids);
 
 /* ---------------------------------- */
 /*        Additional Client Data      */
@@ -212,16 +212,16 @@ export const removeClientContact = (id: string) =>
 /** 
  * Récupère un client avec ses adresses et contacts 
  * @param id UUID du client
- * @param userId UUID de l’utilisateur (optionnel, pour multi-tenant)
+ * @param membershipId UUID de l’utilisateur (optionnel, pour multi-tenant)
  * @returns ClientWithDetails
  */
 export async function getClientWithDetails(
   id: string,
-  userId?: string
+  membershipId?: string
 ): Promise<ClientWithDetails> {
   try {
     const [client, { data: addresses }, { data: contacts }] = await Promise.all([
-      getClient(id, userId),
+      getClient(id, membershipId),
       listClientAddresses(id),
       listClientContacts(id),
     ]);
@@ -234,7 +234,7 @@ export async function getClientWithDetails(
   } catch (err) {
     console.error(
       "[ClientsApi:getClientWithDetails] Failed",
-      { id, userId },
+      { id, membershipId },
       err
     );
     throw err;

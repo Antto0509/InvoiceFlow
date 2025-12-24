@@ -1,62 +1,33 @@
 -- =====================================================================
 -- InvoiceFlow — RLS policies (public)
 -- =====================================================================
--- Stratégie :
---  - Visibilité par entreprise via company_memberships
---  - Tables "profil" / "perso" par user_id
---  - Currencies : lecture ouverte
--- =====================================================================
 
 -- =========================================================
--- 0. Helpers conceptuels (pas des fonctions, juste la logique)
+-- 1) company_memberships
 -- =========================================================
--- Membre d'une entreprise :
---   EXISTS (
---     SELECT 1 FROM public.company_memberships m
---     WHERE m.company_id = <TABLE>.company_id
---       AND m.user_id = auth.uid()
---   );
---
--- Membre d'une entreprise via document :
---   EXISTS (
---     SELECT 1
---     FROM public.documents d
---     JOIN public.company_memberships m ON m.company_id = d.company_id
---     WHERE d.id = <TABLE>.document_id
---       AND m.user_id = auth.uid()
---   );
--- =========================================================
-
-
--- =========================================================
--- 1. company_memberships
--- =========================================================
-
 ALTER TABLE public.company_memberships ENABLE ROW LEVEL SECURITY;
 
+-- ✅ SELECT : je peux voir uniquement MES memberships
 CREATE POLICY memberships_select_own
   ON public.company_memberships
   FOR SELECT TO public
   USING (user_id = auth.uid());
 
-CREATE POLICY memberships_insert_self
-  ON public.company_memberships
-  FOR INSERT TO public
-  WITH CHECK (user_id = auth.uid());
+-- ❌ INSERT depuis le client : interdit (sinon auto-invite dans n’importe quelle company)
+-- -> la création du membership owner se fait par trigger côté DB (voir plus bas)
 
+-- ✅ DELETE : je peux quitter une company (mais trigger empêchera de supprimer le dernier owner)
 CREATE POLICY memberships_delete_self
   ON public.company_memberships
   FOR DELETE TO public
   USING (user_id = auth.uid());
 
--- (Pas de UPDATE exposé au client pour changer son rôle,
---  ça restera réservé à un rôle admin DB ou plus tard à un workflow dédié.)
+-- Pas de UPDATE exposé
 
 
 -- =========================================================
--- 2. currencies / currency_rates (lecture globale)
+-- 2) currencies / currency_rates (lecture globale)
 -- =========================================================
-
 ALTER TABLE public.currencies       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.currency_rates   ENABLE ROW LEVEL SECURITY;
 
@@ -72,9 +43,8 @@ CREATE POLICY currency_rates_read_all
 
 
 -- =========================================================
--- 3. users (profil applicatif lié à auth.users)
+-- 3) users (profil applicatif)
 -- =========================================================
-
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY users_select_self
@@ -88,13 +58,12 @@ CREATE POLICY users_update_self
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
--- Pas d'INSERT/DELETE via le client, c'est géré via les triggers sur auth.users.
+-- Pas d'insert/delete côté client (triggers auth.users)
 
 
 -- =========================================================
--- 4. settings (par utilisateur)
+-- 4) settings (par utilisateur)
 -- =========================================================
-
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY settings_all_self
@@ -105,18 +74,15 @@ CREATE POLICY settings_all_self
 
 
 -- =========================================================
--- 5. companies & ressources rattachées à company_id
+-- 5) companies + company_addresses + company_bank_accounts
 -- =========================================================
-
 ALTER TABLE public.companies              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.company_addresses      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.company_bank_accounts  ENABLE ROW LEVEL SECURITY;
 
--- Companies :
---  - SELECT : tout membre
---  - INSERT : user_id = auth.uid() (créateur)
---  - UPDATE/DELETE : owner (user_id = auth.uid()) pour l’instant
-
+-- Companies:
+-- - SELECT : tout membre
+-- - INSERT/UPDATE/DELETE : owner logique (companies.user_id)
 CREATE POLICY companies_select_member
   ON public.companies
   FOR SELECT TO public
@@ -145,38 +111,93 @@ CREATE POLICY companies_delete_owner
   FOR DELETE TO public
   USING (user_id = auth.uid());
 
--- Adresses d’entreprise : tout membre a accès / modif
+-- Company addresses:
+-- - SELECT : membre
+-- - ALL (write) : owner de la company
+CREATE POLICY company_addresses_select_member
+  ON public.company_addresses
+  FOR SELECT TO public
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.company_memberships m
+      WHERE m.company_id = company_addresses.company_id
+        AND m.user_id = auth.uid()
+    )
+  );
 
-CREATE POLICY company_addresses_member_all
+CREATE POLICY company_addresses_modify_owner
   ON public.company_addresses
   FOR ALL TO public
   USING (
     EXISTS (
       SELECT 1
-      FROM public.company_memberships m
-      WHERE m.company_id = company_addresses.company_id
-        AND m.user_id = auth.uid()
+      FROM public.companies c
+      WHERE c.id = company_addresses.company_id
+        AND c.user_id = auth.uid()
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1
+      FROM public.companies c
+      WHERE c.id = company_addresses.company_id
+        AND c.user_id = auth.uid()
+    )
+  );
+
+-- Company bank accounts:
+-- - SELECT : membre
+-- - ALL (write) : owner de la company
+CREATE POLICY company_bank_accounts_select_member
+  ON public.company_bank_accounts
+  FOR SELECT TO public
+  USING (
+    EXISTS (
+      SELECT 1
       FROM public.company_memberships m
-      WHERE m.company_id = company_addresses.company_id
+      WHERE m.company_id = company_bank_accounts.company_id
         AND m.user_id = auth.uid()
     )
   );
 
--- Comptes bancaires d’entreprise
-
-CREATE POLICY company_bank_accounts_member_all
+CREATE POLICY company_bank_accounts_modify_owner
   ON public.company_bank_accounts
   FOR ALL TO public
   USING (
     EXISTS (
       SELECT 1
+      FROM public.companies c
+      WHERE c.id = company_bank_accounts.company_id
+        AND c.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.companies c
+      WHERE c.id = company_bank_accounts.company_id
+        AND c.user_id = auth.uid()
+    )
+  );
+
+
+-- =========================================================
+-- 6) clients + client_addresses + client_contacts (par company)
+-- =========================================================
+ALTER TABLE public.clients          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_contacts  ENABLE ROW LEVEL SECURITY;
+
+-- Clients: membre de la company
+CREATE POLICY clients_member_all
+  ON public.clients
+  FOR ALL TO public
+  USING (
+    EXISTS (
+      SELECT 1
       FROM public.company_memberships m
-      WHERE m.company_id = company_bank_accounts.company_id
+      WHERE m.company_id = clients.company_id
         AND m.user_id = auth.uid()
     )
   )
@@ -184,68 +205,66 @@ CREATE POLICY company_bank_accounts_member_all
     EXISTS (
       SELECT 1
       FROM public.company_memberships m
-      WHERE m.company_id = company_bank_accounts.company_id
+      WHERE m.company_id = clients.company_id
+        AND m.user_id = auth.uid()
+    )
+  );
+
+-- Addresses: via client -> company -> membership
+CREATE POLICY client_addresses_member_all
+  ON public.client_addresses
+  FOR ALL TO public
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.clients c
+      JOIN public.company_memberships m ON m.company_id = c.company_id
+      WHERE c.id = client_addresses.client_id
+        AND m.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.clients c
+      JOIN public.company_memberships m ON m.company_id = c.company_id
+      WHERE c.id = client_addresses.client_id
+        AND m.user_id = auth.uid()
+    )
+  );
+
+-- Contacts: idem
+CREATE POLICY client_contacts_member_all
+  ON public.client_contacts
+  FOR ALL TO public
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.clients c
+      JOIN public.company_memberships m ON m.company_id = c.company_id
+      WHERE c.id = client_contacts.client_id
+        AND m.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.clients c
+      JOIN public.company_memberships m ON m.company_id = c.company_id
+      WHERE c.id = client_contacts.client_id
         AND m.user_id = auth.uid()
     )
   );
 
 
 -- =========================================================
--- 6. clients & dérivés (modèle encore user_id-based)
+-- 7) documents + lines + sequences + reminders
 -- =========================================================
-
-ALTER TABLE public.clients          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.client_addresses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.client_contacts  ENABLE ROW LEVEL SECURITY;
-
--- Clients : full contrôle par user_id (pour l’instant)
-CREATE POLICY clients_all_own
-  ON public.clients
-  FOR ALL TO public
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
--- Adresses & contacts rattachés à des clients du user
-
-CREATE POLICY client_addresses_all_own
-  ON public.client_addresses
-  FOR ALL TO public
-  USING (
-    client_id IN (
-      SELECT id FROM public.clients WHERE user_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    client_id IN (
-      SELECT id FROM public.clients WHERE user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY client_contacts_all_own
-  ON public.client_contacts
-  FOR ALL TO public
-  USING (
-    client_id IN (
-      SELECT id FROM public.clients WHERE user_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    client_id IN (
-      SELECT id FROM public.clients WHERE user_id = auth.uid()
-    )
-  );
-
-
--- =========================================================
--- 7. documents, lignes, séquences, rappels
--- =========================================================
-
 ALTER TABLE public.documents           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_lines      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_sequences  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document_reminders  ENABLE ROW LEVEL SECURITY;
 
--- Documents : accès pour tout membre de la company
 CREATE POLICY documents_member_all
   ON public.documents
   FOR ALL TO public
@@ -266,7 +285,6 @@ CREATE POLICY documents_member_all
     )
   );
 
--- Lignes de documents : accès via membership sur la company du document
 CREATE POLICY document_lines_member_all
   ON public.document_lines
   FOR ALL TO public
@@ -274,8 +292,7 @@ CREATE POLICY document_lines_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = document_lines.document_id
         AND m.user_id = auth.uid()
     )
@@ -284,14 +301,12 @@ CREATE POLICY document_lines_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = document_lines.document_id
         AND m.user_id = auth.uid()
     )
   );
 
--- Séquences : par company_id
 CREATE POLICY document_sequences_member_all
   ON public.document_sequences
   FOR ALL TO public
@@ -312,7 +327,6 @@ CREATE POLICY document_sequences_member_all
     )
   );
 
--- Rappels de documents : via document -> company -> membership
 CREATE POLICY document_reminders_member_all
   ON public.document_reminders
   FOR ALL TO public
@@ -320,8 +334,7 @@ CREATE POLICY document_reminders_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = document_reminders.document_id
         AND m.user_id = auth.uid()
     )
@@ -330,8 +343,7 @@ CREATE POLICY document_reminders_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = document_reminders.document_id
         AND m.user_id = auth.uid()
     )
@@ -339,13 +351,11 @@ CREATE POLICY document_reminders_member_all
 
 
 -- =========================================================
--- 8. payments & payment_allocations
+-- 8) payments + payment_allocations
 -- =========================================================
-
 ALTER TABLE public.payments            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_allocations ENABLE ROW LEVEL SECURITY;
 
--- Payments : par company_id -> membership
 CREATE POLICY payments_member_all
   ON public.payments
   FOR ALL TO public
@@ -366,7 +376,6 @@ CREATE POLICY payments_member_all
     )
   );
 
--- Payment allocations : via document -> company -> membership
 CREATE POLICY payment_allocations_member_all
   ON public.payment_allocations
   FOR ALL TO public
@@ -374,8 +383,7 @@ CREATE POLICY payment_allocations_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = payment_allocations.document_id
         AND m.user_id = auth.uid()
     )
@@ -384,8 +392,7 @@ CREATE POLICY payment_allocations_member_all
     EXISTS (
       SELECT 1
       FROM public.documents d
-      JOIN public.company_memberships m
-        ON m.company_id = d.company_id
+      JOIN public.company_memberships m ON m.company_id = d.company_id
       WHERE d.id = payment_allocations.document_id
         AND m.user_id = auth.uid()
     )
@@ -393,9 +400,8 @@ CREATE POLICY payment_allocations_member_all
 
 
 -- =========================================================
--- 9. email_logs (par user_id)
+-- 9) email_logs (par user_id)
 -- =========================================================
-
 ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY email_logs_all_own
@@ -406,20 +412,17 @@ CREATE POLICY email_logs_all_own
 
 
 -- =========================================================
--- 10. files & file_links
+-- 10) files + file_links (par user_id)
 -- =========================================================
-
 ALTER TABLE public.files      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.file_links ENABLE ROW LEVEL SECURITY;
 
--- Fichiers : par user_id (proprio du fichier)
 CREATE POLICY files_all_own
   ON public.files
   FOR ALL TO public
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
--- Liens de fichiers : accès si on possède le file_id
 CREATE POLICY file_links_all_own
   ON public.file_links
   FOR ALL TO public

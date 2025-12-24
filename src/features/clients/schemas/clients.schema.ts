@@ -30,7 +30,9 @@ export const clientAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’ad
  */
 export const clientDbSchema = z.object({
   id: zUuid.describe("Identifiant client (UUID)"),
-  user_id: zUuid.nullable().describe("Propriétaire (auth.uid)"),
+  // user_id: zUuid.nullable().describe("Propriétaire (auth.uid)"),
+  company_id: zUuid.nullable().describe("Entreprise propriétaire (FK)"),
+  membership_id: zUuid.nullable().describe("Membre propriétaire (FK)"),
   name: zNonEmptyString.min(2, "Nom trop court").describe("Nom/Raison sociale du client"),
   email: zEmail.nullable().optional().describe("Email de contact"),
   address: z.string().nullable().optional().describe("Adresse (texte libre)"),
@@ -46,7 +48,7 @@ export const clientDbSchema = z.object({
  * Plus permissif sur id et timestamps; mêmes labels côté UI.
  */
 export const clientFormSchema = clientDbSchema
-  .omit({ user_id: true, created_at: true, updated_at: true })
+  .omit({ company_id: true, membership_id: true, created_at: true, updated_at: true })
   .describe("Formulaire de création/édition de client");
 
 // Types TS

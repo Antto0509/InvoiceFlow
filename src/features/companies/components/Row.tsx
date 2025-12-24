@@ -93,6 +93,8 @@ export default function Row({
             src={value}
             alt={`${label} logo`}
             className="max-h-16 w-auto rounded-md border bg-muted object-contain"
+            width={64}
+            height={64}
           />
         );
 

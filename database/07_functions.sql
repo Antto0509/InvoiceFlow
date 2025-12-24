@@ -424,3 +424,78 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+
+
+
+-- Création automatique du membership "owner" après création d'une company
+CREATE OR REPLACE FUNCTION public.companies_ai_create_owner_membership()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.company_memberships (company_id, user_id, role)
+  VALUES (NEW.id, NEW.user_id, 'owner')
+  ON CONFLICT DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Empêche la suppression du dernier membership "owner" d'une company
+CREATE OR REPLACE FUNCTION public.company_memberships_bd_prevent_last_owner_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  owners_count int;
+BEGIN
+  -- si pas owner, on laisse faire
+  IF OLD.role <> 'owner' THEN
+    RETURN OLD;
+  END IF;
+
+  SELECT COUNT(*)
+  INTO owners_count
+  FROM public.company_memberships m
+  WHERE m.company_id = OLD.company_id
+    AND m.role = 'owner'
+    AND m.id <> OLD.id;
+
+  IF owners_count = 0 THEN
+    RAISE EXCEPTION 'Cannot delete the last owner membership of the company';
+  END IF;
+
+  RETURN OLD;
+END;
+$$;
+
+-- Synchronise company_id dans clients depuis membership_id
+CREATE OR REPLACE FUNCTION public.clients_bi_sync_company_from_membership()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  mid_company uuid;
+BEGIN
+  IF NEW.membership_id IS NOT NULL THEN
+    SELECT m.company_id INTO mid_company
+    FROM public.company_memberships m
+    WHERE m.id = NEW.membership_id;
+
+    IF mid_company IS NULL THEN
+      RAISE EXCEPTION 'Invalid membership_id';
+    END IF;
+
+    -- force la cohérence
+    NEW.company_id := mid_company;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;

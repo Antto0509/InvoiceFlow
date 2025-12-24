@@ -31,7 +31,6 @@ export function ClientForm({
     defaultValues: {
       name: "",
       email: "",
-      company: "",
       phone: "",
       address: "",
       notes: "",
@@ -151,24 +150,6 @@ export function ClientForm({
                   <Input
                     type="email"
                     placeholder="marie@exemple.com"
-                    {...field}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="company"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Société</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Ex: Acme SAS"
                     {...field}
                     value={field.value ?? ""}
                   />

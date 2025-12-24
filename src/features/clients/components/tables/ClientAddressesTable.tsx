@@ -16,7 +16,7 @@ export function ClientAddressesTable({
     onEdit,
     onDelete,
 }: ClientAddressesTableProps) {
-    const columns = React.useMemo<ColumnDef<ClientAddress>[]>(() => {
+    const columns = React.useMemo<ColumnDef<ClientAddress & { client_name?: string }>[]>(() => {
         return [
             {
                 id: "select",
@@ -38,6 +38,16 @@ export function ClientAddressesTable({
                     />
                 ),
                 size: 40,
+            },
+            {
+                accessorKey: "client_name",
+                header: () => (
+                    <div className="flex items-center gap-1">
+                        <span>Client</span>
+                        <SortBtn col="client_name" sort={sort as ClientAddressSort} onSortChange={(s) => onSortChange?.(s as ClientAddressSort)} />
+                    </div>
+                ),
+                cell: ({ row }) => <span className="font-medium">{row.original.client_name || <span className="text-muted-foreground">—</span>}</span>,
             },
             {
                 accessorKey: "line1",

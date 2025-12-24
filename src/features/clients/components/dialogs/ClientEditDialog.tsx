@@ -35,7 +35,6 @@ export function ClientEditDialog({
               email: editClient.email ?? undefined,
               phone: editClient.phone ?? undefined,
               address: editClient.address ?? undefined,
-              company: editClient.company ?? undefined,
             }}
             onSubmit={async (values) => {
               try {

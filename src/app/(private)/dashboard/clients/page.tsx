@@ -32,7 +32,7 @@ export default function ClientsPage() {
       page: 1,
       pageSize: 20,
       search: "",
-      company: "all" as ClientListParams["company"],
+      name: "all" as ClientListParams["name"],
       hasEmail: "all" as unknown as ClientListParams["hasEmail"],
       sort: { column: "name", dir: "asc" },
     }

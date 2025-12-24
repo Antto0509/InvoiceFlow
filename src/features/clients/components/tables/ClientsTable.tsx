@@ -76,14 +76,30 @@ export function ClientsTable({
         },
       },
       {
-        accessorKey: "company",
+        accessorKey: "phone",
         header: () => (
           <div className="hidden lg:flex lg:items-center lg:gap-1">
-            <span>Société</span>
-            <SortBtn col="company" sort={sort as ClientSort} onSortChange={(s) => onSortChange?.(s as ClientSort)} />
+            <span>Téléphone</span>
+            <SortBtn col="phone" sort={sort as ClientSort} onSortChange={(s) => onSortChange?.(s as ClientSort)} />
           </div>
         ),
-        cell: ({ row }) => <span className="hidden lg:inline">{row.original.company ?? "—"}</span>,
+        cell: ({ row }) => {
+          const phone = row.original.phone;
+
+          if (!phone) {
+            return <span className="hidden lg:inline">—</span>;
+          }
+
+          return (
+            <a
+              href={`tel:${phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="hidden lg:inline text-primary hover:underline"
+            >
+              {phone}
+            </a>
+          );
+        }
       },
       {
         accessorKey: "created_at",

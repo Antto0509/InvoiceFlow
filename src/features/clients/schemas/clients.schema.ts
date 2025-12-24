@@ -30,13 +30,11 @@ export const clientAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’ad
  */
 export const clientDbSchema = z.object({
   id: zUuid.describe("Identifiant client (UUID)"),
-  // user_id: zUuid.nullable().describe("Propriétaire (auth.uid)"),
   company_id: zUuid.describe("Entreprise propriétaire (FK)"),
   membership_id: zUuid.nullable().describe("Membre propriétaire (FK)"),
   name: zNonEmptyString.min(2, "Nom trop court").describe("Nom/Raison sociale du client"),
   email: zEmail.nullable().optional().describe("Email de contact"),
   address: z.string().nullable().optional().describe("Adresse (texte libre)"),
-  company: z.string().nullable().optional().describe("Société (si contact personne)"),
   phone: z.string().nullable().optional().describe("Téléphone"),
   notes: z.string().nullable().optional().describe("Notes internes"),
   created_at: zDateISO.describe("Création (ISO)"),
@@ -133,7 +131,6 @@ export type ClientListRow = {
   email: string | null;
   phone: string | null;
   address: string | null;
-  company: string | null;
   created_at: string;   // ISO
   updated_at: string;   // ISO
 };
@@ -143,7 +140,6 @@ export type ClientSort = {
   column:
     | "name"
     | "email"
-    | "company"
     | "phone"
     | "address"
     | "created_at"
@@ -168,7 +164,7 @@ export type ClientListParams = {
   page: number;
   pageSize: number;
   search: string;
-  company: string;
+  name: string;
   hasEmail: boolean;
   sort: ClientSort;
   signal?: AbortSignal;

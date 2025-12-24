@@ -27,7 +27,7 @@ export const makeClientsApi = (companyId?: string) =>
   createResourceApi<Client>({
     table: "clients",
     select:
-      "id, company_id, membership_id, name, email, company, phone, address, notes, created_at, updated_at",
+      "id, company_id, membership_id, name, email, phone, address, notes, created_at, updated_at",
     sortableColumns: [...SORTABLE_CLIENTS],
     searchColumns: ["name", "email", "company"],
     // scope multi-tenant
@@ -81,7 +81,7 @@ export async function listClients(
     page = 1,
     pageSize = 20,
     search,
-    company,
+    name,
     hasEmail,
     sort = { column: "name", dir: "asc" as const },
     signal,
@@ -99,7 +99,7 @@ export async function listClients(
       sort,
       signal,
       filters: {
-        ...(company ? { company: { op: "ilike", value: company } } : {}),
+        ...(name ? { name: { op: "ilike", value: name } } : {}),
         ...(hasEmail != null
           ? hasEmail
             ? { email: { op: "neq", value: null } }
@@ -152,7 +152,7 @@ export const makeClientAddressesApi = (clientId?: string) =>
   createResourceApi<ClientAddress>({
     table: "client_addresses",
     select:
-      "id, client_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at",
+      "id, client_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at, client:clients(name)",
     sortableColumns: [
       "kind",
       "city",
@@ -176,7 +176,7 @@ export const makeClientAddressesApi = (clientId?: string) =>
 export const makeClientContactsApi = (clientId?: string) =>
   createResourceApi<ClientContact>({
     table: "client_contacts",
-    select: "id, client_id, full_name, email, phone, role, created_at, updated_at",
+    select: "id, client_id, full_name, email, phone, role, created_at, updated_at, client:clients(name)",
     sortableColumns: [
       "full_name",
       "email",
@@ -236,7 +236,12 @@ export async function listClientAddresses(
       },
     });
 
-    return { rows: data as ClientAddress[], total };
+    const rows = (data ?? []).map((a: ClientAddress & { client?: { name?: string } }) => ({
+      ...a,
+      client_name: a.client?.name ?? null,
+    }));
+
+    return { rows, total };
   } catch (err) {
     console.error(
       "[ClientsApi:listClientAddresses] Failed",
@@ -291,7 +296,12 @@ export async function listClientContacts(
       },
     });
 
-    return { rows: data as ClientContact[], total };
+    const rows = (data ?? []).map((c: ClientContact & { client?: { name?: string } }) => ({
+      ...c,
+      client_name: c.client?.name ?? null,
+    }));
+
+    return { rows, total };
   } catch (err) {
     console.error(
       "[ClientsApi:listClientContacts] Failed",

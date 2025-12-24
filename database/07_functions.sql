@@ -499,3 +499,42 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Remplit membership_id à partir de company_id + auth.uid()
+CREATE OR REPLACE FUNCTION public.clients_bi_set_membership_from_company()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  mid uuid;
+BEGIN
+  -- Si déjà fourni, on ne touche pas (ça laisse la porte ouverte à un admin si besoin)
+  IF NEW.membership_id IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Si pas de company_id, on ne peut rien deviner
+  IF NEW.company_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Récupère le membership du user connecté pour cette company
+  SELECT m.id INTO mid
+  FROM public.company_memberships m
+  WHERE m.company_id = NEW.company_id
+    AND m.user_id = auth.uid()
+  ORDER BY m.created_at DESC
+  LIMIT 1;
+
+  IF mid IS NULL THEN
+    RAISE EXCEPTION 'No membership found for user % in company %', auth.uid(), NEW.company_id
+      USING ERRCODE = '23503'; -- foreign_key_violation-like
+  END IF;
+
+  NEW.membership_id := mid;
+
+  RETURN NEW;
+END;
+$$;

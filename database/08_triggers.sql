@@ -165,7 +165,15 @@ CREATE TRIGGER trg_company_memberships_prevent_last_owner_delete
 -- =========================================================
 -- 5. Clients — sync company_id from membership_id
 -- =========================================================
+
+-- Synchronise company_id dans clients depuis la membership_id
 CREATE TRIGGER trg_clients_sync_company_from_membership
 BEFORE INSERT OR UPDATE OF membership_id ON public.clients
 FOR EACH ROW
 EXECUTE FUNCTION public.clients_bi_sync_company_from_membership();
+
+-- Définit membership_id dans clients depuis company_id si membership_id NULL
+CREATE TRIGGER trg_clients_set_membership_from_company
+BEFORE INSERT OR UPDATE OF company_id ON public.clients
+FOR EACH ROW
+EXECUTE FUNCTION public.clients_bi_set_membership_from_company();

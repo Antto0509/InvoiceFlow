@@ -189,7 +189,9 @@ export type DocumentReminder = z.infer<typeof DocumentRemindersDbSchema>;
  * Schéma dédié au formulaire de création/édition de document.
  * On ne force pas certains champs gérés serveur (id, user_id, pdf_url, timestamps…).
  */
-export const DocumentFormSchema = DocumentDbSchema.extend({
+export const DocumentFormSchema = DocumentDbSchema
+  .omit({ created_at: true, updated_at: true })
+  .extend({
   id: DocumentDbSchema.shape.id.optional().describe("UUID (optionnel en création)"),
   user_id: DocumentDbSchema.shape.user_id.optional().describe("Renseigné par trigger/serveur"),
 

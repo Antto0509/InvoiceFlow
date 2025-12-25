@@ -88,7 +88,7 @@ export async function getDocumentDetail(id: string, userId?: string) {
       [
         "*",
         "document_lines(*)",
-        "clients:clients(id, name, address, company)",
+        "clients:clients(id, name, address)",
         "companies:companies(id, name, vat_regime, payment_terms, penalty_rate, recovery_fee_enabled, default_currency, logo_url)",
       ].join(",")
     )

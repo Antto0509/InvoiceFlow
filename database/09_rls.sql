@@ -442,3 +442,14 @@ CREATE POLICY file_links_all_own
         AND f.user_id = auth.uid()
     )
   );
+
+-- =========================================================
+-- 11) countries (lecture globale)
+-- =========================================================
+
+ALTER TABLE public.countries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY countries_read_all
+  ON public.countries
+  FOR SELECT TO public
+  USING (true);

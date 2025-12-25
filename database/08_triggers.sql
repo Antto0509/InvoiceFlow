@@ -107,6 +107,10 @@ CREATE TRIGGER trg_updated_at_files
   BEFORE UPDATE ON public.files
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
+create trigger trg_countries_updated_at
+  BEFORE UPDATE ON public.countries
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 
 
 -- =========================================================

@@ -131,9 +131,9 @@ export function ClientForm({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom</FormLabel>
+                <FormLabel>Raison/Dénomination sociale</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Marie Martin" {...field} />
+                  <Input placeholder="Ex: Acme Corp" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

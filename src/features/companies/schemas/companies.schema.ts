@@ -189,10 +189,26 @@ export type CompanyWithDetails = z.infer<typeof companyWithDetailsSchema>;
 
 // -------------------- Types FORM --------------------
 
-export type CompanyFormValues = z.infer<typeof companySchema>;
-export type CompanyAddressFormValues = z.infer<typeof companyAddressSchema>;
-export type CompanyBankAccountFormValues = z.infer<typeof companyBankAccountSchema>;
-export type CompanyMembershipFormValues = z.infer<typeof companyMembershipSchema>;
+export const companyFormSchema = companySchema
+  .omit({ id: true, user_id: true, created_at: true, updated_at: true })
+  .describe("Schéma de formulaire de création/modification d’entreprise");
+
+export const companyAddressFormSchema = companyAddressSchema
+  .omit({ id: true, company_id: true, created_at: true, updated_at: true })
+  .describe("Schéma de formulaire de création/modification d’adresse d’entreprise");
+
+export const companyBankAccountFormSchema = companyBankAccountSchema
+  .omit({ id: true, company_id: true, created_at: true, updated_at: true })
+  .describe("Schéma de formulaire de création/modification de compte bancaire d’entreprise");
+
+export const companyMembershipFormSchema = companyMembershipSchema
+  .omit({ id: true, company_id: true, created_at: true, updated_at: true })
+  .describe("Schéma de formulaire de création/modification de membre d’entreprise");
+
+export type CompanyFormValues = z.infer<typeof companyFormSchema>;
+export type CompanyAddressFormValues = z.infer<typeof companyAddressFormSchema>;
+export type CompanyBankAccountFormValues = z.infer<typeof companyBankAccountFormSchema>;
+export type CompanyMembershipFormValues = z.infer<typeof companyMembershipFormSchema>;
 
 // -------------------- Types LISTING --------------------
 

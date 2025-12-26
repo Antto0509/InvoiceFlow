@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  companySchema,
-  type CompanyFormValues,
-} from "@/schemas/companies.schema";
+import { companyFormSchema, type CompanyFormValues } from "@/schemas/companies.schema";
 import { Form } from "@/components/ui/form";
 import { FormShell } from "@/components/forms/FormShell";
 
 import { CompanyIdentityFields } from "./CompanyIdentityFields";
 import { CompanyContactBrandingFields } from "./CompanyContactBrandingFields";
 import { CompanyBillingFields } from "./CompanyBillingFields";
+
+import { useRHFDebug } from "@/lib/forms/debug";
+import { useRHFResetOnDefaultValues } from "@/lib/forms/reset";
 
 export function CompanyForm({
   defaultValues,
@@ -26,7 +25,7 @@ export function CompanyForm({
   show?: "all" | "identity" | "contact_branding" | "billing" | "addresses" | "bank_accounts";
 }) {
   const form = useForm<CompanyFormValues>({
-    resolver: zodResolver(companySchema) as Resolver<CompanyFormValues>,
+    resolver: zodResolver(companyFormSchema) as Resolver<CompanyFormValues>,
     defaultValues: {
       name: "",
       legal_form: null,
@@ -51,27 +50,57 @@ export function CompanyForm({
     mode: "onChange",
   });
 
-  // si on édite, on remet à jour
-  useEffect(() => {
-    if (defaultValues) {
-      form.reset({ ...form.getValues(), ...defaultValues });
-    }
-  }, [defaultValues, form]);
+  // ✅ DEBUG (init + watch + submit wrappers)
+  const { handleValid, handleInvalid } = useRHFDebug<CompanyFormValues>({
+    name: "CompanyForm",
+    form,
+    schema: companyFormSchema,
+    loading,
+    defaultValues,
+    watch: {
+      enabled: true,
+      onlyNames: [
+        "name",
+        "legal_form",
+        "siren",
+        "siret",
+        "vat_number",
+        "rcs_city",
+        "ape_naf",
+        "share_capital",
+        "website",
+        "email",
+        "phone",
+        "logo_url",
+        "default_currency",
+        "payment_terms",
+        "penalty_rate",
+        "recovery_fee_enabled",
+        "vat_regime",
+        "legal_notes",
+      ],
+    },
+  });
+
+  // ♻️ reset quand defaultValues change (une seule source de vérité)
+  useRHFResetOnDefaultValues<CompanyFormValues>({
+    name: "CompanyForm",
+    form,
+    defaultValues,
+  });
+
+  const submit = handleValid(async (values) => {
+    const payload: CompanyFormValues = {
+      ...values,
+      default_currency: (values.default_currency ?? "EUR").toUpperCase().slice(0, 3),
+    };
+
+    await onSubmit(payload);
+  });
 
   return (
     <Form {...form}>
-      <FormShell
-        onSubmit={form.handleSubmit(async (values) => {
-          const payload: CompanyFormValues = {
-            ...values,
-            default_currency: (values.default_currency ?? "EUR")
-              .toUpperCase()
-              .slice(0, 3),
-          };
-          await onSubmit(payload);
-        })}
-        loading={loading}
-      >
+      <FormShell onSubmit={form.handleSubmit(submit, handleInvalid)} loading={loading}>
         {show === "all" && (
           <>
             <CompanyIdentityFields form={form} />

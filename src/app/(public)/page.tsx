@@ -47,7 +47,7 @@ export default function HomePage() {
       {/* Contenu */}
       <main className="flex-1">
         {/* Hero */}
-        <section className="border-b border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950">
+        <section className="border-b border-slate-800 bg-linear-to-b from-slate-900 to-slate-950">
           <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-2 md:items-center">
             <div className="space-y-6">
               <p className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">

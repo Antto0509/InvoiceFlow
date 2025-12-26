@@ -28,8 +28,6 @@ export const userSchema = z.object({
     first_name: zNonEmptyString.describe("Prénom de l’utilisateur"),
     last_name: zNonEmptyString.describe("Nom de famille de l’utilisateur"),
     avatar_url: zUrl.optional().describe("URL de l’avatar de l’utilisateur"),
-    company_id: zUuid.optional().nullable()
-        .describe("Identifiant de l’entreprise associée (UUID), optionnel"),
     created_at: zDateISO.optional().describe("Date de création de l’utilisateur"),
     updated_at: zDateISO.optional().describe("Date de dernière modification de l’utilisateur"),
 }).describe("Utilisateur de l’application InvoiceFlow");

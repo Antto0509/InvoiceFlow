@@ -192,23 +192,23 @@ export type DocumentReminder = z.infer<typeof DocumentRemindersDbSchema>;
 export const DocumentFormSchema = DocumentDbSchema
   .omit({ created_at: true, updated_at: true })
   .extend({
-  id: DocumentDbSchema.shape.id.optional().describe("UUID (optionnel en création)"),
-  user_id: DocumentDbSchema.shape.user_id.optional().describe("Renseigné par trigger/serveur"),
+    id: DocumentDbSchema.shape.id.optional().describe("UUID (optionnel en création)"),
+    user_id: DocumentDbSchema.shape.user_id.optional().describe("Renseigné par trigger/serveur"),
 
-  // Les lignes dans le formulaire : uniquement les champs éditables
-  lines: DocumentLinesDbSchema.pick({
-    kind: true,
-    description: true,
-    qty: true,
-    unit_price: true,
-    unit: true,
-    discount_rate: true,
-    discount_amount: true,
-    tax_rate: true,
-  })
-    .array()
-    .min(1, "Ajoute au moins une ligne")
-    .describe("Lignes éditées dans le formulaire"),
+    // Les lignes dans le formulaire : uniquement les champs éditables
+    lines: DocumentLinesDbSchema.pick({
+      kind: true,
+      description: true,
+      qty: true,
+      unit_price: true,
+      unit: true,
+      discount_rate: true,
+      discount_amount: true,
+      tax_rate: true,
+    })
+      .array()
+      .min(1, "Ajoute au moins une ligne")
+      .describe("Lignes éditées dans le formulaire"),
 }).describe("Schéma de formulaire (client) pour les documents");
 
 export type DocumentFormValues = z.infer<typeof DocumentFormSchema>;

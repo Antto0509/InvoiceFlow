@@ -11,6 +11,8 @@ import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from "
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+
 import { FormShell } from "@/components/forms/FormShell";
 import { LinesEditor } from "./LinesEditor";
 
@@ -21,8 +23,13 @@ import { SelectCompany } from "@/components/datatable/select/SelectCompany";
 import { safeRandomUUID } from "@/lib/utils";
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE } from "@/lib/constants";
 
-import { DocumentFormValues, DocumentFormSchema, DocumentKind, DocumentStatus } from "@/features/documents/schemas/documents.schema";
-import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
+import {
+  DocumentFormValues,
+  DocumentFormSchema,
+  DocumentKind,
+  DocumentStatus,
+} from "@/features/documents/schemas/documents.schema";
+import { labelDocStatus, getDocStatusVariant, isFiniteNumber, round2 } from "@/lib/utils";
 
 import { useRHFDebug } from "@/lib/forms/debug";
 
@@ -48,6 +55,7 @@ export function DocumentForm({
   loading?: boolean;
 }) {
   const cfg = kindConfig[kind];
+
   const initialDocIdRef = useRef<string>("");
   if (!initialDocIdRef.current) initialDocIdRef.current = safeRandomUUID();
 
@@ -66,7 +74,7 @@ export function DocumentForm({
             unit: null,
             discount_rate: null,
             discount_amount: null,
-            tax_rate: null,
+            tax_rate: DEFAULT_TAX_RATE,
           },
         ];
 
@@ -97,16 +105,19 @@ export function DocumentForm({
       notes_public: defaultValues?.notes_public ?? null,
       notes_private: defaultValues?.notes_private ?? null,
       pdf_url: defaultValues?.pdf_url ?? null,
+
+      // Ces champs sont des MONTANTS (documents.tax = montant TVA)
       subtotal: defaultValues?.subtotal ?? 0,
       tax: defaultValues?.tax ?? 0,
       total: defaultValues?.total ?? 0,
       total_eur: defaultValues?.total_eur ?? null,
+
       lines: defaultLines,
     },
     mode: "onChange",
   });
 
-  // ✅ DEBUG (comme ClientForm)
+  // DEBUG
   const { handleValid, handleInvalid } = useRHFDebug<DocumentFormValues>({
     name: "DocumentForm",
     form,
@@ -114,7 +125,6 @@ export function DocumentForm({
     loading,
     defaultValues,
     watch: {
-      // sinon ça va spam sec à cause des lines
       enabled: true,
       onlyNames: ["client_id", "company_id", "currency_code", "issue_date", "due_date", "status"],
     },
@@ -123,10 +133,43 @@ export function DocumentForm({
   // WATCH
   const watchedLines = useWatch({ control: form.control, name: "lines" }) as DocumentFormValues["lines"] | undefined;
   const lines = useMemo<DocumentFormValues["lines"]>(() => watchedLines ?? [], [watchedLines]);
+
   const currency_code = useWatch({ control: form.control, name: "currency_code" }) ?? DEFAULT_CURRENCY;
   const status = useWatch({ control: form.control, name: "status" }) ?? "draft";
 
-  const [taxRate, setTaxRate] = React.useState<number>(DEFAULT_TAX_RATE);
+  /**
+   * TVA globale (UI only)
+   * - On l'initialise sur le premier tax_rate trouvé (sinon DEFAULT_TAX_RATE)
+   * - Quand ça change => on push sur toutes les lignes (tax_rate)
+   */
+  const [globalTaxRate, setGlobalTaxRate] = React.useState<number>(DEFAULT_TAX_RATE);
+
+  // init quand on charge un doc différent
+  useEffect(() => {
+    const fromLines =
+      (defaultValues?.lines ?? []).find((l) => l?.tax_rate != null)?.tax_rate ??
+      lines.find((l) => l?.tax_rate != null)?.tax_rate ??
+      DEFAULT_TAX_RATE;
+
+    setGlobalTaxRate(typeof fromLines === "number" ? fromLines : DEFAULT_TAX_RATE);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValues?.id]);
+
+  const applyGlobalTaxRate = React.useCallback(
+    (nextRate: number) => {
+      const safe = Number.isFinite(nextRate) ? nextRate : 0;
+      setGlobalTaxRate(safe);
+
+      const current = form.getValues("lines") ?? [];
+      const nextLines = current.map((ln) => ({
+        ...ln,
+        tax_rate: safe,
+      }));
+
+      form.setValue("lines", nextLines, { shouldDirty: true, shouldValidate: true });
+    },
+    [form]
+  );
 
   // Conversion devise: avertissement
   const prevCurrency = React.useRef<string | null>(null);
@@ -140,20 +183,35 @@ export function DocumentForm({
     prevCurrency.current = currency_code;
   }, [currency_code]);
 
-  // Totaux live
+  // Totaux live (à partir des lignes et de leurs tax_rate)
   useEffect(() => {
-    const subtotal = lines.reduce(
-      (acc: number, ln: DocumentFormValues["lines"][number]) =>
-        acc + (Number(ln?.qty) || 0) * (Number(ln?.unit_price) || 0),
-      0
+    const subtotal = round2(
+      lines.reduce((acc, ln) => {
+        const qty = Number(ln?.qty) || 0;
+        const unitPrice = Number(ln?.unit_price) || 0;
+        return acc + qty * unitPrice;
+      }, 0)
     );
-    const tax = Math.round(subtotal * (taxRate || 0) * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
 
-    form.setValue("subtotal", subtotal, { shouldValidate: true });
-    form.setValue("tax", tax, { shouldValidate: true });
-    form.setValue("total", total, { shouldValidate: true });
-  }, [lines, taxRate, form]);
+    const tax = round2(
+      lines.reduce((acc, ln) => {
+        const qty = Number(ln?.qty) || 0;
+        const unitPrice = Number(ln?.unit_price) || 0;
+        const base = qty * unitPrice;
+
+        const rate = Number(ln?.tax_rate) || 0;
+        return acc + base * rate;
+      }, 0)
+    );
+
+    const total = round2(subtotal + tax);
+
+    // ✅ montants, pas le taux
+    // shouldValidate:false => évite de relancer zod en boucle sur chaque frappe
+    form.setValue("subtotal", subtotal, { shouldValidate: false, shouldDirty: true });
+    form.setValue("tax", tax, { shouldValidate: false, shouldDirty: true });
+    form.setValue("total", total, { shouldValidate: false, shouldDirty: true });
+  }, [lines, form]);
 
   return (
     <Form {...form}>
@@ -325,29 +383,69 @@ export function DocumentForm({
               )}
             />
 
-            {/* TVA globale UI */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FormLabel>TVA (globale, UI)</FormLabel>
+            {/* TVA globale UI (push sur lines.tax_rate) */}
+            <FormItem>
+              <FormLabel>TVA (globale)</FormLabel>
+              <FormControl>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     step="0.01"
                     min={0}
                     max={1}
-                    value={Number.isFinite(taxRate) ? taxRate : 0}
-                    onChange={(e) => setTaxRate(e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber)}
+                    value={isFiniteNumber(globalTaxRate) ? globalTaxRate : 0}
+                    onChange={(e) => applyGlobalTaxRate(e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber)}
                   />
                   <span className="text-sm text-muted-foreground tabular-nums">
-                    {Math.round((Number(taxRate) || 0) * 100)}%
+                    {Math.round((Number(globalTaxRate) || 0) * 100)}%
                   </span>
                 </div>
-              </div>
-            </div>
+              </FormControl>
+            </FormItem>
+
+            {/* Note publique */}
+            <FormField
+              control={form.control}
+              name="notes_public"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Note publique</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Cette note apparaîtra sur le document (PDF, devis, facture…)…"
+                      rows={3}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Note privée */}
+            <FormField
+              control={form.control}
+              name="notes_private"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Note privée</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Note interne, non visible par le client…"
+                      rows={3}
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
-        <LinesEditor currency_code={currency_code} taxRate={taxRate} className="mt-4" />
+        <LinesEditor currency_code={currency_code} taxRate={globalTaxRate} className="mt-4" />
       </FormShell>
     </Form>
   );

@@ -1,12 +1,18 @@
-// documents.repository.ts
 import { createResourceApi } from "@/data/createResourceApi";
 import { createClient } from "@/data/supabase/client";
 import { FilterOps, SORTABLE_DOCS } from "@/lib/index";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
 import type { Document, DocumentLine, DocumentListParams, DocumentListRow } from "@/features/documents/schemas/documents.schema";
 
-// ---- API “liste” : jointure client + alias client_name
+// ==============================================
+// API liste + détail + création avec lignes
+// ==============================================
 
+/**
+ * Liste des documents avec jointure client (pour l’affichage liste)
+ * @param userId Optionnel : pour vérifier l’appartenance au user
+ * @returns API liste des documents avec client
+ */
 const makeDocumentListApi = (userId?: string) =>
   createResourceApi<Document & { client_name: string | null }>({
     table: "documents_with_client",
@@ -17,6 +23,12 @@ const makeDocumentListApi = (userId?: string) =>
     protectedColumns: ["user_id"],
   });
 
+/**
+ * Liste des documents avec filtres, pagination, tri
+ * @param params Paramètres de liste
+ * @param userId Optionnel : pour vérifier l’appartenance au user
+ * @returns Liste des documents + total
+ */
 const makeDocumentCrudApi = (userId?: string) =>
   createResourceApi<Document>({
     table: "documents",
@@ -27,6 +39,12 @@ const makeDocumentCrudApi = (userId?: string) =>
     protectedColumns: ["user_id"],
   });
 
+/**
+ * Liste des documents avec filtres, pagination, tri
+ * @param params Paramètres de liste
+ * @param userId Optionnel : pour vérifier l’appartenance au user
+ * @returns Liste des documents + total
+ */
 export async function listDocuments(params: Partial<DocumentListParams> = {}, userId?: string) {
   const {
     page = 1,
@@ -78,7 +96,12 @@ export async function listDocuments(params: Partial<DocumentListParams> = {}, us
   return { rows, total };
 }
 
-/** Détail : document + lignes + client (pour l’éditeur) */
+/** 
+ * Détail : document + lignes + client (pour l’éditeur) 
+ * @param id ID du document
+ * @param userId Optionnel : pour vérifier l’appartenance au user
+ * @returns Document complet avec lignes et client
+ */
 export async function getDocumentDetail(id: string, userId?: string) {
   const sb = createClient();
 
@@ -117,7 +140,12 @@ export async function getDocumentDetail(id: string, userId?: string) {
   };
 }
 
-/** Création document + lignes (transaction “pauvre” côté client) */
+/** 
+ * Création document + lignes (transaction “pauvre” côté client) 
+ * @param payload Document + lignes
+ * @param userId Optionnel : ID du user
+ * @returns Document créé (ID uniquement)
+ */
 export async function createDocumentWithLines(
   payload: Partial<Document & { lines?: Partial<DocumentLine>[] }>,
   userId?: string
@@ -152,9 +180,25 @@ export async function createDocumentWithLines(
   return doc;
 }
 
-// CRUD simple
+// ==============================================
+// CRUD basique (sans lignes ni jointures)
+// ==============================================
+
+/** 
+ * Récupération document simple (sans lignes)
+ * @param id ID du document
+ * @param userId Optionnel : ID du user
+ * @returns Document
+ */
 export const getDocument = (id: string, userId?: string) => makeDocumentCrudApi(userId).get(id);
 
+/** 
+ * Création document + lignes (transaction “pauvre” côté client) 
+ * @param payload Document + lignes
+ * @param userId Optionnel : ID du user
+ * @param opts Optionnel : options supplémentaires
+ * @returns Document créé (ID uniquement)
+ */
 export const createDocument = async (
   payload: Partial<Document & { lines?: DocumentLine[] }>,
   userId?: string,
@@ -178,13 +222,32 @@ export const createDocument = async (
   return doc;
 };
 
+/**
+ * Mise à jour document + lignes
+ * @param id ID du document
+ * @param payload Document + lignes
+ * @param userId Optionnel : ID du user
+ * @returns Document mis à jour
+ */
 export const updateDocument = (
   id: string,
   payload: Partial<Document & { lines?: DocumentLine[] }>,
   userId?: string
 ) => makeDocumentCrudApi(userId).update(id, payload);
 
+/** 
+ * Suppression document
+ * @param id ID du document
+ * @param userId Optionnel : ID du user
+ * @returns Document supprimé
+ */
 export const removeDocument = (id: string, userId?: string) => makeDocumentCrudApi(userId).remove(id);
 
+/** 
+ * Suppression multiple documents
+ * @param ids IDs des documents
+ * @param userId Optionnel : ID du user
+ * @returns Documents supprimés
+ */
 export const bulkDeleteDocuments = (ids: string[], userId?: string) =>
   makeDocumentCrudApi(userId).bulkDelete(ids);

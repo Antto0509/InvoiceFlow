@@ -8,13 +8,9 @@ import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { formatMoney, labelDocKind, labelDocStatus, getDocStatusVariant, downloadDocumentPdf } from "@/lib/utils";
 import { SortBtn } from "@/components/datatable/SortBtn";
 import { FileDown, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
 import type { DocumentListRow, DocumentSort, DocumentsTableProps } from "@/features/documents/schemas/documents.schema";
 
-/** 
- * Table des documents (factures, devis, avoirs, proformas).
- * @param param0 Props du composant
- * @returns Composant DocumentsTable
- */
 export function DocumentsTable({
   data = [],
   loading,
@@ -27,7 +23,6 @@ export function DocumentsTable({
 }: DocumentsTableProps) {
   const columns = React.useMemo<ColumnDef<DocumentListRow>[]>(() => {
     const cols: ColumnDef<DocumentListRow>[] = [
-      // Type (optionnel)
       ...(showKindColumn
         ? [
             {
@@ -112,6 +107,16 @@ export function DocumentsTable({
         cell: ({ row }) => {
           const doc = row.original;
           const isPdfCapable = doc.kind === "invoice" || doc.kind === "credit_note" || doc.kind === "proforma";
+
+          const handlePdf = async (regenerate: boolean) => {
+            const label = doc.number ? ` ${doc.number}` : "";
+            toast.promise(downloadDocumentPdf(doc.id, regenerate), {
+              loading: regenerate ? `Régénération du PDF ${label}…` : `Téléchargement du PDF ${label}…`,
+              success: regenerate ? `PDF régénéré et téléchargé ${label}` : `PDF téléchargé ${label}`,
+              error: (e) => (e instanceof Error ? e.message : "Impossible de télécharger le PDF."),
+            });
+          };
+
           return (
             <RowActions
               item={doc}
@@ -124,18 +129,14 @@ export function DocumentsTable({
                       {
                         label: "Télécharger PDF",
                         icon: <FileDown className="h-4 w-4" />,
-                        onClick: async () => {
-                          await downloadDocumentPdf(doc.id, false);
-                        },
+                        onClick: () => handlePdf(false),
                         variant: "secondary",
                         separatorBefore: true,
                       },
                       {
                         label: "Régénérer PDF",
                         icon: <RefreshCcw className="h-4 w-4" />,
-                        onClick: async () => {
-                          await downloadDocumentPdf(doc.id, true);
-                        },
+                        onClick: () => handlePdf(true),
                         variant: "ghost",
                       },
                     ]

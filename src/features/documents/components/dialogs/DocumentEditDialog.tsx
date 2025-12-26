@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DocumentForm } from "../DocumentForm";
 
-import { updateDocument } from "@/features/documents/data/documents.repository";
-import { upsertDocumentLines, deleteDocumentLines } from "@/features/documents/data/documentLines.repository";
+import { updateDocument } from "@/data/documents.repository";
+import { replaceDocumentLines } from "@/data/documentLines.repository";
 import type { DocumentLine, DocumentEditProps } from "@/features/documents/schemas/documents.schema";
+
 import { toastSuccessMessage } from "@/lib/utils";
 
 export function DocumentEditDialog({
@@ -67,25 +68,25 @@ export function DocumentEditDialog({
                   due_date: values.due_date ?? null,
                   currency_code: values.currency_code ?? null,
                   notes_public: values.notes_public ?? null,
+                  notes_private: values.notes_private ?? null,
                   payment_terms: values.payment_terms ?? null,
                   penalty_rate: values.penalty_rate ?? null,
                   recovery_fee: values.recovery_fee ?? null,
+                  status: values.status ?? "draft",
+                  subtotal: values.subtotal ?? null,
+                  tax: values.tax ?? null,
+                  total: values.total ?? null,
                 });
 
-                // 2) Upsert des lignes (ajout + maj)
-                const incoming = (values.lines ?? []).map((ln) => ({
+                // 2) Replace total des lignes
+                const incoming = (values.lines ?? []).map((ln, idx) => ({
                   ...(ln as Partial<DocumentLine>),
-                  document_id: editDocument.id,
-                })) as Array<Partial<DocumentLine>>;
-                await upsertDocumentLines(incoming);
+                  // optionnel mais conseillé si tu utilises position pour l’ordre
+                  position: (ln as Partial<DocumentLine>).position ?? idx,
+                }));
 
-                // 3) Suppression des lignes retirées par l’utilisateur
-                const originalIds = new Set((editDocument.lines ?? []).map((l) => l.id));
-                const incomingIds = new Set(incoming.map((l: Partial<DocumentLine>) => l.id).filter(Boolean) as string[]);
-                const toDelete = [...originalIds].filter((id) => id && !incomingIds.has(id));
-                if (toDelete.length) {
-                  await deleteDocumentLines(toDelete as string[]);
-                }
+                await replaceDocumentLines(editDocument.id, incoming);
+
 
                 toastSuccessMessage(kind, "mis à jour");
 

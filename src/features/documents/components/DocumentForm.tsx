@@ -7,12 +7,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
-import { Form, FormField, FormItem, FormLabel, FormMessage, FormControl } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormControl,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-
 import { FormShell } from "@/components/forms/FormShell";
 import { LinesEditor } from "./LinesEditor";
 
@@ -29,7 +43,7 @@ import {
   DocumentKind,
   DocumentStatus,
 } from "@/features/documents/schemas/documents.schema";
-import { labelDocStatus, getDocStatusVariant, isFiniteNumber, round2 } from "@/lib/utils";
+import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
 
 import { useRHFDebug } from "@/lib/forms/debug";
 
@@ -37,11 +51,76 @@ const kindConfig: Record<
   DocumentKind,
   { title: string; showDueDate: boolean; allowedStatuses: DocumentStatus[] }
 > = {
-  invoice: { title: "Créer une facture", showDueDate: true, allowedStatuses: ["draft", "sent", "paid", "overdue", "void"] },
-  credit_note: { title: "Créer un avoir", showDueDate: false, allowedStatuses: ["draft", "sent", "void"] },
-  quote: { title: "Créer un devis", showDueDate: false, allowedStatuses: ["draft", "sent", "accepted", "declined", "expired", "void"] },
-  proforma: { title: "Créer une proforma", showDueDate: false, allowedStatuses: ["draft", "sent", "void"] },
+  invoice: {
+    title: "Créer une facture",
+    showDueDate: true,
+    allowedStatuses: ["draft", "sent", "paid", "overdue", "void"],
+  },
+  credit_note: {
+    title: "Créer un avoir",
+    showDueDate: false,
+    allowedStatuses: ["draft", "sent", "void"],
+  },
+  quote: {
+    title: "Créer un devis",
+    showDueDate: false,
+    allowedStatuses: ["draft", "sent", "accepted", "declined", "expired", "void"],
+  },
+  proforma: {
+    title: "Créer une proforma",
+    showDueDate: false,
+    allowedStatuses: ["draft", "sent", "void"],
+  },
 };
+
+// Transitions métier (pour éviter draft -> paid direct)
+const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatus[]>> = {
+  invoice: {
+    draft: ["sent", "void"],
+    sent: ["paid", "overdue", "void"],
+    overdue: ["paid", "void"],
+    paid: [],
+    void: [],
+    // au cas où ton type contient d'autres statuses, tu peux compléter
+    accepted: [],
+    declined: [],
+    expired: [],
+  },
+  quote: {
+    draft: ["sent", "void"],
+    sent: ["accepted", "declined", "expired", "void"],
+    accepted: [],
+    declined: [],
+    expired: [],
+    void: [],
+    paid: [],
+    overdue: [],
+  },
+  credit_note: {
+    draft: ["sent", "void"],
+    sent: ["void"],
+    void: [],
+    paid: [],
+    overdue: [],
+    accepted: [],
+    declined: [],
+    expired: [],
+  },
+  proforma: {
+    draft: ["sent", "void"],
+    sent: ["void"],
+    void: [],
+    paid: [],
+    overdue: [],
+    accepted: [],
+    declined: [],
+    expired: [],
+  },
+};
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 export function DocumentForm({
   kind,
@@ -74,7 +153,7 @@ export function DocumentForm({
             unit: null,
             discount_rate: null,
             discount_amount: null,
-            tax_rate: DEFAULT_TAX_RATE,
+            tax_rate: DEFAULT_TAX_RATE, // ✅ on met un taux par défaut
           },
         ];
 
@@ -102,11 +181,14 @@ export function DocumentForm({
       penalty_rate: defaultValues?.penalty_rate ?? null,
       recovery_fee: defaultValues?.recovery_fee ?? null,
       purchase_order_number: defaultValues?.purchase_order_number ?? null,
+
+      // ✅ notes
       notes_public: defaultValues?.notes_public ?? null,
       notes_private: defaultValues?.notes_private ?? null,
+
       pdf_url: defaultValues?.pdf_url ?? null,
 
-      // Ces champs sont des MONTANTS (documents.tax = montant TVA)
+      // ✅ montants (documents.tax = montant)
       subtotal: defaultValues?.subtotal ?? 0,
       tax: defaultValues?.tax ?? 0,
       total: defaultValues?.total ?? 0,
@@ -117,7 +199,7 @@ export function DocumentForm({
     mode: "onChange",
   });
 
-  // DEBUG
+  // ✅ DEBUG
   const { handleValid, handleInvalid } = useRHFDebug<DocumentFormValues>({
     name: "DocumentForm",
     form,
@@ -130,25 +212,42 @@ export function DocumentForm({
     },
   });
 
+  const baseStatusRef = useRef<DocumentStatus>(
+    (defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
+      ? defaultValues.status
+      : "draft") as DocumentStatus
+  );
+
+  // reset quand on change de document
+  useEffect(() => {
+    baseStatusRef.current =
+      (defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
+        ? defaultValues.status
+        : "draft") as DocumentStatus;
+  }, [defaultValues?.id, defaultValues?.status, cfg.allowedStatuses]);
+
+
   // WATCH
-  const watchedLines = useWatch({ control: form.control, name: "lines" }) as DocumentFormValues["lines"] | undefined;
-  const lines = useMemo<DocumentFormValues["lines"]>(() => watchedLines ?? [], [watchedLines]);
+  const emptyLines = useMemo(() => [] as DocumentFormValues["lines"], []);
+
+  const watchedLinesRaw = useWatch({
+    control: form.control,
+    name: "lines",
+  }) as DocumentFormValues["lines"] | undefined;
+
+  const watchedLines = watchedLinesRaw ?? emptyLines;
 
   const currency_code = useWatch({ control: form.control, name: "currency_code" }) ?? DEFAULT_CURRENCY;
   const status = useWatch({ control: form.control, name: "status" }) ?? "draft";
 
-  /**
-   * TVA globale (UI only)
-   * - On l'initialise sur le premier tax_rate trouvé (sinon DEFAULT_TAX_RATE)
-   * - Quand ça change => on push sur toutes les lignes (tax_rate)
-   */
+  // TVA globale (UI only) -> pousse sur lines.tax_rate
   const [globalTaxRate, setGlobalTaxRate] = React.useState<number>(DEFAULT_TAX_RATE);
 
   // init quand on charge un doc différent
   useEffect(() => {
     const fromLines =
       (defaultValues?.lines ?? []).find((l) => l?.tax_rate != null)?.tax_rate ??
-      lines.find((l) => l?.tax_rate != null)?.tax_rate ??
+      watchedLines.find((l) => l?.tax_rate != null)?.tax_rate ??
       DEFAULT_TAX_RATE;
 
     setGlobalTaxRate(typeof fromLines === "number" ? fromLines : DEFAULT_TAX_RATE);
@@ -183,10 +282,10 @@ export function DocumentForm({
     prevCurrency.current = currency_code;
   }, [currency_code]);
 
-  // Totaux live (à partir des lignes et de leurs tax_rate)
+  // Totaux live (depuis lignes + taux par ligne)
   useEffect(() => {
     const subtotal = round2(
-      lines.reduce((acc, ln) => {
+      watchedLines.reduce((acc, ln) => {
         const qty = Number(ln?.qty) || 0;
         const unitPrice = Number(ln?.unit_price) || 0;
         return acc + qty * unitPrice;
@@ -194,7 +293,7 @@ export function DocumentForm({
     );
 
     const tax = round2(
-      lines.reduce((acc, ln) => {
+      watchedLines.reduce((acc, ln) => {
         const qty = Number(ln?.qty) || 0;
         const unitPrice = Number(ln?.unit_price) || 0;
         const base = qty * unitPrice;
@@ -206,12 +305,26 @@ export function DocumentForm({
 
     const total = round2(subtotal + tax);
 
-    // ✅ montants, pas le taux
-    // shouldValidate:false => évite de relancer zod en boucle sur chaque frappe
     form.setValue("subtotal", subtotal, { shouldValidate: false, shouldDirty: true });
     form.setValue("tax", tax, { shouldValidate: false, shouldDirty: true });
     form.setValue("total", total, { shouldValidate: false, shouldDirty: true });
-  }, [lines, form]);
+  }, [watchedLines, form]);
+
+  const selectableStatuses = useMemo(() => {
+    const base = baseStatusRef.current;
+
+    const transitions = DOC_TRANSITIONS[kind]?.[base] ?? [];
+    const allowed = new Set(cfg.allowedStatuses);
+
+    // base + transitions possibles (donc on peut revenir au base)
+    const set = new Set<DocumentStatus>([base, ...transitions.filter((s) => allowed.has(s))]);
+
+    // (optionnel) si on veut toujours afficher le statut actuellement sélectionné même si hors set
+    // set.add(status);
+
+    return Array.from(set).filter((s) => cfg.allowedStatuses.includes(s));
+  }, [kind, cfg.allowedStatuses /*, status */]);
+
 
   return (
     <Form {...form}>
@@ -234,6 +347,7 @@ export function DocumentForm({
                     : "Renseigne le client, la date et la devise, puis compose ton devis."}
                 </CardDescription>
               </div>
+
               <Badge variant={getDocStatusVariant(status) ?? "secondary"}>
                 {labelDocStatus(kind, status)}
               </Badge>
@@ -249,20 +363,7 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Client</FormLabel>
                   <FormControl>
-                    <SelectClient
-                      value={field.value}
-                      onChange={(next) => {
-                        console.group("👤 DocumentForm / SelectClient");
-                        console.info("➡️ client_id change:", { prev: field.value, next });
-                        field.onChange(next);
-
-                        queueMicrotask(() => {
-                          console.info("📦 RHF client_id now:", form.getValues("client_id"));
-                          console.info("🧨 errors.client_id:", form.formState.errors.client_id);
-                          console.groupEnd();
-                        });
-                      }}
-                    />
+                    <SelectClient value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -277,19 +378,56 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Entreprise</FormLabel>
                   <FormControl>
-                    <SelectCompany
-                      value={field.value}
-                      onChange={(next) => {
-                        console.group("🏢 DocumentForm / SelectCompany");
-                        console.info("➡️ company_id change:", { prev: field.value, next });
-                        field.onChange(next);
+                    <SelectCompany value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                        queueMicrotask(() => {
-                          console.info("📦 RHF company_id now:", form.getValues("company_id"));
-                          console.info("🧨 errors.company_id:", form.formState.errors.company_id);
-                          console.groupEnd();
-                        });
-                      }}
+            {/* Statut */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Statut
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (enregistré : {labelDocStatus(kind, baseStatusRef.current)})
+                    </span>
+                  </FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectableStatuses.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {labelDocStatus(kind, s)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Numéro doc */}
+            <FormField
+              control={form.control}
+              name="number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>N° de document</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={kind === "invoice" ? "FAC-2025-001" : "DEV-2025-001"}
+                      {...field}
+                      value={field.value?.toUpperCase() ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -298,7 +436,7 @@ export function DocumentForm({
             />
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:col-span-2">
               <FormField
                 control={form.control}
                 name="issue_date"
@@ -344,46 +482,14 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Devise</FormLabel>
                   <FormControl>
-                    <SelectCurrency
-                      value={field.value}
-                      onChange={(next) => {
-                        console.group("💱 DocumentForm / SelectCurrency");
-                        console.info("➡️ currency_code change:", { prev: field.value, next });
-                        field.onChange(next);
-
-                        queueMicrotask(() => {
-                          console.info("📦 RHF currency_code now:", form.getValues("currency_code"));
-                          console.info("🧨 errors.currency_code:", form.formState.errors.currency_code);
-                          console.groupEnd();
-                        });
-                      }}
-                    />
+                    <SelectCurrency value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Numéro doc */}
-            <FormField
-              control={form.control}
-              name="number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>N° de document</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={kind === "invoice" ? "FAC-2025-001" : "DEV-2025-001"}
-                      {...field}
-                      value={field.value?.toUpperCase() ?? ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* TVA globale UI (push sur lines.tax_rate) */}
+            {/* TVA globale UI */}
             <FormItem>
               <FormLabel>TVA (globale)</FormLabel>
               <FormControl>
@@ -393,8 +499,10 @@ export function DocumentForm({
                     step="0.01"
                     min={0}
                     max={1}
-                    value={isFiniteNumber(globalTaxRate) ? globalTaxRate : 0}
-                    onChange={(e) => applyGlobalTaxRate(e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber)}
+                    value={Number.isFinite(globalTaxRate) ? globalTaxRate : 0}
+                    onChange={(e) =>
+                      applyGlobalTaxRate(e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber)
+                    }
                   />
                   <span className="text-sm text-muted-foreground tabular-nums">
                     {Math.round((Number(globalTaxRate) || 0) * 100)}%
@@ -412,8 +520,8 @@ export function DocumentForm({
                   <FormLabel>Note publique</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Cette note apparaîtra sur le document (PDF, devis, facture…)…"
                       rows={3}
+                      placeholder="Visible sur le document (PDF)…"
                       {...field}
                       value={field.value ?? ""}
                     />
@@ -432,8 +540,8 @@ export function DocumentForm({
                   <FormLabel>Note privée</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Note interne, non visible par le client…"
                       rows={3}
+                      placeholder="Interne, non visible par le client…"
                       {...field}
                       value={field.value ?? ""}
                     />

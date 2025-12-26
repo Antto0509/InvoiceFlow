@@ -81,7 +81,6 @@ const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatu
     overdue: ["paid", "void"],
     paid: [],
     void: [],
-    // au cas où ton type contient d'autres statuses, tu peux compléter
     accepted: [],
     declined: [],
     expired: [],
@@ -153,7 +152,7 @@ export function DocumentForm({
             unit: null,
             discount_rate: null,
             discount_amount: null,
-            tax_rate: DEFAULT_TAX_RATE, // ✅ on met un taux par défaut
+            tax_rate: DEFAULT_TAX_RATE,
           },
         ];
 
@@ -182,13 +181,11 @@ export function DocumentForm({
       recovery_fee: defaultValues?.recovery_fee ?? null,
       purchase_order_number: defaultValues?.purchase_order_number ?? null,
 
-      // ✅ notes
       notes_public: defaultValues?.notes_public ?? null,
       notes_private: defaultValues?.notes_private ?? null,
 
       pdf_url: defaultValues?.pdf_url ?? null,
 
-      // ✅ montants (documents.tax = montant)
       subtotal: defaultValues?.subtotal ?? 0,
       tax: defaultValues?.tax ?? 0,
       total: defaultValues?.total ?? 0,
@@ -212,13 +209,13 @@ export function DocumentForm({
     },
   });
 
+  // ✅ statut enregistré (référence stable, utilisée pour transitions + locks)
   const baseStatusRef = useRef<DocumentStatus>(
     (defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
       ? defaultValues.status
       : "draft") as DocumentStatus
   );
 
-  // reset quand on change de document
   useEffect(() => {
     baseStatusRef.current =
       (defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
@@ -226,14 +223,36 @@ export function DocumentForm({
         : "draft") as DocumentStatus;
   }, [defaultValues?.id, defaultValues?.status, cfg.allowedStatuses]);
 
+  const baseStatus = baseStatusRef.current;
+
+  // ✅ règles de verrouillage (basées sur le statut enregistré)
+  const isFinal = useMemo(() => {
+    // facture : paid/void final
+    // devis : accepted/declined/expired/void final
+    return (
+      baseStatus === "paid" ||
+      baseStatus === "void" ||
+      baseStatus === "accepted" ||
+      baseStatus === "declined" ||
+      baseStatus === "expired"
+    );
+  }, [baseStatus]);
+
+  const isSentLike = useMemo(() => baseStatus === "sent" || baseStatus === "overdue", [baseStatus]);
+
+  // Dès que c’est “envoyé” ou “final”, on fige le contenu financier
+  const lockFinancial = isFinal || isSentLike;
+
+  // Notes : on peut être plus souple
+  const lockNotesPublic = isFinal || isSentLike; // visible client => strict
+  const lockNotesPrivate = false; // interne => reste modifiable
 
   // WATCH
   const emptyLines = useMemo(() => [] as DocumentFormValues["lines"], []);
 
-  const watchedLinesRaw = useWatch({
-    control: form.control,
-    name: "lines",
-  }) as DocumentFormValues["lines"] | undefined;
+  const watchedLinesRaw = useWatch({ control: form.control, name: "lines" }) as
+    | DocumentFormValues["lines"]
+    | undefined;
 
   const watchedLines = watchedLinesRaw ?? emptyLines;
 
@@ -243,7 +262,6 @@ export function DocumentForm({
   // TVA globale (UI only) -> pousse sur lines.tax_rate
   const [globalTaxRate, setGlobalTaxRate] = React.useState<number>(DEFAULT_TAX_RATE);
 
-  // init quand on charge un doc différent
   useEffect(() => {
     const fromLines =
       (defaultValues?.lines ?? []).find((l) => l?.tax_rate != null)?.tax_rate ??
@@ -259,6 +277,9 @@ export function DocumentForm({
       const safe = Number.isFinite(nextRate) ? nextRate : 0;
       setGlobalTaxRate(safe);
 
+      // si verrouillé => on ne touche pas
+      if (lockFinancial) return;
+
       const current = form.getValues("lines") ?? [];
       const nextLines = current.map((ln) => ({
         ...ln,
@@ -267,10 +288,10 @@ export function DocumentForm({
 
       form.setValue("lines", nextLines, { shouldDirty: true, shouldValidate: true });
     },
-    [form]
+    [form, lockFinancial]
   );
 
-  // Conversion devise: avertissement
+  // Conversion devise: avertissement (on laisse le warning même si lock)
   const prevCurrency = React.useRef<string | null>(null);
   useEffect(() => {
     if (prevCurrency.current && prevCurrency.current !== currency_code) {
@@ -310,21 +331,20 @@ export function DocumentForm({
     form.setValue("total", total, { shouldValidate: false, shouldDirty: true });
   }, [watchedLines, form]);
 
+  // ✅ statuses sélectionnables basés sur le statut enregistré (pas celui du form)
   const selectableStatuses = useMemo(() => {
     const base = baseStatusRef.current;
 
     const transitions = DOC_TRANSITIONS[kind]?.[base] ?? [];
     const allowed = new Set(cfg.allowedStatuses);
 
-    // base + transitions possibles (donc on peut revenir au base)
     const set = new Set<DocumentStatus>([base, ...transitions.filter((s) => allowed.has(s))]);
 
-    // (optionnel) si on veut toujours afficher le statut actuellement sélectionné même si hors set
-    // set.add(status);
+    // On inclut le status choisi si tu veux éviter l'effet "disparaît" (facultatif)
+    set.add(status);
 
     return Array.from(set).filter((s) => cfg.allowedStatuses.includes(s));
-  }, [kind, cfg.allowedStatuses /*, status */]);
-
+  }, [kind, cfg.allowedStatuses, status]);
 
   return (
     <Form {...form}>
@@ -363,7 +383,7 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Client</FormLabel>
                   <FormControl>
-                    <SelectClient value={field.value} onChange={field.onChange} />
+                    <SelectClient value={field.value} onChange={field.onChange} disabled={lockFinancial} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -378,7 +398,7 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Entreprise</FormLabel>
                   <FormControl>
-                    <SelectCompany value={field.value} onChange={field.onChange} />
+                    <SelectCompany value={field.value} onChange={field.onChange} disabled={lockFinancial} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -398,7 +418,7 @@ export function DocumentForm({
                     </span>
                   </FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isFinal}>
                       <SelectTrigger>
                         <SelectValue placeholder="Choisir un statut" />
                       </SelectTrigger>
@@ -425,6 +445,7 @@ export function DocumentForm({
                   <FormLabel>N° de document</FormLabel>
                   <FormControl>
                     <Input
+                      disabled={lockFinancial}
                       placeholder={kind === "invoice" ? "FAC-2025-001" : "DEV-2025-001"}
                       {...field}
                       value={field.value?.toUpperCase() ?? ""}
@@ -446,7 +467,13 @@ export function DocumentForm({
                     <FormControl>
                       <div className="relative">
                         <CalendarDays className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="date" className="pl-8" {...field} value={field.value ?? ""} />
+                        <Input
+                          type="date"
+                          className="pl-8"
+                          {...field}
+                          value={field.value ?? ""}
+                          disabled={lockFinancial}
+                        />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -464,7 +491,13 @@ export function DocumentForm({
                       <FormControl>
                         <div className="relative">
                           <CalendarDays className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input type="date" className="pl-8" {...field} value={field.value ?? ""} />
+                          <Input
+                            type="date"
+                            className="pl-8"
+                            {...field}
+                            value={field.value ?? ""}
+                            disabled={lockFinancial}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -482,7 +515,7 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Devise</FormLabel>
                   <FormControl>
-                    <SelectCurrency value={field.value} onChange={field.onChange} />
+                    <SelectCurrency value={field.value} onChange={field.onChange} disabled={lockFinancial} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -499,9 +532,12 @@ export function DocumentForm({
                     step="0.01"
                     min={0}
                     max={1}
+                    disabled={lockFinancial}
                     value={Number.isFinite(globalTaxRate) ? globalTaxRate : 0}
                     onChange={(e) =>
-                      applyGlobalTaxRate(e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber)
+                      applyGlobalTaxRate(
+                        e.currentTarget.value === "" ? 0 : e.currentTarget.valueAsNumber
+                      )
                     }
                   />
                   <span className="text-sm text-muted-foreground tabular-nums">
@@ -521,6 +557,7 @@ export function DocumentForm({
                   <FormControl>
                     <Textarea
                       rows={3}
+                      disabled={lockNotesPublic}
                       placeholder="Visible sur le document (PDF)…"
                       {...field}
                       value={field.value ?? ""}
@@ -541,6 +578,7 @@ export function DocumentForm({
                   <FormControl>
                     <Textarea
                       rows={3}
+                      disabled={lockNotesPrivate}
                       placeholder="Interne, non visible par le client…"
                       {...field}
                       value={field.value ?? ""}
@@ -553,7 +591,12 @@ export function DocumentForm({
           </CardContent>
         </Card>
 
-        <LinesEditor currency_code={currency_code} taxRate={globalTaxRate} className="mt-4" />
+        <LinesEditor
+          currency_code={currency_code}
+          taxRate={globalTaxRate}
+          className="mt-4"
+          disabled={lockFinancial}
+        />
       </FormShell>
     </Form>
   );

@@ -46,6 +46,7 @@ import {
 import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
 
 import { useRHFDebug } from "@/lib/forms/debug";
+import { useRHFResetOnDefaultValues } from "@/lib/forms/reset";
 
 const kindConfig: Record<
   DocumentKind,
@@ -209,6 +210,13 @@ export function DocumentForm({
     },
   });
 
+  // ♻️ Reset quand defaultValues change (comme ClientForm)
+  useRHFResetOnDefaultValues<DocumentFormValues>({
+    name: "DocumentForm",
+    form,
+    defaultValues,
+  });
+
   // ✅ statut enregistré (référence stable, utilisée pour transitions + locks)
   const baseStatusRef = useRef<DocumentStatus>(
     (defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
@@ -331,7 +339,7 @@ export function DocumentForm({
     form.setValue("total", total, { shouldValidate: false, shouldDirty: true });
   }, [watchedLines, form]);
 
-  // ✅ statuses sélectionnables basés sur le statut enregistré (pas celui du form)
+  // statuses sélectionnables basés sur le statut enregistré (pas celui du form)
   const selectableStatuses = useMemo(() => {
     const base = baseStatusRef.current;
 
@@ -383,7 +391,20 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Client</FormLabel>
                   <FormControl>
-                    <SelectClient value={field.value} onChange={field.onChange} disabled={lockFinancial} />
+                    <SelectClient 
+                      value={field.value} 
+                      onChange={(next) => {
+                        console.group("👤 DocumentForm / SelectClient");
+                        console.info("➡️ client_id change:", { prev: field.value, next });
+                        field.onChange(next);
+                        queueMicrotask(() => {
+                          console.info("📦 RHF client_id now:", form.getValues("client_id"));
+                          console.info("🧨 errors.client_id:", form.formState.errors.client_id);
+                          console.groupEnd();
+                        });
+                      }}
+                      disabled={lockFinancial} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -398,7 +419,20 @@ export function DocumentForm({
                 <FormItem>
                   <FormLabel>Entreprise</FormLabel>
                   <FormControl>
-                    <SelectCompany value={field.value} onChange={field.onChange} disabled={lockFinancial} />
+                    <SelectCompany 
+                      value={field.value} 
+                      onChange={(next) => {
+                        console.group("🏢 DocumentForm / SelectCompany");
+                        console.info("➡️ company_id change:", { prev: field.value, next });
+                        field.onChange(next);
+                        queueMicrotask(() => {
+                          console.info("📦 RHF company_id now:", form.getValues("company_id"));
+                          console.info("🧨 errors.company_id:", form.formState.errors.company_id);
+                          console.groupEnd();
+                        });
+                      }} 
+                      disabled={lockFinancial} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

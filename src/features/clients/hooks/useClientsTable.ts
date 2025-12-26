@@ -197,7 +197,6 @@ export function useClientsTable() {
     if (!ids.length) return toast.error("Aucune sélection");
 
     const clean: Partial<Client> = {};
-    if (patch.company) clean.company = patch.company;
     if (patch.phone) clean.phone = patch.phone;
     if (patch.notes) clean.notes = patch.notes;
     if (!Object.keys(clean).length) return toast.error("Aucun champ à mettre à jour");

@@ -34,7 +34,6 @@ export const clientDbSchema = z.object({
   membership_id: zUuid.nullable().describe("Membre propriétaire (FK)"),
   name: zNonEmptyString.min(2, "Nom trop court").describe("Nom/Raison sociale du client"),
   email: zEmail.nullable().optional().describe("Email de contact"),
-  address: z.string().nullable().optional().describe("Adresse (texte libre)"),
   phone: z.string().nullable().optional().describe("Téléphone"),
   notes: z.string().nullable().optional().describe("Notes internes"),
   created_at: zDateISO.describe("Création (ISO)"),
@@ -130,7 +129,6 @@ export type ClientListRow = {
   name: string | null | undefined; // souple si SELECT partiel
   email: string | null;
   phone: string | null;
-  address: string | null;
   created_at: string;   // ISO
   updated_at: string;   // ISO
 };
@@ -141,7 +139,6 @@ export type ClientSort = {
     | "name"
     | "email"
     | "phone"
-    | "address"
     | "created_at"
     | "updated_at";
   dir: "asc" | "desc";

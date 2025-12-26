@@ -3,6 +3,7 @@
 
 import { useEffect } from "react";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
+import { isDev } from "@/lib/env";
 
 /**
  * Récupère les clés d'un schéma Zod de type objet
@@ -52,6 +53,8 @@ export function useRHFDebug<T extends FieldValues>({
 }: RHFDebugOptions<T>) {
   // init
   useEffect(() => {
+    if (!isDev) return;
+
     console.group(`🧩 ${name} / init`);
     console.info("⏳ loading:", loading);
     console.info("🧾 defaultValues (props):", defaultValues);
@@ -67,6 +70,7 @@ export function useRHFDebug<T extends FieldValues>({
 
   // watch
   useEffect(() => {
+    if (!isDev) return;
     if (watch?.enabled === false) return;
 
     const sub = form.watch((values, info) => {
@@ -86,29 +90,39 @@ export function useRHFDebug<T extends FieldValues>({
 
   // wrappers submit
   const handleValid = (fn: (values: T) => Promise<void> | void) => async (values: T) => {
-    console.group(`✅ ${name} / submit(valid)`);
-    console.info("⏳ loading:", loading);
-    console.info("📦 values (from RHF):", values);
-    console.info("🧾 formState:", {
-      isValid: form.formState.isValid,
-      isDirty: form.formState.isDirty,
-      isSubmitting: form.formState.isSubmitting,
-      submitCount: form.formState.submitCount,
-    });
-    console.info("🧨 errors (should be empty):", form.formState.errors);
+    if (isDev) {
+      console.group(`✅ ${name} / submit(valid)`);
+      console.info("⏳ loading:", loading);
+      console.info("📦 values (from RHF):", values);
+      console.info("🧾 formState:", {
+        isValid: form.formState.isValid,
+        isDirty: form.formState.isDirty,
+        isSubmitting: form.formState.isSubmitting,
+        submitCount: form.formState.submitCount,
+      });
+      console.info("🧨 errors (should be empty):", form.formState.errors);
+    }
 
     try {
       await fn(values);
-      console.info("🚀 onSubmit(values) terminé sans throw");
+      if (isDev) {
+        console.info("🚀 onSubmit(values) terminé sans throw");
+      }
     } catch (err) {
-      console.error("❌ onSubmit(values) a throw:", err);
+      if (isDev) {
+        console.error("❌ onSubmit(values) a throw:", err);
+      }
       throw err;
     } finally {
-      console.groupEnd();
+      if (isDev) {
+        console.groupEnd();
+      }
     }
   };
 
   const handleInvalid = (errors: typeof form.formState.errors) => {
+    if (!isDev) return;
+    
     console.group(`⛔ ${name} / submit(invalid)`);
     console.warn("Le submit est bloqué par la validation.");
     console.info("🧨 errors:", errors);

@@ -1,9 +1,8 @@
 "use client";
 
-import { z } from "zod";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { ClientFormValues, clientFormSchema } from "@/schemas/clients.schema";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +15,9 @@ import {
 } from "@/components/ui/form";
 import { FormShell } from "@/components/forms/FormShell";
 import { SelectCompany } from "@/components/datatable/select/SelectCompany";
+
+import { useRHFDebug } from "@/lib/forms/debug";
+import { useRHFResetOnDefaultValues } from "@/lib/forms/reset";
 
 export function ClientForm({
   defaultValues,
@@ -32,99 +34,35 @@ export function ClientForm({
       name: "",
       email: "",
       phone: "",
-      address: "",
       notes: "",
       ...defaultValues,
     },
     mode: "onChange",
   });
 
-  // 🔎 Log init + schema keys (hyper utile quand un champ n’existe pas dans Zod)
-  useEffect(() => {
-    console.group("🧩 ClientForm / init");
-    console.info("⏳ loading:", loading);
-    console.info("🧾 defaultValues (props):", defaultValues);
+  // ✅ DEBUG (init + watch + submit wrappers)
+  const { handleValid, handleInvalid } = useRHFDebug<ClientFormValues>({
+    name: "ClientForm",
+    form,
+    schema: clientFormSchema,
+    loading,
+    defaultValues,
+    watch: {
+      enabled: true,
+      onlyNames: ["name", "email", "phone", "company_id", "notes"],
+    },
+  });
 
-    const schemaKeys =
-      clientFormSchema instanceof z.ZodObject
-        ? Object.keys((clientFormSchema as z.ZodObject).shape)
-        : [];
-    
-    console.info("🧷 clientFormSchema keys:", schemaKeys);
-
-    console.info("📦 RHF defaultValues (computed):", form.getValues());
-    console.groupEnd();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 🔥 Attention : reset peut écraser des saisies si defaultValues change souvent
-  useEffect(() => {
-    if (!defaultValues) return;
-
-    console.group("♻️ ClientForm / reset");
-    console.info("📩 defaultValues changed:", defaultValues);
-    console.info("📦 before reset:", form.getValues());
-
-    form.reset({ ...form.getValues(), ...defaultValues });
-
-    console.info("📦 after reset:", form.getValues());
-    console.groupEnd();
-  }, [defaultValues, form]);
-
-  // 👀 Watch global (si ça spam trop, limite à quelques champs)
-  useEffect(() => {
-    const sub = form.watch((values, info) => {
-      console.groupCollapsed("👁️ ClientForm / watch");
-      console.info("🔁 field changed:", info?.name);
-      console.info("🧭 event:", info?.type);
-      console.debug("📦 values:", values);
-      console.groupEnd();
-    });
-    return () => sub.unsubscribe();
-  }, [form]);
-
-  const handleValid = async (values: ClientFormValues) => {
-    console.group("✅ ClientForm / submit(valid)");
-    console.info("⏳ loading:", loading);
-    console.info("📦 values (from RHF):", values);
-    console.info("🧾 formState:", {
-      isValid: form.formState.isValid,
-      isDirty: form.formState.isDirty,
-      isSubmitting: form.formState.isSubmitting,
-      submitCount: form.formState.submitCount,
-    });
-    console.info("🧨 errors (should be empty):", form.formState.errors);
-
-    try {
-      await onSubmit(values);
-      console.info("🚀 onSubmit(values) terminé sans throw");
-    } catch (err) {
-      console.error("❌ onSubmit(values) a throw:", err);
-      throw err;
-    } finally {
-      console.groupEnd();
-    }
-  };
-
-  const handleInvalid = (errors: typeof form.formState.errors) => {
-    console.group("⛔ ClientForm / submit(invalid)");
-    console.warn("Le submit est bloqué par la validation.");
-    console.info("🧨 errors:", errors);
-    console.info("📦 current values (RHF):", form.getValues());
-    console.info("🧾 formState:", {
-      isValid: form.formState.isValid,
-      isDirty: form.formState.isDirty,
-      submitCount: form.formState.submitCount,
-    });
-    console.groupEnd();
-  };
+  // ♻️ reset quand defaultValues change (comme avant, mais factorisé)
+  useRHFResetOnDefaultValues<ClientFormValues>({
+    name: "ClientForm",
+    form,
+    defaultValues,
+  });
 
   return (
     <Form {...form}>
-      <FormShell
-        onSubmit={form.handleSubmit(handleValid, handleInvalid)}
-        loading={loading}
-      >
+      <FormShell onSubmit={form.handleSubmit(handleValid(onSubmit), handleInvalid)} loading={loading}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -133,7 +71,7 @@ export function ClientForm({
               <FormItem>
                 <FormLabel>Raison/Dénomination sociale</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Acme Corp" {...field} />
+                  <Input placeholder="Ex: Acme Corp" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -180,24 +118,6 @@ export function ClientForm({
 
         <FormField
           control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Adresse</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Rue, CP, Ville"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="company_id"
           render={({ field }) => (
             <FormItem>
@@ -206,15 +126,12 @@ export function ClientForm({
                 <SelectCompany
                   value={field.value}
                   onChange={(next) => {
+                    // logs ciblés, optionnels (si tu les veux)
                     console.group("🏢 ClientForm / SelectCompany");
-                    console.info("➡️ company_id change:", {
-                      prev: field.value,
-                      next,
-                    });
+                    console.info("➡️ company_id change:", { prev: field.value, next });
 
                     field.onChange(next);
 
-                    // microtask: laisse RHF mettre à jour avant de relire
                     queueMicrotask(() => {
                       console.info("📦 RHF company_id now:", form.getValues("company_id"));
                       console.info("🧨 errors.company_id:", form.formState.errors.company_id);

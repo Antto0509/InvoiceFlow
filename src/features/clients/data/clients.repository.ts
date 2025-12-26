@@ -1,4 +1,3 @@
-// Api Clients
 import { createResourceApi } from "@/data/createResourceApi";
 import type {
   Client,
@@ -27,7 +26,7 @@ export const makeClientsApi = (companyId?: string) =>
   createResourceApi<Client>({
     table: "clients",
     select:
-      "id, company_id, membership_id, name, email, phone, address, notes, created_at, updated_at",
+      "id, company_id, membership_id, name, email, phone, notes, created_at, updated_at",
     sortableColumns: [...SORTABLE_CLIENTS],
     searchColumns: ["name", "email", "company"],
     // scope multi-tenant

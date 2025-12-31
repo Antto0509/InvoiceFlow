@@ -87,7 +87,6 @@ CREATE TABLE public.company_memberships (
 -- Clients (tiers : personne / société cliente)
 CREATE TABLE public.clients (
   id         uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id    uuid, -- créateur / responsable (optionnel, lié à public.users)
   name       text NOT NULL,
   email      text UNIQUE,
   address    text,
@@ -96,9 +95,13 @@ CREATE TABLE public.clients (
   notes      text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  company_id uuid, -- entreprise propriétaire du client
+  membership_id uuid, -- user propriétaire du client
   CONSTRAINT clients_pkey PRIMARY KEY (id),
-  CONSTRAINT clients_user_id_fkey
-    FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT clients_company_id_fkey
+    FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT clients_membership_id_fkey
+    FOREIGN KEY (membership_id) REFERENCES public.company_memberships(id),
 );
 
 -- Adresses clients (facturation / livraison)

@@ -42,3 +42,40 @@ CREATE TABLE public.users (
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+
+-- Référence pays/territoires (ISO-3166 + libellés)
+CREATE TABLE IF NOT EXISTS public.countries (
+  -- ISO 3166-1 alpha-2 (FR, BE, etc.) => clé la plus pratique partout
+  iso2 text PRIMARY KEY CHECK (char_length(iso2) = 2),
+
+  -- ISO 3166-1 alpha-3 (FRA, BEL, etc.)
+  iso3 text UNIQUE CHECK (char_length(iso3) = 3),
+
+  -- Code numérique (ex: 250). Dans ta source: code_num_3
+  iso_numeric int,
+
+  -- Libellés
+  name_fr text NOT NULL,
+  name_en text,
+  name_native text,
+
+  -- Métadonnées utiles
+  flag_url text,
+  website text,
+  wikidata text,
+
+  -- Frontières (liste iso3 dans ta source: "LVA,LTU,...")
+  borders_iso3 text[],
+
+  -- Stocke tout le reste sans débat (bologne, UE, régions, etc.)
+  extra jsonb NOT NULL DEFAULT '{}'::jsonb,
+
+  -- Gouvernance / hygiène
+  is_active boolean NOT NULL DEFAULT true,
+  source text NOT NULL DEFAULT 'data.gouv.fr',
+  source_dataset text NOT NULL DEFAULT 'curiexplore-pays',
+  source_updated_at date,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

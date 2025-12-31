@@ -6,7 +6,7 @@ import { ensurePdfForDocument } from "./generateDocumentPdf.server";
 
 type SignOptions = {
   expiresIn?: number; // secondes
-  force?: boolean;    // force régénération du PDF
+  force?: boolean;    // force regénération du PDF
 };
 
 /**

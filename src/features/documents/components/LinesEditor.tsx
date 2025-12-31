@@ -32,10 +32,12 @@ export function LinesEditor({
   currency_code,
   taxRate = DEFAULT_TAX_RATE,
   className,
+  disabled = false,
 }: {
   currency_code: string;
   taxRate?: number;
   className?: string;
+  disabled?: boolean;
 }) {
   const form = useFormContext<LinesFormShape>();
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "lines" });
@@ -53,6 +55,7 @@ export function LinesEditor({
           type="button"
           size="sm"
           variant="secondary"
+          disabled={disabled}
           onClick={() =>
             append({
               description: "",
@@ -95,7 +98,12 @@ export function LinesEditor({
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <FormControl>
-                              <Input placeholder="Description" {...field} value={String(field.value ?? "")} />
+                              <Input
+                                disabled={disabled}
+                                placeholder="Description"
+                                {...field}
+                                value={String(field.value ?? "")}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -111,13 +119,18 @@ export function LinesEditor({
                           <FormItem className="mb-0">
                             <FormControl>
                               <Input
+                                disabled={disabled}
                                 type="number"
                                 step="1"
                                 min={1}
                                 max={1000000000}
                                 className="text-right tabular-nums"
                                 value={String(field.value ?? "")}
-                                onChange={(e) => field.onChange(e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber)}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber
+                                  )
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -134,12 +147,17 @@ export function LinesEditor({
                           <FormItem className="mb-0">
                             <FormControl>
                               <Input
+                                disabled={disabled}
                                 type="number"
                                 step="0.01"
                                 min={0}
                                 className="text-right tabular-nums"
                                 value={String(field.value ?? "")}
-                                onChange={(e) => field.onChange(e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber)}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.currentTarget.value === "" ? "" : e.currentTarget.valueAsNumber
+                                  )
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -150,7 +168,8 @@ export function LinesEditor({
 
                     <div className="col-span-1 text-right font-medium tabular-nums">
                       {formatMoney(
-                        (Number(watchedLines?.[index]?.qty) || 0) * (Number(watchedLines?.[index]?.unit_price) || 0),
+                        (Number(watchedLines?.[index]?.qty) || 0) *
+                          (Number(watchedLines?.[index]?.unit_price) || 0),
                         currency_code
                       )}
                     </div>
@@ -159,7 +178,13 @@ export function LinesEditor({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={disabled}
+                              onClick={() => remove(index)}
+                            >
                               <Trash className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>

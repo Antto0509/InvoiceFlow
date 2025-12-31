@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { ClientFormValues, clientFormSchema } from "@/schemas/clients.schema";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { FormShell } from "@/components/forms/FormShell";
+import { SelectCompany } from "@/components/datatable/select/SelectCompany";
+
+import { useRHFDebug } from "@/lib/forms/debug";
+import { useRHFResetOnDefaultValues } from "@/lib/forms/reset";
 
 export function ClientForm({
   defaultValues,
@@ -29,36 +33,45 @@ export function ClientForm({
     defaultValues: {
       name: "",
       email: "",
-      company: "",
       phone: "",
-      address: "",
       notes: "",
       ...defaultValues,
     },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    if (defaultValues) form.reset({ ...form.getValues(), ...defaultValues });
-  }, [defaultValues, form]);
+  // ✅ DEBUG (init + watch + submit wrappers)
+  const { handleValid, handleInvalid } = useRHFDebug<ClientFormValues>({
+    name: "ClientForm",
+    form,
+    schema: clientFormSchema,
+    loading,
+    defaultValues,
+    watch: {
+      enabled: true,
+      onlyNames: ["name", "email", "phone", "company_id", "notes"],
+    },
+  });
+
+  // ♻️ reset quand defaultValues change (comme avant, mais factorisé)
+  useRHFResetOnDefaultValues<ClientFormValues>({
+    name: "ClientForm",
+    form,
+    defaultValues,
+  });
 
   return (
     <Form {...form}>
-      <FormShell
-        onSubmit={form.handleSubmit(async (v) => {
-          await onSubmit(v);
-        })}
-        loading={loading}
-      >
+      <FormShell onSubmit={form.handleSubmit(handleValid(onSubmit), handleInvalid)} loading={loading}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom</FormLabel>
+                <FormLabel>Raison/Dénomination sociale</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: Marie Martin" {...field} />
+                  <Input placeholder="Ex: Acme Corp" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -72,21 +85,12 @@ export function ClientForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="marie@exemple.com" {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="company"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Société</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ex: Acme SAS" {...field} value={field.value ?? ""} />
+                  <Input
+                    type="email"
+                    placeholder="marie@exemple.com"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -100,7 +104,11 @@ export function ClientForm({
               <FormItem>
                 <FormLabel>Téléphone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ex: +33 6 12 34 56 78" {...field} value={field.value ?? ""} />
+                  <Input
+                    placeholder="Ex: +33 6 12 34 56 78"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -110,12 +118,27 @@ export function ClientForm({
 
         <FormField
           control={form.control}
-          name="address"
+          name="company_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Adresse</FormLabel>
+              <FormLabel>Entreprise responsable</FormLabel>
               <FormControl>
-                <Input placeholder="Rue, CP, Ville" {...field} value={field.value ?? ""} />
+                <SelectCompany
+                  value={field.value}
+                  onChange={(next) => {
+                    // logs ciblés, optionnels (si tu les veux)
+                    console.group("🏢 ClientForm / SelectCompany");
+                    console.info("➡️ company_id change:", { prev: field.value, next });
+
+                    field.onChange(next);
+
+                    queueMicrotask(() => {
+                      console.info("📦 RHF company_id now:", form.getValues("company_id"));
+                      console.info("🧨 errors.company_id:", form.formState.errors.company_id);
+                      console.groupEnd();
+                    });
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -129,7 +152,11 @@ export function ClientForm({
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Input placeholder="Infos internes (optionnel)" {...field} value={field.value ?? ""} />
+                <Input
+                  placeholder="Infos internes (optionnel)"
+                  {...field}
+                  value={field.value ?? ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

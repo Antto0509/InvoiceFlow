@@ -290,7 +290,7 @@ export function getDocStatusVariant(status: DocumentKind | string) {
 /**
  * Télécharge le PDF d'un document.
  * @param id Identifiant du document
- * @param force Forcer la régénération du PDF
+ * @param force Forcer la regénération du PDF
  * @returns Promise résolue une fois l'ouverture initiée
  */
 export async function downloadDocumentPdf(id: string, force = false) {
@@ -322,6 +322,23 @@ export async function downloadDocumentPdf(id: string, force = false) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+/** 
+ * Vérifie si une valeur est un nombre fini.
+ * @param v Valeur à vérifier
+ * @returns Vrai si c'est un nombre fini, sinon faux
+ */
+export function isFiniteNumber(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v);
+}
+
+/** 
+ * Arrondit un nombre à 2 décimales.
+ * @param n Nombre à arrondir
+ * @returns Nombre arrondi
+ */
+export function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 /** 
  * Affiche un message de succès toasté pour une action sur un document.

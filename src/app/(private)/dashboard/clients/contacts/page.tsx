@@ -18,27 +18,12 @@ import { ClientContactsTable, ClientDialogs } from "@/features/clients";
 export default function ClientContactsPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [editClientContact, setEditClientContact] = React.useState<ClientContact | null>(
-    null
-  );
+  const [editClientContact, setEditClientContact] = React.useState<ClientContact | null>(null);
   const [updating, setUpdating] = React.useState(false);
-  const [deleteClientContact, setDeleteClientContact] =
-    React.useState<ClientContact | null>(null);
-
-  const {
-    data,
-    total,
-    loading,
-    params,
-    setParams,
-  } = useDataTable<ClientContact, ClientContactListParams>(
+  const [deleteClientContact, setDeleteClientContact] = React.useState<ClientContact | null>(null);
+  const { data, total, loading, params, setParams } = useDataTable<ClientContact, ClientContactListParams>(
     async (p) => {
-      const res = await (listClientContacts as unknown as (args: {
-        page: number;
-        pageSize: number;
-        search?: string;
-        sort: ClientContactSort;
-      }) => Promise<{ rows: ClientContact[]; total: number }> )({
+      const res = await listClientContacts({
         page: p.page,
         pageSize: p.pageSize,
         search: p.search,

@@ -18,27 +18,12 @@ import { ClientAddressesTable, ClientDialogs } from "@/features/clients";
 export default function ClientAddressesPage() {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [editClientAddress, setEditClientAddress] = React.useState<ClientAddress | null>(
-    null
-  );
+  const [editClientAddress, setEditClientAddress] = React.useState<ClientAddress | null>(null);
   const [updating, setUpdating] = React.useState(false);
-  const [deleteClientAddress, setDeleteClientAddress] =
-    React.useState<ClientAddress | null>(null);
-
-  const {
-    data,
-    total,
-    loading,
-    params,
-    setParams,
-  } = useDataTable<ClientAddress, ClientAddressListParams>(
+  const [deleteClientAddress, setDeleteClientAddress] = React.useState<ClientAddress | null>(null);
+  const { data, total, loading, params, setParams } = useDataTable<ClientAddress, ClientAddressListParams>(
     async (p) => {
-      const res = await (listClientAddresses as unknown as (args: {
-        page: number;
-        pageSize: number;
-        search?: string;
-        sort: ClientAddressSort;
-      }) => Promise<{ rows: ClientAddress[]; total: number }>)({
+      const res = await listClientAddresses ({
         page: p.page,
         pageSize: p.pageSize,
         search: p.search,

@@ -177,8 +177,7 @@ export function mapDocumentPdfSourceToPdfData(src: DocumentPdfSource): DocumentP
       ? {
           label: "Client",
           name: cl.name ?? null,
-          company: cl.company ?? null,
-          address: clientAddress ?? cl.address ?? null,
+          address: clientAddress ?? null,
           email: cl.email ?? null,
           phone: cl.phone ?? null,
         }

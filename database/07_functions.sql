@@ -424,3 +424,117 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+
+
+
+-- Création automatique du membership "owner" après création d'une company
+CREATE OR REPLACE FUNCTION public.companies_ai_create_owner_membership()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.company_memberships (company_id, user_id, role)
+  VALUES (NEW.id, NEW.user_id, 'owner')
+  ON CONFLICT DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Empêche la suppression du dernier membership "owner" d'une company
+CREATE OR REPLACE FUNCTION public.company_memberships_bd_prevent_last_owner_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  owners_count int;
+BEGIN
+  -- si pas owner, on laisse faire
+  IF OLD.role <> 'owner' THEN
+    RETURN OLD;
+  END IF;
+
+  SELECT COUNT(*)
+  INTO owners_count
+  FROM public.company_memberships m
+  WHERE m.company_id = OLD.company_id
+    AND m.role = 'owner'
+    AND m.id <> OLD.id;
+
+  IF owners_count = 0 THEN
+    RAISE EXCEPTION 'Cannot delete the last owner membership of the company';
+  END IF;
+
+  RETURN OLD;
+END;
+$$;
+
+-- Synchronise company_id dans clients depuis membership_id
+CREATE OR REPLACE FUNCTION public.clients_bi_sync_company_from_membership()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  mid_company uuid;
+BEGIN
+  IF NEW.membership_id IS NOT NULL THEN
+    SELECT m.company_id INTO mid_company
+    FROM public.company_memberships m
+    WHERE m.id = NEW.membership_id;
+
+    IF mid_company IS NULL THEN
+      RAISE EXCEPTION 'Invalid membership_id';
+    END IF;
+
+    -- force la cohérence
+    NEW.company_id := mid_company;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Remplit membership_id à partir de company_id + auth.uid()
+CREATE OR REPLACE FUNCTION public.clients_bi_set_membership_from_company()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  mid uuid;
+BEGIN
+  -- Si déjà fourni, on ne touche pas (ça laisse la porte ouverte à un admin si besoin)
+  IF NEW.membership_id IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Si pas de company_id, on ne peut rien deviner
+  IF NEW.company_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Récupère le membership du user connecté pour cette company
+  SELECT m.id INTO mid
+  FROM public.company_memberships m
+  WHERE m.company_id = NEW.company_id
+    AND m.user_id = auth.uid()
+  ORDER BY m.created_at DESC
+  LIMIT 1;
+
+  IF mid IS NULL THEN
+    RAISE EXCEPTION 'No membership found for user % in company %', auth.uid(), NEW.company_id
+      USING ERRCODE = '23503'; -- foreign_key_violation-like
+  END IF;
+
+  NEW.membership_id := mid;
+
+  RETURN NEW;
+END;
+$$;

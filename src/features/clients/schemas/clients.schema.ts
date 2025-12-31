@@ -30,11 +30,10 @@ export const clientAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’ad
  */
 export const clientDbSchema = z.object({
   id: zUuid.describe("Identifiant client (UUID)"),
-  user_id: zUuid.nullable().describe("Propriétaire (auth.uid)"),
+  company_id: zUuid.describe("Entreprise propriétaire (FK)"),
+  membership_id: zUuid.nullable().describe("Membre propriétaire (FK)"),
   name: zNonEmptyString.min(2, "Nom trop court").describe("Nom/Raison sociale du client"),
   email: zEmail.nullable().optional().describe("Email de contact"),
-  address: z.string().nullable().optional().describe("Adresse (texte libre)"),
-  company: z.string().nullable().optional().describe("Société (si contact personne)"),
   phone: z.string().nullable().optional().describe("Téléphone"),
   notes: z.string().nullable().optional().describe("Notes internes"),
   created_at: zDateISO.describe("Création (ISO)"),
@@ -46,7 +45,7 @@ export const clientDbSchema = z.object({
  * Plus permissif sur id et timestamps; mêmes labels côté UI.
  */
 export const clientFormSchema = clientDbSchema
-  .omit({ user_id: true, created_at: true, updated_at: true })
+  .omit({ id: true, membership_id: true, created_at: true, updated_at: true })
   .describe("Formulaire de création/édition de client");
 
 // Types TS
@@ -130,8 +129,6 @@ export type ClientListRow = {
   name: string | null | undefined; // souple si SELECT partiel
   email: string | null;
   phone: string | null;
-  address: string | null;
-  company: string | null;
   created_at: string;   // ISO
   updated_at: string;   // ISO
 };
@@ -141,9 +138,7 @@ export type ClientSort = {
   column:
     | "name"
     | "email"
-    | "company"
     | "phone"
-    | "address"
     | "created_at"
     | "updated_at";
   dir: "asc" | "desc";
@@ -166,7 +161,7 @@ export type ClientListParams = {
   page: number;
   pageSize: number;
   search: string;
-  company: string;
+  name: string;
   hasEmail: boolean;
   sort: ClientSort;
   signal?: AbortSignal;
@@ -179,10 +174,13 @@ export type ClientAddressListParams = {
   page: number;
   pageSize: number;
   search?: string;
-  sort: {
-    column: keyof ClientAddress;
-    dir: "asc" | "desc";
-  };
+  kind?: ClientAddressKind | "all";
+  city?: string;
+  country?: string;
+  sort: ClientAddressSort;
+  signal?: AbortSignal;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
 };
 
 /** Paramètres des listes de contacts clients */
@@ -190,10 +188,12 @@ export type ClientContactListParams = {
   page: number;
   pageSize: number;
   search?: string;
-  sort: {
-    column: keyof ClientContact;
-    dir: "asc" | "desc";
-  };
+  role?: string;
+  hasEmail?: boolean | "all";
+  sort: ClientContactSort;
+  signal?: AbortSignal;
+  dateFrom?: string; // YYYY-MM-DD
+  dateTo?: string;   // YYYY-MM-DD
 };
 
 /** Props du composant ClientsTable */

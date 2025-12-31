@@ -32,7 +32,7 @@ type RowActionsProps<T> = {
   labels?: { edit?: string; delete?: string; menu?: string };
   alwaysVisible?: boolean;
 
-  /** Nouvelles actions (ex: Télécharger, Régénérer…) */
+  /** Nouvelles actions (ex: Télécharger, Regénérer…) */
   actions?: RowExtraAction<T>[];
 };
 

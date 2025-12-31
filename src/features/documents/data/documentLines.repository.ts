@@ -4,6 +4,8 @@ import type { DocumentLine } from "@/schemas/documents.schema";
 
 /**
  * Récupérer les lignes d'un document
+ * @param documentId ID du document
+ * @returns Liste des lignes
  */
 export async function listDocumentLines(documentId: string): Promise<DocumentLine[]> {
   const sb = createClient();
@@ -21,8 +23,10 @@ export async function listDocumentLines(documentId: string): Promise<DocumentLin
 /**
  * Upsert de lignes :
  * - Si id présent → update
- * - Si pas d'id → insert
+ * - Si pas d'id → insert  
  * NOTE: `document_id` doit être fourni pour chaque ligne.
+ * @param lines Lignes à upserter
+ * @returns Nombre de lignes upsertées
  */
 export async function upsertDocumentLines(lines: Array<Partial<DocumentLine>>) {
   if (!lines?.length) return { count: 0 };
@@ -51,6 +55,8 @@ export async function upsertDocumentLines(lines: Array<Partial<DocumentLine>>) {
 
 /**
  * Suppression en masse de lignes par id
+ * @param ids IDs des lignes à supprimer
+ * @returns Nombre de lignes supprimées
  */
 export async function deleteDocumentLines(ids: string[]) {
   if (!ids?.length) return { count: 0 };
@@ -65,6 +71,9 @@ export async function deleteDocumentLines(ids: string[]) {
  * - Fait le diff entre les lignes existantes et entrantes
  * - Upsert les nouvelles/maj
  * - Supprime celles retirées
+ * @param documentId ID du document
+ * @param incoming Lignes entrantes
+ * @returns Statistiques de l'opération
  */
 export async function replaceDocumentLines(
   documentId: string,

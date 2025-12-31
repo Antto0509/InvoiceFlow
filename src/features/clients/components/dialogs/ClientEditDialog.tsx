@@ -34,8 +34,6 @@ export function ClientEditDialog({
               ...(editClient as unknown as Partial<ClientFormValues>),
               email: editClient.email ?? undefined,
               phone: editClient.phone ?? undefined,
-              address: editClient.address ?? undefined,
-              company: editClient.company ?? undefined,
             }}
             onSubmit={async (values) => {
               try {

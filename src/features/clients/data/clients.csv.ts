@@ -1,7 +1,12 @@
-import { Client } from "@/schemas/clients.schema";
+import { Client, clientDbSchema } from "@/schemas/clients.schema";
 
-const MIN_HEADERS = ["name","email","company","phone","address","notes"] as const;
-const FULL_HEADERS = ["id","name","email","company","phone","address","notes","created_at","updated_at"] as const;
+const MIN_HEADERS = clientDbSchema.pick({
+  name: true,
+  email: true,
+  phone: true,
+  notes: true,
+}).keyof().enum as unknown as readonly ["name","email","phone","notes"];
+const FULL_HEADERS = clientDbSchema.keyof().enum as unknown as readonly string[];
 type FullHeader = typeof FULL_HEADERS[number];
 
 /** Parse robuste des CSV (gère les champs entre guillemets, virgules dans valeurs, retours ligne) */

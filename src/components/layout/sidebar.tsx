@@ -107,7 +107,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div className="text-xs text-muted-foreground">{VERSION}</div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1 md:mt-15">
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1 md:mt-16">
         {nav.map((item) => {
           const Icon = item.icon;
           const hasChildren = !!item.children?.length;

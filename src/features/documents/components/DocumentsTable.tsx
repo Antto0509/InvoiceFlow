@@ -111,8 +111,8 @@ export function DocumentsTable({
           const handlePdf = async (regenerate: boolean) => {
             const label = doc.number ? ` ${doc.number}` : "";
             toast.promise(downloadDocumentPdf(doc.id, regenerate), {
-              loading: regenerate ? `Régénération du PDF ${label}…` : `Téléchargement du PDF ${label}…`,
-              success: regenerate ? `PDF régénéré et téléchargé ${label}` : `PDF téléchargé ${label}`,
+              loading: regenerate ? `Regénération du PDF ${label}…` : `Téléchargement du PDF ${label}…`,
+              success: regenerate ? `PDF regénéré et téléchargé ${label}` : `PDF téléchargé ${label}`,
               error: (e) => (e instanceof Error ? e.message : "Impossible de télécharger le PDF."),
             });
           };
@@ -134,7 +134,7 @@ export function DocumentsTable({
                         separatorBefore: true,
                       },
                       {
-                        label: "Régénérer PDF",
+                        label: "Regénérer PDF",
                         icon: <RefreshCcw className="h-4 w-4" />,
                         onClick: () => handlePdf(true),
                         variant: "ghost",

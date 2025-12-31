@@ -290,7 +290,7 @@ export function getDocStatusVariant(status: DocumentKind | string) {
 /**
  * Télécharge le PDF d'un document.
  * @param id Identifiant du document
- * @param force Forcer la régénération du PDF
+ * @param force Forcer la regénération du PDF
  * @returns Promise résolue une fois l'ouverture initiée
  */
 export async function downloadDocumentPdf(id: string, force = false) {

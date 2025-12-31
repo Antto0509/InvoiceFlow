@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <RouteLoadingProvider>
       <div className="min-h-dvh bg-background">
         {/* Sidebar desktop */}
-        <aside className="fixed inset-y-0 left-0 hidden w-[240px] border-r bg-background md:block">
+        <aside className="fixed inset-y-0 left-0 hidden w-60 border-r bg-background md:block">
           <Sidebar />
         </aside>
 
@@ -17,9 +17,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div
           className="flex min-h-dvh flex-col ml-0"
         >
+          <Topbar />
           {/* Sur desktop, on décale le contenu */}
-          <div className="md:ml-[240px] flex min-h-dvh flex-col">
-            <Topbar />
+          <div className="md:ml-60 flex min-h-dvh flex-col">
 
             {/* Contenu */}
             <main className="flex-1 p-4 md:p-6">

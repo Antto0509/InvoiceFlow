@@ -31,9 +31,9 @@ export default async function Topbar() {
       </Sheet>
 
       {/* Breadcrumb simple / logo mobile */}
-      <Link href="/app" className="font-semibold md:hidden">
+      <h1 className="font-semibold cursor-default text-lg md:text-xl">
         InvoiceFlow
-      </Link>
+      </h1>
 
       <div className="ml-auto flex items-center gap-2">
         {user ? (

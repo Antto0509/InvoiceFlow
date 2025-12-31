@@ -81,17 +81,20 @@ ALTER TABLE public.company_addresses      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.company_bank_accounts  ENABLE ROW LEVEL SECURITY;
 
 -- Companies:
--- - SELECT : tout membre
+-- - SELECT : tout membre OU owner
 -- - INSERT/UPDATE/DELETE : owner logique (companies.user_id)
 CREATE POLICY companies_select_member
   ON public.companies
   FOR SELECT TO public
   USING (
-    EXISTS (
-      SELECT 1
-      FROM public.company_memberships m
-      WHERE m.company_id = companies.id
-        AND m.user_id = auth.uid()
+    (
+      (user_id = auth.uid()) OR (
+        EXISTS ( 
+          SELECT 1
+          FROM company_memberships m
+          WHERE ((m.company_id = companies.id) AND (m.user_id = auth.uid()))
+        )
+      )
     )
   );
 

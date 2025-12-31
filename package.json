@@ -63,6 +63,7 @@
     "@types/node": "^20.19.21",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",

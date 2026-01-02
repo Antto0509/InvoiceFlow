@@ -246,7 +246,7 @@ export default function DashboardHome(): React.ReactElement {
       {/* Graphiques */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* CA encaissé par mois */}
-        <Card className="h-[320px]">
+        <Card className="h-80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
               CA encaissé par mois
@@ -301,7 +301,7 @@ export default function DashboardHome(): React.ReactElement {
         </Card>
 
         {/* Répartition par statut */}
-        <Card className="h-[320px]">
+        <Card className="h-80">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
               Répartition par statut

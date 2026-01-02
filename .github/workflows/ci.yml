@@ -1,4 +1,4 @@
-name: CI
+name: Quality Gate CI
 
 # Que fait ce workflow ?
 # - Push/PR sur dev/main
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # ⚠️ Tes secrets sont dans l'Environment "preview"
+    # Mes secrets sont dans l'Environment "preview"
     environment: preview
 
     env:
@@ -40,9 +40,11 @@ jobs:
         node: [20, 22]
 
     steps:
+      # Checkout repo
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Setup Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

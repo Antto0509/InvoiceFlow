@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { formatMoney, round2, isFiniteNumber } from "@/lib/utils";
 
-describe("formatMoney", () => {
+describe("[UTILS / Money] formatMoney", () => {
   it("formats currency", () => {
     const out = formatMoney(12.5, "EUR");
     expect(typeof out).toBe("string");
@@ -13,14 +13,14 @@ describe("formatMoney", () => {
   });
 });
 
-describe("round2", () => {
+describe("[UTILS / Money] round2", () => {
   it("rounds to 2 decimals", () => {
     expect(round2(1.005)).toBe(1); // JS classic (si tu veux 1.01 faut une autre strat)
     expect(round2(1.234)).toBe(1.23);
   });
 });
 
-describe("isFiniteNumber", () => {
+describe("[UTILS / Money] isFiniteNumber", () => {
   it("detects finite numbers", () => {
     expect(isFiniteNumber(10)).toBe(true);
     expect(isFiniteNumber(NaN)).toBe(false);

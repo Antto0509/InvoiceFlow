@@ -8,7 +8,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-describe("downloadDocumentPdf", () => {
+describe("[UTILS / downloadDocumentPdf] downloadDocumentPdf", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });

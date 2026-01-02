@@ -1,0 +1,115 @@
+name: Quality Gate CI
+
+# Que fait ce workflow ?
+# - Push/PR sur dev/main
+# - Installe, lint, tests + coverage, build
+# - Vérifie que les variables d'env requises sont présentes (sans leak)
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Mes secrets sont dans l'Environment "preview"
+    environment: preview
+
+    env:
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+
+    steps:
+      # Checkout repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # Vérifie la présence des env AVANT d'installer/build (fail fast)
+      - name: Check required env (presence only)
+        shell: bash
+        run: |
+          required=(
+            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            "NEXT_PUBLIC_SUPABASE_URL"
+            "STRIPE_SECRET_KEY"
+            "SUPABASE_SERVICE_ROLE_KEY"
+            "SUPABASE_URL"
+          )
+
+          missing=0
+          echo "Checking required environment variables..."
+          for k in "${required[@]}"; do
+            if [ -z "${!k:-}" ]; then
+              echo "::error title=Missing env::${k} is missing"
+              missing=1
+            else
+              echo "${k}: present"
+            fi
+          done
+
+          if [ "$missing" -eq 1 ]; then
+            echo "One or more required env vars are missing. Stopping."
+            exit 1
+          fi
+
+      # Install
+      - name: Install
+        run: npm ci
+
+      # Lint
+      - name: Lint
+        run: npm run lint
+
+      # Tests + coverage
+      - name: Tests (coverage)
+        run: npm run test:coverage
+
+      # Upload même si les tests fail
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-node-${{ matrix.node }}
+          path: coverage
+
+      # Cache Next.js pour accélérer build
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-next-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('next.config.*', 'src/**/*.{ts,tsx,js,jsx}', 'app/**/*.{ts,tsx,js,jsx}') }}
+          restore-keys: |
+            ${{ runner.os }}-next-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}-
+
+      # Build
+      - name: Build
+        run: npm run build

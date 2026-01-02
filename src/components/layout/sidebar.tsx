@@ -102,12 +102,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b px-4 py-3 font-bold flex items-center justify-between">
-        <div className="text-lg">InvoiceFlow</div>
+      <div className="border-b px-4 py-3 pr-10 font-bold flex items-center justify-between md:hidden">
+        <h1 className="text-lg">InvoiceFlow</h1>
         <div className="text-xs text-muted-foreground">{VERSION}</div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1 md:mt-16">
         {nav.map((item) => {
           const Icon = item.icon;
           const hasChildren = !!item.children?.length;

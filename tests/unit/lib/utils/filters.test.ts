@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildOrIlike, ensureSortable } from "@/lib/utils";
 
-describe("buildOrIlike", () => {
+describe("[UTILS / Filters] buildOrIlike", () => {
   it("returns undefined on empty", () => {
     expect(buildOrIlike(["name"], "   ")).toBeUndefined();
   });
@@ -17,7 +17,7 @@ describe("buildOrIlike", () => {
   });
 });
 
-describe("ensureSortable", () => {
+describe("[UTILS / Filters] ensureSortable", () => {
   it("rejects non-whitelisted column", () => {
     expect(ensureSortable({ column: "hack", dir: "asc" } as { column: string; dir: "asc" | "desc" | undefined }, ["name"])).toBeUndefined();
   });

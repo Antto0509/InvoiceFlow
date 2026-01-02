@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import EmptyState from "@/components/EmptyState";
 
-describe("EmptyState", () => {
+describe("[UI / Components] EmptyState", () => {
   it("renders text + button label", () => {
     render(<EmptyState onCreate={() => {}} text="Aucun client" label="Créer" />);
     expect(screen.getByText("Aucun client")).toBeInTheDocument();

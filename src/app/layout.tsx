@@ -3,6 +3,8 @@ import { Inter, Lexend } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"; 
 import { Suspense } from "react";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeWipeProvider } from "@/components/ThemeWipeProvider";
 
 // --- Fonts configuration ---
 const inter = Inter({
@@ -36,12 +38,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${lexend.variable}`}>
+    <html lang="fr" className={`${inter.variable} ${lexend.variable}`} suppressHydrationWarning>
       <body className="font-sans bg-background text-foreground antialiased">
-        <Suspense>
-          {children}
-          <Toaster richColors position="top-right" />
-        </Suspense>
+        <ThemeProvider>
+          <ThemeWipeProvider>
+            <Suspense>
+              {children}
+              <Toaster richColors position="top-right" />
+            </Suspense>
+          </ThemeWipeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,0 +1,11 @@
+export { Section } from "./Section";
+export { SectionReveal } from "./SectionReveal";
+export { LandingHeader } from "./LandingHeader";
+export { HeroSection } from "./HeroSection";
+export { SocialProofSection } from "./SocialProofSection";
+export { FeaturesSection } from "./FeaturesSection";
+export { HowItWorksSection } from "./HowItWorksSection";
+export { PricingSection } from "./PricingSection";
+export { FaqSection } from "./FaqSection";
+export { FinalCtaSection } from "./FinalCtaSection";
+export { LandingFooter } from "./LandingFooter";

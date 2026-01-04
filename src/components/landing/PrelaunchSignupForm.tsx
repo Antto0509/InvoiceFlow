@@ -74,7 +74,7 @@ export function PrelaunchSignupForm({
           }}
           placeholder="ton.email@exemple.com"
           className={cn(
-            "w-full rounded-lg border bg-background px-3 text-foreground placeholder:text-muted-foreground outline-none",
+            "w-full rounded-lg border bg-background px-3 text-foreground placeholder:text-muted-foreground outline-none cursor-text",
             "border-input focus-visible:border-emerald-500/60 focus-visible:ring-2 focus-visible:ring-emerald-500/15",
             small ? "h-9 text-sm" : "h-10 text-sm"
           )}
@@ -87,7 +87,7 @@ export function PrelaunchSignupForm({
           type="submit"
           disabled={disabled}
           className={cn(
-            "inline-flex items-center justify-center rounded-lg bg-emerald-500 font-medium text-slate-950 transition",
+            "cursor-pointer inline-flex items-center justify-center rounded-lg bg-emerald-500 font-medium text-slate-950 transition",
             "hover:bg-emerald-400 disabled:opacity-60 disabled:hover:bg-emerald-500",
             small ? "h-9 px-3 text-sm" : "h-10 px-4 text-sm"
           )}

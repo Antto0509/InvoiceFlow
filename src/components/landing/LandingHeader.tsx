@@ -51,7 +51,7 @@ export function LandingHeader() {
   const onNavClick = () => setOpen(false);
 
   return (
-    <header className="fixed top-0 z-50 w-full pt-2">
+    <header className="fixed top-0 z-20 w-full pt-2">
       <motion.div style={{ y }} className="px-3 md:px-4">
         <motion.header
           style={{ borderRadius: radius, scale }}

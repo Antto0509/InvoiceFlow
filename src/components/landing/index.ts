@@ -1,5 +1,4 @@
-export { Section } from "./Section";
-export { SectionReveal } from "./SectionReveal";
+// Composants principaux de la landing page
 export { LandingHeader } from "./LandingHeader";
 export { HeroSection } from "./HeroSection";
 export { SocialProofSection } from "./SocialProofSection";
@@ -9,3 +8,9 @@ export { PricingSection } from "./PricingSection";
 export { FaqSection } from "./FaqSection";
 export { FinalCtaSection } from "./FinalCtaSection";
 export { LandingFooter } from "./LandingFooter";
+
+// Utils et sous-composants
+export { Section } from "./Section";
+export { SectionReveal } from "./SectionReveal";
+export { PrelaunchSignupForm } from "./PrelaunchSignupForm";
+export { RevealGroup, RevealItem } from "./RevealGroup";

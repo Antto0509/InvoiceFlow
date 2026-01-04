@@ -17,7 +17,7 @@ type SectionRevealProps<T extends ElementType = "div"> = {
   amount?: number;
 
   staggerChildren?: number; // 0 = pas de stagger
-  motionProps?: MotionProps; // override si besoin
+  motionProps?: MotionProps;
 };
 
 export function SectionReveal<T extends ElementType = "div">({
@@ -36,39 +36,36 @@ export function SectionReveal<T extends ElementType = "div">({
   motionProps,
 }: SectionRevealProps<T>) {
   const reduceMotion = useReducedMotion();
-  const Comp: ElementType = as ?? "div";
 
   if (reduceMotion) {
+    const Comp: ElementType = as ?? "div";
     return <Comp className={cn(className)}>{children}</Comp>;
   }
 
-  const variants =
-    staggerChildren > 0
-      ? {
-          hidden: { opacity: 0, y },
-          show: {
-            opacity: 1,
-            y: 0,
-            transition: {
-              duration,
-              delay,
-              staggerChildren,
-            },
-          },
-        }
-      : undefined;
+  const variants = {
+    hidden: { opacity: 0, y },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition:
+        staggerChildren > 0
+          ? { duration, delay, staggerChildren }
+          : { duration, delay },
+    },
+  } as const;
+
+  const MotionComp = motion.create(as ?? "div");
 
   return (
-    <motion.div
+    <MotionComp
       className={cn(className)}
       initial="hidden"
       whileInView="show"
       viewport={{ once, amount }}
-      transition={staggerChildren > 0 ? undefined : { duration, delay }}
       variants={variants}
       {...motionProps}
     >
       {children}
-    </motion.div>
+    </MotionComp>
   );
 }

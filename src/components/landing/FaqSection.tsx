@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { Section } from "./Section";
+import { RevealGroup, RevealItem } from "./RevealGroup"; // adapte le chemin
 
 export function FaqSection() {
   const faqs = [
@@ -28,25 +31,35 @@ export function FaqSection() {
       title="Des questions ?"
       subtitle="On a les réponses."
       headerAlign="left"
+      className="cursor-default"
     >
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <RevealGroup
+        className="mt-8 grid gap-4 md:grid-cols-2"
+        delay={0.05}
+        stagger={0.08}
+        amount={0.2}
+        once
+      >
         {faqs.map((f) => (
-          <div
-            key={f.q}
-            className={cn(
-              "rounded-2xl border p-5",
-              "border-border bg-card/70"
-            )}
-          >
-            <p className="text-sm font-semibold text-card-foreground">
-              {f.q}
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {f.a}
-            </p>
-          </div>
+          <RevealItem key={f.q} duration={0.45} y={14}>
+            <div
+              className={cn(
+                "rounded-2xl border p-5",
+                "border-border bg-card/70",
+                "transition will-change-transform",
+                "hover:-translate-y-0.5 hover:bg-card/90"
+              )}
+            >
+              <p className="text-sm font-semibold text-card-foreground">
+                {f.q}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {f.a}
+              </p>
+            </div>
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
     </Section>
   );
 }

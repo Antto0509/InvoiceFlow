@@ -37,7 +37,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       variant="ghost"
       className={cn(
         "relative inline-flex h-9 w-9 items-center justify-center rounded-lg",
-        "bg-background hover:bg-muted text-foreground",
+        "hover:bg-muted text-foreground",
         className
       )}
       aria-label="Changer le thème"

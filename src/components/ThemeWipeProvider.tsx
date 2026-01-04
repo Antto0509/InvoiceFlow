@@ -69,7 +69,9 @@ export function ThemeWipeProvider({ children }: { children: React.ReactNode }) {
               "pointer-events-none fixed inset-0 z-9999",
               // force les tokens du thème cible juste sur l’overlay
               wipe.nextTheme === "dark" ? "dark" : "",
-              "bg-background theme-grain",
+              "bg-background/80 backdrop-blur",
+              "supports-backdrop-filter:bg-background/60",
+              "theme-grain"
             ].join(" ")}
             initial={{
               opacity: 1,

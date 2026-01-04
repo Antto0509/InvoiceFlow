@@ -10,7 +10,7 @@ import {
   FinalCtaSection,
   LandingFooter,
 } from "@/components/landing";
-import ClickSpark from "@/components/ClickSpark";
+import ClickSpark from "@/components/ui/react-bits/ClickSpark";
 
 export default function HomePage() {
   return (

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClientMiddleware } from "@/data/supabase/middleware";
 
-const AUTH_PAGES = new Set(["/login", "/register", "/reset-password"]);
+const AUTH_PAGES = new Set(["/login", "/register", "/forgot-password", "/reset-password"]);
 const MAINTENANCE_PATH = "/maintenance";
 
 /** 

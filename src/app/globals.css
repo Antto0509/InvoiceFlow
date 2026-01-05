@@ -212,3 +212,20 @@
   mix-blend-mode: overlay;
   animation: grainShift 1.5s steps(2) infinite;
 }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px; /* approx hauteur header + marge */
+}
+
+/* chaque section avec un id garde une marge en haut */
+section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* respect des utilisateurs "reduced motion" */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

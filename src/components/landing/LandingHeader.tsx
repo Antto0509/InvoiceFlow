@@ -15,6 +15,8 @@ const NAV = [
 ];
 
 export function LandingHeader() {
+  const headerRef = React.useRef<HTMLElement>(null);
+
   const { scrollY } = useScroll();
 
   const tRaw = useTransform(scrollY, [0, 80], [0, 1]);
@@ -48,10 +50,37 @@ export function LandingHeader() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  const onNavClick = () => setOpen(false);
+  const scrollToHash = (hash: string) => {
+    const el = document.querySelector(hash) as HTMLElement | null;
+    if (!el) return;
+
+    const headerH = headerRef.current?.getBoundingClientRect().height ?? 0;
+    const extra = 12; // petite marge “respire”
+
+    const top =
+      el.getBoundingClientRect().top + window.scrollY - headerH - extra;
+
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+    window.scrollTo({
+      top,
+      behavior: prefersReduced ? "auto" : "smooth",
+    });
+
+    // garde l'URL clean sans jump navigateur
+    history.pushState(null, "", hash);
+  };
+
+  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    setOpen(false);
+    scrollToHash(href);
+  };
 
   return (
-    <header className="fixed top-0 z-20 w-full pt-2">
+    <header ref={headerRef} className="fixed top-0 z-20 w-full pt-2">
       <motion.div style={{ y }} className="px-3 md:px-4">
         <motion.header
           style={{ borderRadius: radius, scale }}
@@ -91,7 +120,7 @@ export function LandingHeader() {
                     <a
                       key={item.href}
                       href={item.href}
-                      onClick={onNavClick}
+                      onClick={(e) => onNavClick(e, item.href)}
                       className={cn(
                         "relative rounded-lg px-3 py-2 transition",
                         isActive
@@ -177,7 +206,7 @@ export function LandingHeader() {
                     <a
                       key={item.href}
                       href={item.href}
-                      onClick={onNavClick}
+                      onClick={(e) => onNavClick(e, item.href)}
                       className={cn(
                         "rounded-lg px-3 py-2 text-sm transition",
                         isActive

@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 import {
   LandingHeader,
   LandingBackground,
@@ -14,6 +15,17 @@ import {
 import ClickSpark from "@/components/ui/react-bits/ClickSpark";
 
 export default function HomePage() {
+  React.useEffect(() => {
+    if (window.location.hash) {
+      const hash = window.location.hash;
+      // laisse le layout se poser
+      requestAnimationFrame(() => {
+        const el = document.querySelector(hash) as HTMLElement | null;
+        el?.scrollIntoView({ behavior: "auto", block: "start" });
+      });
+    }
+  }, []);
+
   return (
     <ClickSpark
       sparkColor="rgba(16, 185, 129, 0.8)"

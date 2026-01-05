@@ -29,3 +29,15 @@ export const FILE_TARGETS = ['document', 'client', 'company', 'other'] as const;
 export const SUPPORTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
 export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_FILES_PER_TARGET = 10;
+
+/**
+ * Time window in milliseconds for rate limiting
+ * actions like waitlist signups.
+ */
+export const WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * Maximum number of requests allowed within the time window
+ * for actions like waitlist signups.
+ */
+export const MAX_REQ = 5;

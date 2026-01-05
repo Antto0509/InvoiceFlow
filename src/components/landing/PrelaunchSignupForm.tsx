@@ -1,13 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn, isValidEmail } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 export function PrelaunchSignupForm({
   className,
@@ -19,6 +15,7 @@ export function PrelaunchSignupForm({
   small?: boolean;
 }) {
   const [email, setEmail] = React.useState("");
+  const [company, setCompany] = React.useState(""); // honeypot
   const [status, setStatus] = React.useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -37,14 +34,23 @@ export function PrelaunchSignupForm({
 
     setStatus("loading");
 
-    // Fake request (pas de backend pour l’instant)
-    await new Promise((r) => setTimeout(r, 500));
-
     try {
-      const key = "invoiceflow_waitlist";
-      const prev = JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
-      const next = Array.from(new Set([...prev, clean]));
-      localStorage.setItem(key, JSON.stringify(next));
+      // Si honeypot rempli, on affiche "success" côté UI
+      // (on évite de signaler au bot qu'il est grillé)
+      if (company.trim()) {
+        setStatus("success");
+        setMessage("C’est noté. Tu seras prévenu au lancement 🚀");
+        setEmail("");
+        return;
+      }
+
+      const r = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: clean, company }), // <-- send honeypot
+      });
+
+      if (!r.ok) throw new Error("Request failed");
 
       setStatus("success");
       setMessage("C’est noté. Tu seras prévenu au lancement 🚀");
@@ -59,6 +65,22 @@ export function PrelaunchSignupForm({
 
   return (
     <form onSubmit={onSubmit} className={cn(className)}>
+      {/* Honeypot field (hidden) */}
+      <div
+        className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden"
+        aria-hidden="true"
+      >
+        <label>
+          Company
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+          />
+        </label>
+      </div>
+
       <div
         className={cn(
           "flex w-full flex-col gap-2 sm:flex-row sm:items-center",
@@ -100,7 +122,9 @@ export function PrelaunchSignupForm({
         <p
           className={cn(
             "mt-2 text-xs",
-            status === "success" ? "text-emerald-600 dark:text-emerald-300" : "text-destructive"
+            status === "success"
+              ? "text-emerald-600 dark:text-emerald-300"
+              : "text-destructive"
           )}
           role="status"
           aria-live="polite"

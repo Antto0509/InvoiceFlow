@@ -1,19 +1,18 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { PrelaunchSignupForm } from "@/components/landing/PrelaunchSignupForm";
 
 describe("[UI / Components / Landing] PrelaunchSignupForm", () => {
-  const key = "invoiceflow_waitlist";
+  const fetchMock = vi.fn();
 
   beforeEach(() => {
-    localStorage.clear();
-    vi.useFakeTimers();
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("rend input + bouton avec cta par défaut", () => {
@@ -25,22 +24,27 @@ describe("[UI / Components / Landing] PrelaunchSignupForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("email invalide => message error + pas de localStorage", async () => {
+  it("email invalide => message error + pas d'appel API", () => {
     render(<PrelaunchSignupForm />);
 
     fireEvent.change(screen.getByLabelText("Adresse email"), {
       target: { value: "foo" },
     });
-
     fireEvent.click(screen.getByRole("button"));
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Email invalide. Mets un vrai mail et on est bien."
     );
-    expect(localStorage.getItem(key)).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("email valide => loading puis success + stocke email nettoyé + reset input", async () => {
+  it("email valide => loading puis success + reset input + appelle l'API avec email clean", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+
     render(<PrelaunchSignupForm />);
 
     const input = screen.getByLabelText("Adresse email") as HTMLInputElement;
@@ -49,53 +53,68 @@ describe("[UI / Components / Landing] PrelaunchSignupForm", () => {
     fireEvent.submit(input.closest("form")!);
 
     // loading immédiat
-    const btn = screen.getByRole("button", { name: "Enregistrement..." });
-    expect(btn).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Enregistrement..." })
+    ).toBeDisabled();
 
-    // avance le fake request
-    await act(async () => {
-      vi.advanceTimersByTime(500);
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
+    // success
+    expect(await screen.findByRole("status")).toHaveTextContent(
       "C’est noté. Tu seras prévenu au lancement 🚀"
     );
 
     // input reset
     expect((screen.getByLabelText("Adresse email") as HTMLInputElement).value).toBe("");
 
-    // localStorage contient email propre
-    const saved = JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
-    expect(saved).toEqual(["antoine@example.com"]);
+    // API appelée avec email clean + honeypot vide
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, opts] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/waitlist");
+    expect(opts.method).toBe("POST");
+    expect(opts.headers).toEqual({ "Content-Type": "application/json" });
+    expect(JSON.parse(opts.body)).toEqual({
+      email: "antoine@example.com",
+      company: "",
+    });
   });
 
-  it("dédoublonne les emails dans localStorage", async () => {
+  it("si l'API renvoie 429 => affiche erreur", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      text: async () => "rate limited",
+    });
+
     render(<PrelaunchSignupForm />);
 
-    const form = screen.getByLabelText("Adresse email").closest("form")!;
     const input = screen.getByLabelText("Adresse email") as HTMLInputElement;
-
-    // 1er submit
     fireEvent.change(input, { target: { value: "test@site.com" } });
-    fireEvent.submit(form);
+    fireEvent.submit(input.closest("form")!);
 
-    await act(async () => {
-      vi.advanceTimersByTime(500);
-    });
-
-    // 2e submit même email (diff casse) -> doit pas dupliquer
-    fireEvent.change(input, { target: { value: "TEST@site.com" } });
-    fireEvent.submit(form);
-
-    await act(async () => {
-      vi.advanceTimersByTime(500);
-    });
-
-    const saved = JSON.parse(localStorage.getItem(key) ?? "[]") as string[];
-    expect(saved).toEqual(["test@site.com"]);
+    // Ton composant met un message générique en catch()
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Oups. Impossible d’enregistrer. Réessaie."
+    );
   });
 
-  it("quand on retape après une erreur, ça reset le message et le status", () => {
+  it("honeypot rempli => affiche success mais n'appelle pas l'API", async () => {
+    render(<PrelaunchSignupForm />);
+
+    const input = screen.getByLabelText("Adresse email") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "test@site.com" } });
+
+    // retrouve le honeypot (il existe dans le DOM)
+    const hp = screen.getByLabelText("Company") as HTMLInputElement;
+    fireEvent.change(hp, { target: { value: "bot filled me" } });
+
+    fireEvent.submit(input.closest("form")!);
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "C’est noté. Tu seras prévenu au lancement 🚀"
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("quand on retape après une erreur, ça reset le message", () => {
     render(<PrelaunchSignupForm />);
 
     const input = screen.getByLabelText("Adresse email") as HTMLInputElement;
@@ -104,7 +123,6 @@ describe("[UI / Components / Landing] PrelaunchSignupForm", () => {
 
     expect(screen.getByRole("status")).toBeInTheDocument();
 
-    // retape -> message disparaît (setMessage(null)) + status idle
     fireEvent.change(input, { target: { value: "nope@" } });
 
     expect(screen.queryByRole("status")).toBeNull();

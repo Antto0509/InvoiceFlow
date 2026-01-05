@@ -34,7 +34,7 @@ export const MAX_FILES_PER_TARGET = 10;
  * Time window in milliseconds for rate limiting
  * actions like waitlist signups.
  */
-export const WINDOW_MS = 10 * 60 * 1000;
+export const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
  * Maximum number of requests allowed within the time window

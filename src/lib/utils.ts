@@ -382,13 +382,17 @@ export function getIp(req: Request) {
 
 /** 
  * Applique une limitation de débit basée sur l'adresse IP.
+ */
+const hits = new Map<string, number[]>(); // ip -> timestamps
+
+/** 
+ * Applique une limitation de débit basée sur l'adresse IP.
  * @param ip Adresse IP du client
  * @returns Objet avec le statut de la limitation
  */
 export function rateLimit(ip: string) {
   const now = Date.now();
   const windowStart = now - WINDOW_MS;
-  const hits = new Map<string, number[]>(); // ip -> timestamps
 
   const prev = hits.get(ip) ?? [];
   const next = prev.filter((t) => t > windowStart);

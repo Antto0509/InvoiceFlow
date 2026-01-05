@@ -1,7 +1,10 @@
 import "@testing-library/jest-dom";
 import { afterAll, beforeAll, vi } from "vitest";
 
-// Silence les logs verbeux pendant les tests
+// Mock Next.js 'server-only' module
+vi.mock("server-only", () => ({}));
+
+// Suppress console output during tests
 beforeAll(() => {
   vi.spyOn(console, "group").mockImplementation(() => {});
   vi.spyOn(console, "groupEnd").mockImplementation(() => {});

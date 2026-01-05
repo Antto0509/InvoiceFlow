@@ -1,5 +1,6 @@
 // Composants principaux de la landing page
 export { LandingHeader } from "./LandingHeader";
+export { LandingBackground } from "./LandingBackground";
 export { HeroSection } from "./HeroSection";
 export { SocialProofSection } from "./SocialProofSection";
 export { FeaturesSection } from "./FeaturesSection";

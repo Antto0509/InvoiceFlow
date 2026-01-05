@@ -30,7 +30,9 @@ export function HowItWorksSection() {
   return (
     <Section
       id="how-it-works"
+      name="Comment ça marche ?"
       title="Comment ça se passe concrètement ?"
+      subtitle="On est là pour vous accompagner."
       headerAlign="left"
       className="cursor-default"
     >

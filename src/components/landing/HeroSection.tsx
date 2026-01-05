@@ -10,33 +10,11 @@ export function HeroSection() {
     <section
       className={cn(
         "border-b border-border",
-        "bg-background",
-        "relative overflow-hidden",
-        "top-0 z-10 pt-10",
-        'cursor-default'
+        "relative z-10 pt-10",
+        "bg-transparent",
+        "cursor-default"
       )}
     >
-      {/* overlays */}
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-0",
-          "bg-linear-to-b from-muted/40 via-background to-background",
-          "dark:from-background dark:via-background dark:to-background"
-        )}
-      />
-      <div
-        className={cn(
-          "pointer-events-none absolute -top-24 right-[-120px] h-72 w-72 rounded-full blur-3xl",
-          "bg-emerald-500/15 dark:bg-emerald-500/10"
-        )}
-      />
-      <div
-        className={cn(
-          "pointer-events-none absolute -bottom-28 left-[-120px] h-72 w-72 rounded-full blur-3xl",
-          "bg-emerald-500/10 dark:bg-emerald-500/5"
-        )}
-      />
-
       <RevealGroup
         className="relative mx-auto max-w-6xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-2 md:items-center"
         delay={0.05}

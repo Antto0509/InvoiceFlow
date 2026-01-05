@@ -1,6 +1,7 @@
 "use client";
 import {
   LandingHeader,
+  LandingBackground,
   HeroSection,
   SocialProofSection,
   FeaturesSection,
@@ -15,7 +16,7 @@ import ClickSpark from "@/components/ui/react-bits/ClickSpark";
 export default function HomePage() {
   return (
     <ClickSpark
-      sparkColor="rgba(16, 185, 129, 0.8)" // emerald-500
+      sparkColor="rgba(16, 185, 129, 0.8)"
       sparkSize={8}
       sparkRadius={12}
       sparkCount={10}
@@ -23,10 +24,12 @@ export default function HomePage() {
       easing="ease-out"
       extraScale={1.2}
     >
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <LandingBackground />
+
+      <div className="relative min-h-screen bg-transparent text-foreground flex flex-col">
         <LandingHeader />
 
-        <main className="flex-1">
+        <main className="relative z-10 flex-1">
           <HeroSection />
           <SocialProofSection />
           <FeaturesSection />

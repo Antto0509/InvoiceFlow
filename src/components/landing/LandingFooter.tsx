@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export function LandingFooter() {
   return (
-    <footer className={cn("border-t border-border bg-background cursor-default")}>
+    <footer className={cn("border-t border-border bg-transparent cursor-default")}>
       <div
         className={cn(
           "mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 text-xs",

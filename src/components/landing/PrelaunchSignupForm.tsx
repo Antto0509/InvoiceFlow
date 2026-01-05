@@ -107,6 +107,7 @@ export function PrelaunchSignupForm({
 
         <Button
           type="submit"
+          title="Inscrivez-vous pour le pré-lancement"
           disabled={disabled}
           className={cn(
             "cursor-pointer inline-flex items-center justify-center rounded-lg bg-emerald-500 font-medium text-slate-950 transition",

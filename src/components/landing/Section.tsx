@@ -21,7 +21,7 @@ type SectionProps = {
 };
 
 const SECTION_VARIANTS: Record<NonNullable<SectionProps["variant"]>, string> = {
-  default: "border-b border-border bg-background",
+  default: "border-b border-border bg-transparent",
   muted: "border-b border-border bg-muted/30",
   none: "",
 };

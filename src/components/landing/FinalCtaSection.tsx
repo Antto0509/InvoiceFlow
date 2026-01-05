@@ -91,14 +91,19 @@ export function FinalCtaSection() {
               <RevealItem y={14} duration={0.5}>
                 <div
                   className={cn(
-                    "rounded-2xl border p-6",
+                    "group rounded-2xl border p-6",
                     "border-border bg-card/70",
                     "transition will-change-transform",
                     "hover:-translate-y-0.5 hover:bg-card"
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+                  <div className={cn("flex items-center gap-2")}>
+                    <span className={cn(
+                      "flex h-8 w-8 items-center justify-center",
+                      "rounded-lg border border-emerald-500/30", 
+                      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+                      "transition group-hover:bg-emerald-500/20"
+                      )}>
                       <Mail className="h-4 w-4" />
                     </span>
                     <p className="text-sm font-semibold text-card-foreground">

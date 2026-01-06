@@ -1,3 +1,6 @@
+// La landing page
+export { LandingClient } from "./LandingClient";
+
 // Composants principaux de la landing page
 export { LandingHeader } from "./LandingHeader";
 export { LandingBackground } from "./LandingBackground";

@@ -1,5 +1,11 @@
 export const VERSION = "0.1.0";
 
+export const APP_NAME = "InvoiceFlow";
+export const APP_DESC =
+  "Gérez vos factures, devis et avoirs simplement : PDF, suivi des paiements, relances, et pilotage en temps réel.";
+export const SITE_URL = "https://invoiceflow.fr"; // ← mettre le vrai domaine
+export const OG_IMAGE = "/og/og-default.png"; // ← idéalement 1200x630
+
 export const DEFAULT_LANGUAGE = "fr";
 export const DEFAULT_CURRENCY = "EUR";
 export const DEFAULT_TAX_RATE = 0.2; // 20%

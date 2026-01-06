@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { LegalFooterLinks } from "@/components/legal/";
 
 export function LandingFooter() {
   return (
@@ -11,23 +11,11 @@ export function LandingFooter() {
         )}
       >
         <span>
-          © {new Date().getFullYear()} InvoiceFlow. Tous droits réservés.
+          © {new Date().getFullYear()}{" "}
+          <span className="text-foreground font-medium">InvoiceFlow</span>. Tous droits réservés.
         </span>
 
-        <div className="flex flex-wrap gap-4">
-          <Link
-            href="/legal"
-            className="transition hover:text-foreground"
-          >
-            Mentions légales
-          </Link>
-          <Link
-            href="/privacy"
-            className="transition hover:text-foreground"
-          >
-            Politique de confidentialité
-          </Link>
-        </div>
+        <LegalFooterLinks />
       </div>
     </footer>
   );

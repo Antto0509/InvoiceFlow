@@ -10,9 +10,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Routes publiques (marketing)
     const routes: Array<{ path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }> = [
         { path: "/", priority: 1.0, changeFrequency: "weekly" },
-        // Ajoute tes futures pages publiques ici :
-        // { path: "/legal/mentions-legales", priority: 0.3, changeFrequency: "yearly" },
-        // { path: "/legal/confidentialite", priority: 0.3, changeFrequency: "yearly" },
+        { path: "/legal/legal-notices", priority: 0.3, changeFrequency: "yearly" },
+        { path: "/legal/privacy-policy", priority: 0.3, changeFrequency: "yearly" },
     ];
 
     return routes.map((r) => ({

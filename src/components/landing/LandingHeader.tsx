@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -99,14 +100,15 @@ export function LandingHeader() {
             <div className="flex items-center justify-between gap-3">
               {/* Brand */}
               <Link href="/" className="flex items-center gap-2">
-                <motion.div
+                {/* <motion.div
                   layout
                   className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-sm font-bold text-slate-950"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   IF
-                </motion.div>
+                </motion.div> */}
+                <Image src="/favicon.ico" alt="InvoiceFlow Logo" className="rounded" width={32} height={32} />
                 <span className="text-sm font-semibold tracking-tight text-foreground">
                   InvoiceFlow
                 </span>

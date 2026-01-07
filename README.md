@@ -67,12 +67,55 @@ npm run dev
 
 ```text
 InvoiceFlow/
-├── app/                # Pages Next.js (App Router)
-├── components/         # UI Components (formulaires, boutons, tables)
-├── lib/                # Fonctions utilitaires (Supabase, Stripe, mail)
-├── public/             # Logos, images
-├── styles/             # Fichiers Tailwind et CSS globaux
-├── .env.local          # Variables d'environnement
+├── .github/            # Workflows GitHub Actions
+├── database/           # Scripts de migration & seed Supabase
+├── public/             # Fichiers statiques (images, favicon)
+├── scripts/            # Scripts utilitaires (import CSV, etc.)
+├── src/
+│   ├── app/                    # Pages Next.js (App Router)
+│   │   ├── (private)/             # Pages privées (auth requise)
+│   │   ├── (public)/              # Pages publiques (landing, login, signup)
+│   │   ├── api/                   # Routes API (webhooks, etc.)
+│   │   ├── globals.css            # Styles globaux
+│   │   └── layout.tsx             # Layout global
+│   ├── components/             # UI Components (formulaires, boutons, tables)
+│   │   ├── auth/                   # Composants liés à l’authentification
+│   │   ├── datatable/              # Composants de tableau de données
+│   │   ├── forms/                  # Composants de formulaires
+│   │   ├── landing/                # Composants de la page d’accueil
+│   │   ├── layout/                 # Composants de layout (navbar, sidebar)
+│   │   ├── ui/                     # Composants UI génériques shadcn (buttons, modals, etc.)
+│   │   ├── EmptySkeleton.tsx        # Composant de chargement vide
+│   │   ├── EmptyState.tsx           # Composant d’état vide
+│   │   ├── ListPage.tsx             # Composant de page liste générique
+│   │   ├── ThemeProvider.tsx         # Composant de gestion du thème
+│   │   ├── ThemeToggle.tsx           # Composant de bascule thème clair/sombre
+│   │   └── ThemeWipeProvider.tsx     # Composant de gestion du thème avec wipe
+│   ├── data/                   # Accès aux données (Supabase queries)
+│   ├── features/               # Fonctionnalités (factures, clients, etc.)
+│   ├── hooks/                  # Hooks React personnalisés
+│   ├── lib/                    # Fonctions utilitaires (Supabase, Stripe, mail)
+│   ├── schemas/                # Schémas de validation (Zod)
+│   └── middleware.ts           # Middleware (auth, logging)
+├── tests/                  # Tests unitaires & d’intégration
+│   ├── components/             # Tests des composants UI
+│   ├── mocks/                  # Données mock pour les tests
+│   ├── unit/                   # Tests des fonctions utilitaires
+│   │   ├── data/                   # Tests des accès aux données
+│   │   └── lib/                    # Tests des fonctions
+│   └── setup.ts                # Configuration globale des tests
+├── .env.example            # Exemple de variables d'environnement -> .env.local
+├── .gitignore              # Fichiers à ignorer par Git
+├── components.json         # Configuration Storybook
+├── eslint.config.js        # Configuration ESLint
+├── next.config.js          # Configuration Next.js
+├── package.json            # Dépendances & scripts npm
+├── tailwind.config.js      # Configuration TailwindCSS
+├── tsconfig.json           # Configuration TypeScript
+├── tsconfig.vitest.json    # Configuration TypeScript pour Vitest
+├── vitest.config.ts        # Configuration Vitest
+├── CONTRIBUTING.md         # Guide de contribution
+├── LICENSE                 # Licence MIT
 └── README.md
 ```
 
@@ -83,10 +126,12 @@ InvoiceFlow/
 ```text
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
 
 RESEND_API_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -146,36 +191,9 @@ Tu es libre de :
 Les contributions sont les bienvenues !  
 Si tu veux aider à améliorer **InvoiceFlow**, voici comment faire 👇
 
-### 🧭 Processus de contribution
+### 🧭 Processus de contribution & 📋 Règles de style
 
-1. **Fork** le repo  
-2. **Crée une branche** pour ta feature ou ton correctif :  
-   ```bash
-   git checkout -b feature/ma-super-feature
-   ```
-3. **Commit** tes modifications avec un message clair :
-   ```bash
-   git commit -m "✨ Ajout de la génération automatique de PDF"
-   ```
-4. **Push** la branche :
-   ```bash
-   git push origin feature/ma-super-feature
-   ```
-5. **Ouvre une Pull Request** sur la branche `main`  
-➡️ Merci d’expliquer clairement ce que ta PR apporte ou corrige.
-
----
-
-## 📋 Règles de style
-
-- Code propre, clair et commenté.
-- Utilise TypeScript si possible.
-- Respecte la structure du projet existante.
-- Évite les dépendances inutiles.
-- Les commits doivent suivre une syntaxe simple :
-  - ✨ feature: ajout de ...
-  - 🐛 fix: correction de ...
-  - 🧹 refactor: nettoyage / simplification
+🤝 [Voir le fichier CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
@@ -194,7 +212,6 @@ Tu peux :
 - Discuter sur les Discussions GitHub (si activées)
 - Ou me contacter directement sur [LinkedIn](https://www.linkedin.com/in/antoine-coutreel/)  
 
-
 ---
 
 > Chaque contribution, même minime, rend InvoiceFlow plus utile aux freelances. 💪
@@ -205,7 +222,7 @@ Tu peux :
 
  - Authentification Supabase
  - CRUD Clients / Factures
- - Génération PDF
+ - Génération PDF + facturation électronique (Factur-X, UBL et/ou CII)
  - Envoi d’emails
  - Relances automatiques
  - Stripe Billing

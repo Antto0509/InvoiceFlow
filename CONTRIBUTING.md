@@ -22,21 +22,22 @@ Voici les étapes pour contribuer au projet.
    ```bash
    git push origin feature/ma-super-feature
    ```
-6. **Ouvre une Pull Request** sur la branche `main`  
-➡️ Merci d’expliquer clairement ce que ta PR apporte ou corrige.
+6. **Ouvre une Pull Request** sur la branche `dev` du dépôt principal.
+➡️ Merci d’expliquer clairement ce que ta PR apporte et/ou corrige.
 
 ---
 
 ## Bonnes pratiques
 
-- Code lisible et commenté
-- Respecte la structure Next.js
-- Teste avant de push (npm run build)
-- Commits propres :
-  - ✨ feature:
-  - 🐛 fix:
-  - 🧹 refactor:
-  - 📚 docs:
+- Code propre, clair et commenté.
+- Utilise TypeScript si possible.
+- Respecte la structure du projet existante.
+- Évite les dépendances inutiles.
+- Les commits doivent suivre une syntaxe simple :
+  - ✨ feature: ajout de ...
+  - 🐛 fix: correction de ...
+  - 🧹 refactor: nettoyage / simplification
+  - 📚 docs: mise à jour de la documentation
  
 ---
 

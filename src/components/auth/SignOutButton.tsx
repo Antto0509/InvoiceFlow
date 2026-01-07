@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { Button } from "@/ui/button";
+import { Button } from "@/components/ui/button";
 import { signOut } from "./signout.action";
 
 export default function SignOutButton() {

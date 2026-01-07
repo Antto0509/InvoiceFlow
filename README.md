@@ -63,22 +63,59 @@ npm run dev
 
 ---
 
-## 📁 Structure du projet (à revoir)
+## 📁 Structure du projet
 
 ```text
 InvoiceFlow/
+├── .github/            # Workflows GitHub Actions
+├── database/           # Scripts de migration & seed Supabase
 ├── public/             # Fichiers statiques (images, favicon)
+├── scripts/            # Scripts utilitaires (import CSV, etc.)
 ├── src/
-│   ├── app/               # Pages Next.js (App Router)
-│   ├── components/        # UI Components (formulaires, boutons, tables)
-│   ├── lib/               # Fonctions utilitaires (Supabase, Stripe, mail)
-│   └── middleware.ts      # Middleware (auth, logging)
-├── .env.local          # Variables d'environnement
-├── package.json        # Dépendances & scripts npm
-├── tailwind.config.js  # Configuration TailwindCSS
-├── tsconfig.json       # Configuration TypeScript
-├── CONTRIBUTING.md     # Guide de contribution
-├── LICENSE             # Licence MIT
+│   ├── app/                    # Pages Next.js (App Router)
+│   │   ├── (private)/             # Pages privées (auth requise)
+│   │   ├── (public)/              # Pages publiques (landing, login, signup)
+│   │   ├── api/                   # Routes API (webhooks, etc.)
+│   │   ├── globals.css            # Styles globaux
+│   │   └── layout.tsx             # Layout global
+│   ├── components/             # UI Components (formulaires, boutons, tables)
+│   │   ├── auth/                   # Composants liés à l’authentification
+│   │   ├── datatable/              # Composants de tableau de données
+│   │   ├── forms/                  # Composants de formulaires
+│   │   ├── landing/                # Composants de la page d’accueil
+│   │   ├── layout/                 # Composants de layout (navbar, sidebar)
+│   │   ├── ui/                     # Composants UI génériques shadcn (buttons, modals, etc.)
+│   │   ├── EmptySkeleton.tsx        # Composant de chargement vide
+│   │   ├── EmptyState.tsx           # Composant d’état vide
+│   │   ├── ListPage.tsx             # Composant de page liste générique
+│   │   ├── ThemeProvider.tsx         # Composant de gestion du thème
+│   │   ├── ThemeToggle.tsx           # Composant de bascule thème clair/sombre
+│   │   └── ThemeWipeProvider.tsx     # Composant de gestion du thème avec wipe
+│   ├── data/                   # Accès aux données (Supabase queries)
+│   ├── features/               # Fonctionnalités (factures, clients, etc.)
+│   ├── hooks/                  # Hooks React personnalisés
+│   ├── lib/                    # Fonctions utilitaires (Supabase, Stripe, mail)
+│   ├── schemas/                # Schémas de validation (Zod)
+│   └── middleware.ts           # Middleware (auth, logging)
+├── tests/                  # Tests unitaires & d’intégration
+│   ├── components/             # Tests des composants UI
+│   ├── mocks/                  # Données mock pour les tests
+│   ├── unit/                   # Tests des fonctions utilitaires
+│   │   ├── data/                   # Tests des accès aux données
+│   │   └── lib/                    # Tests des fonctions
+│   └── setup.ts                # Configuration globale des tests
+├── .env.example            # Exemple de variables d'environnement -> .env.local
+├── .gitignore              # Fichiers à ignorer par Git
+├── components.json         # Configuration Storybook
+├── eslint.config.js        # Configuration ESLint
+├── next.config.js          # Configuration Next.js
+├── package.json            # Dépendances & scripts npm
+├── tailwind.config.js      # Configuration TailwindCSS
+├── tsconfig.json           # Configuration TypeScript
+├── tsconfig.vitest.json    # Configuration TypeScript pour Vitest
+├── vitest.config.ts        # Configuration Vitest
+├── CONTRIBUTING.md         # Guide de contribution
+├── LICENSE                 # Licence MIT
 └── README.md
 ```
 

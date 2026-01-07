@@ -153,6 +153,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    transition: background-color 200ms ease, color 200ms ease;
   }
   h1,
   h2,
@@ -161,5 +162,70 @@
   h5,
   h6 {
     @apply font-display;
+  }
+}
+
+/* --- Film grain ultra discret (pour theme wipe) --- */
+@keyframes grainShift {
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-1%, -1%);
+  }
+  20% {
+    transform: translate(1%, 1%);
+  }
+  30% {
+    transform: translate(-2%, 2%);
+  }
+  40% {
+    transform: translate(2%, -2%);
+  }
+  50% {
+    transform: translate(-1%, 2%);
+  }
+  60% {
+    transform: translate(2%, 1%);
+  }
+  70% {
+    transform: translate(-2%, -1%);
+  }
+  80% {
+    transform: translate(1%, -2%);
+  }
+  90% {
+    transform: translate(-1%, 1%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.theme-grain::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.5'/></svg>");
+  opacity: 0.035; /* 🔑 ultra subtle */
+  mix-blend-mode: overlay;
+  animation: grainShift 1.5s steps(2) infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px; /* approx hauteur header + marge */
+}
+
+/* chaque section avec un id garde une marge en haut */
+section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* respect des utilisateurs "reduced motion" */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

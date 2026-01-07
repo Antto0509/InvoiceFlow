@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Company } from "@/features/companies/schemas/companies.schema";
 import { Filterable } from "@/lib/types";
 import { DocumentKind, DocumentStatus } from "@/features/documents";
+import { MAX_REQ, WINDOW_MS } from "./constants";
 
 /** 
  * Combine des classes CSS avec clsx et tailwind-merge.
@@ -357,4 +358,51 @@ export function toastSuccessMessage(kind: string, action: string) {
     : "Document";
 
   toast.success(`${kindLabel} ${action} avec succès`);
+}
+
+/** 
+ * Valide une adresse email.
+ * @param email Adresse email à valider
+ * @returns Vrai si l'email est valide, sinon faux
+ */
+export function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/** 
+ * Extrait l'adresse IP d'une requête.
+ * @param req Requête entrante
+ * @returns Adresse IP sous forme de chaîne
+ */
+export function getIp(req: Request) {
+  const xf = req.headers.get("x-forwarded-for");
+  if (xf) return xf.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
+/** 
+ * Applique une limitation de débit basée sur l'adresse IP.
+ */
+const hits = new Map<string, number[]>(); // ip -> timestamps
+
+/** 
+ * Applique une limitation de débit basée sur l'adresse IP.
+ * @param ip Adresse IP du client
+ * @returns Objet avec le statut de la limitation
+ */
+export function rateLimit(ip: string) {
+  const now = Date.now();
+  const windowStart = now - WINDOW_MS;
+
+  const prev = hits.get(ip) ?? [];
+  const next = prev.filter((t) => t > windowStart);
+  next.push(now);
+  hits.set(ip, next);
+
+  const remaining = Math.max(0, MAX_REQ - next.length);
+  const allowed = next.length <= MAX_REQ;
+
+  const retryAfterSec = allowed ? 0 : Math.ceil((next[0] - windowStart) / 1000);
+
+  return { allowed, remaining, retryAfterSec };
 }

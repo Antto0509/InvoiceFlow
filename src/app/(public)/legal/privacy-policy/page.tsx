@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
       title="Politique de confidentialité"
       badge="RGPD & données personnelles"
       description="On collecte le minimum, on sécurise, et tu gardes le contrôle."
-      updatedAt="à compléter"
+      updatedAt="7 janvier 2026"
       toc={toc}
     >
       <LegalBox>
@@ -39,15 +39,13 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="responsable" title="1. Responsable du traitement">
         <p>
-          <strong className="text-foreground">Reelium</strong> (Entreprise Individuelle) — à
-          compléter (SIRET / adresse).
+          <strong className="text-foreground">Reelium</strong> (Entreprise Individuelle) — 99197195300013 / 134 rue Saint-Maurice, 80080 Amiens, France
         </p>
         <p>
           Contact :{" "}
-          <a className="underline underline-offset-4" href="mailto:contact@invoiceflow.fr">
-            contact@invoiceflow.fr
-          </a>{" "}
-          (à adapter)
+          <a className="underline underline-offset-4" href="mailto:coutreelantoine@gmail.com">
+            coutreelantoine@gmail.com
+          </a>
         </p>
       </LegalSection>
 
@@ -80,7 +78,9 @@ export default function PrivacyPolicyPage() {
         <p>
           Les données peuvent être traitées par des prestataires techniques nécessaires au
           fonctionnement (hébergement, base de données, emailing transactionnel, etc.).
-          Exemple : <strong className="text-foreground">Vercel Inc.</strong>
+          Exemple : 
+          <strong className="text-foreground">Vercel Inc.</strong> et 
+          <strong className="text-foreground">Supabase Inc.</strong>.
         </p>
       </LegalSection>
 
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection id="conservation" title="7. Durées de conservation">
         <ul className="list-disc space-y-1 pl-5">
           <li>Compte & données métier : durée d’activité du compte puis suppression/anonymisation sur demande, sauf obligation légale</li>
-          <li>Logs de sécurité : durée limitée (à compléter, ex. 6–12 mois)</li>
+          <li>Logs de sécurité : 12 mois</li>
           <li>Obligations légales : conservation selon durées légales applicables</li>
         </ul>
       </LegalSection>
@@ -112,10 +112,9 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           Pour exercer vos droits :{" "}
-          <a className="underline underline-offset-4" href="mailto:contact@invoiceflow.fr">
-            contact@invoiceflow.fr
-          </a>{" "}
-          (à adapter). Vous pouvez aussi saisir la <strong className="text-foreground">CNIL</strong>.
+          <a className="underline underline-offset-4" href="mailto:coutreelantoine@gmail.com">
+            coutreelantoine@gmail.com
+          </a>. Vous pouvez aussi saisir la <strong className="text-foreground">CNIL</strong>.
         </p>
       </LegalSection>
 

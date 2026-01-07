@@ -105,7 +105,7 @@ export function LegalPage({
                   </p>
                   <Separator className="my-3" />
                   <Button asChild className="w-full">
-                    <a href="mailto:contact@invoiceflow.fr">Envoyer un email</a>
+                    <a href="mailto:coutreelantoine@gmail.com">Envoyer un email</a>
                   </Button>
                   <p className="mt-2 text-xs text-muted-foreground">
                     (adresse à adapter)

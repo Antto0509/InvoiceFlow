@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { LegalBox, LegalPage, LegalSection } from "@/components/legal";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Database, Server } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Mentions légales",
@@ -24,7 +27,7 @@ export default function LegalNoticesPage() {
       title="Mentions légales"
       badge="Informations légales"
       description="Les infos essentielles sur l’éditeur, l’hébergement et les règles d’utilisation d’InvoiceFlow."
-      updatedAt="à compléter"
+      updatedAt="7 janvier 2026"
       toc={toc}
     >
       <LegalBox>
@@ -43,25 +46,65 @@ export default function LegalNoticesPage() {
             <strong className="text-foreground">Antoine Coutreel</strong>
           </p>
           <p>
-            <span className="text-muted-foreground">SIRET :</span> à compléter
+            <span className="text-muted-foreground">SIRET :</span> 99197195300013
           </p>
           <p>
-            <span className="text-muted-foreground">Adresse :</span> à compléter
+            <span className="text-muted-foreground">Adresse :</span> 134 rue Saint-Maurice, 80080 Amiens, France
           </p>
           <p>
             <span className="text-muted-foreground">Email :</span>{" "}
-            <a className="underline underline-offset-4" href="mailto:contact@invoiceflow.fr">
-              contact@invoiceflow.fr
-            </a>{" "}
-            (à adapter)
+            <a className="underline underline-offset-4" href="mailto:coutreelantoine@gmail.com">
+              coutreelantoine@gmail.com
+            </a>
           </p>
         </div>
       </LegalSection>
 
-      <LegalSection id="hebergement" title="Hébergement">
-        <p className="text-foreground font-medium">Vercel Inc.</p>
-        <p>340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis</p>
-      </LegalSection>
+    <LegalSection id="hebergement" title="Hébergement">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Vercel */}
+        <Card className="bg-background/60">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <p className="font-medium text-foreground">Vercel Inc.</p>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              650 California St, San Francisco, CA 94108, USA
+            </p>
+
+            <p>
+              Vercel assure l’hébergement du site web et de l’application InvoiceFlow,
+              garantissant la disponibilité et les performances du service.
+            </p>
+
+            <Badge variant="secondary">Serveurs localisés en France</Badge>
+          </CardContent>
+        </Card>
+
+        {/* Supabase */}
+        <Card className="bg-background/60">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <p className="font-medium text-foreground">Supabase Inc.</p>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513
+            </p>
+
+            <p>
+              Supabase fournit les services de base de données et d’authentification
+              nécessaires au fonctionnement d’InvoiceFlow.
+            </p>
+
+            <Badge variant="secondary">Base de données hébergée en Suède</Badge>
+          </CardContent>
+        </Card>
+      </div>
+    </LegalSection>
 
       <LegalSection id="pi" title="Propriété intellectuelle">
         <p>

@@ -107,9 +107,6 @@ export function LegalPage({
                   <Button asChild className="w-full">
                     <a href="mailto:coutreelantoine@gmail.com">Envoyer un email</a>
                   </Button>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    (adresse à adapter)
-                  </p>
                 </CardContent>
               </Card>
             </div>

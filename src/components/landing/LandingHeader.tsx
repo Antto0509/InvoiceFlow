@@ -3,10 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useTransform, useSpring } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useScrollSpy } from "@/hooks/useScrollSpy";
+import { Button } from "@/components/ui/button";
+import { useScrollSpy, useWindowScrollY } from "@/hooks/index";
 
 const NAV = [
   { href: "#features" as const, label: "Fonctionnalités" },
@@ -16,10 +17,13 @@ const NAV = [
 ];
 
 export function LandingHeader() {
+  // ref sur le header complet (barre + dropdown)
   const headerRef = React.useRef<HTMLElement>(null);
 
-  const { scrollY } = useScroll();
+  // scrollY fiable (mobile inclus)
+  const scrollY = useWindowScrollY();
 
+  // animation on scroll
   const tRaw = useTransform(scrollY, [0, 80], [0, 1]);
   const t = useSpring(tRaw, { stiffness: 300, damping: 30 });
 
@@ -31,59 +35,118 @@ export function LandingHeader() {
 
   const [open, setOpen] = React.useState(false);
 
-  // lien actif selon scroll
-  const active = useScrollSpy(NAV);
+  // offset dynamique basé sur la hauteur réelle du header
+  const [headerOffsetPx, setHeaderOffsetPx] = React.useState(96);
 
-  // micro pulse CTA : 1 fois, seulement en haut
+  React.useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const h = el.getBoundingClientRect().height;
+      setHeaderOffsetPx(Math.max(0, Math.ceil(h)));
+    };
+
+    update();
+
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+
+    window.addEventListener("resize", update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  // ✅ ScrollSpy: rootMargin basé sur la hauteur du header (fixed)
+  // IMPORTANT: memoize l'objet options sinon le hook re-run tout le temps
+  const spyOptions = React.useMemo(() => {
+    const top = Math.ceil(headerOffsetPx + 12); // header + petit "air"
+    // On considère une section active quand elle arrive sous le header.
+    // Bottom garde une zone pour éviter que la section suivante ne prenne trop tôt.
+    return {
+      rootMargin: `-${top}px 0px -60% 0px`,
+      threshold: [0.1, 0.25, 0.4, 0.6] as number[],
+    };
+  }, [headerOffsetPx]);
+
+  const active = useScrollSpy(NAV, spyOptions);
+
+  // micro pulse CTA : seulement en haut
   const [pulse, setPulse] = React.useState(false);
   React.useEffect(() => {
     const unsub = scrollY.on("change", (v) => {
-      if (v < 40) setPulse(true);
-      else setPulse(false);
+      setPulse(v < 40);
     });
     return () => unsub();
   }, [scrollY]);
 
-  // close on hash change
+  // close menu on hash change
   React.useEffect(() => {
     const onHashChange = () => setOpen(false);
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  const scrollToHash = (hash: string) => {
-    const el = document.querySelector(hash) as HTMLElement | null;
-    if (!el) return;
+  const [pendingHash, setPendingHash] = React.useState<string | null>(null);
 
-    const headerH = headerRef.current?.getBoundingClientRect().height ?? 0;
-    const extra = 12; // petite marge “respire”
+  const scrollToHash = React.useCallback(
+    (hash: string) => {
+      const el = document.querySelector(hash) as HTMLElement | null;
+      if (!el) return;
 
-    const top =
-      el.getBoundingClientRect().top + window.scrollY - headerH - extra;
+      const extra = 12;
 
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      // hauteur "live" au moment du scroll
+      const liveHeaderOffset =
+        headerRef.current?.getBoundingClientRect().height ?? headerOffsetPx;
 
-    window.scrollTo({
-      top,
-      behavior: prefersReduced ? "auto" : "smooth",
-    });
+      const top =
+        el.getBoundingClientRect().top +
+        (window.scrollY || 0) -
+        Math.ceil(liveHeaderOffset) -
+        extra;
 
-    // garde l'URL clean sans jump navigateur
-    history.pushState(null, "", hash);
-  };
+      const prefersReduced =
+        window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+      window.scrollTo({
+        top,
+        behavior: prefersReduced ? "auto" : "smooth",
+      });
+
+      // URL clean sans jump (pas de navigation, juste l’URL)
+      history.pushState(null, "", hash);
+    },
+    [headerOffsetPx]
+  );
+
+  const isDesktop = React.useCallback(() => {
+    return window.matchMedia?.("(min-width: 768px)")?.matches ?? true;
+  }, []);
 
   const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
+
+    // ✅ desktop: pas de dropdown animé -> scroll direct
+    if (isDesktop()) {
+      setOpen(false);
+      requestAnimationFrame(() => scrollToHash(href));
+      return;
+    }
+
+    // ✅ mobile: on attend la fermeture animée
+    setPendingHash(href);
     setOpen(false);
-    scrollToHash(href);
   };
 
   return (
-    <header ref={headerRef} className="fixed top-0 z-20 w-full pt-2">
+    <header className="fixed top-0 z-20 w-full pt-2">
       <motion.div style={{ y }} className="px-3 md:px-4">
         <motion.header
+          ref={headerRef}
           style={{ borderRadius: radius, scale }}
           className={cn(
             "mx-auto w-full max-w-6xl",
@@ -96,25 +159,27 @@ export function LandingHeader() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
         >
-          <motion.div style={{ paddingTop: padY, paddingBottom: padY }} className="px-3 md:px-4">
+          {/* Top bar */}
+          <motion.div
+            style={{ paddingTop: padY, paddingBottom: padY }}
+            className="px-3 md:px-4"
+          >
             <div className="flex items-center justify-between gap-3">
               {/* Brand */}
               <Link href="/" className="flex items-center gap-2">
-                {/* <motion.div
-                  layout
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-sm font-bold text-slate-950"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  IF
-                </motion.div> */}
-                <Image src="/favicon.ico" alt="InvoiceFlow Logo" className="rounded" width={32} height={32} />
+                <Image
+                  src="/favicon.ico"
+                  alt="InvoiceFlow Logo"
+                  className="rounded"
+                  width={32}
+                  height={32}
+                />
                 <span className="text-sm font-semibold tracking-tight text-foreground">
                   InvoiceFlow
                 </span>
               </Link>
 
-              {/* Nav desktop + indicator animé */}
+              {/* Desktop nav */}
               <nav className="relative hidden items-center gap-2 text-sm md:flex">
                 {NAV.map((item) => {
                   const isActive = active === item.href;
@@ -134,10 +199,13 @@ export function LandingHeader() {
                         <motion.span
                           layoutId="nav-active"
                           className="absolute inset-0 rounded-lg bg-muted"
-                          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 40,
+                          }}
                         />
                       ) : null}
-
                       <span className="relative z-10">{item.label}</span>
                     </a>
                   );
@@ -148,9 +216,14 @@ export function LandingHeader() {
               <div className="flex items-center gap-2">
                 <ThemeToggle />
 
+                {/* CTA desktop */}
                 <motion.div
                   animate={pulse ? { scale: [1, 1.03, 1] } : { scale: 1 }}
-                  transition={{ duration: 1.2, repeat: pulse ? Infinity : 0, repeatDelay: 2 }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: pulse ? Infinity : 0,
+                    repeatDelay: 2,
+                  }}
                   className="hidden md:block"
                 >
                   <Link
@@ -165,8 +238,8 @@ export function LandingHeader() {
                   </Link>
                 </motion.div>
 
-                {/* Mobile menu */}
-                <button
+                {/* Mobile menu button */}
+                <Button
                   type="button"
                   onClick={() => setOpen((v) => !v)}
                   className={cn(
@@ -177,11 +250,11 @@ export function LandingHeader() {
                   aria-expanded={open}
                 >
                   {open ? "✕" : "☰"}
-                </button>
+                </Button>
               </div>
             </div>
 
-            {/* Ombre dynamique */}
+            {/* Dynamic shadow */}
             <motion.div
               aria-hidden
               style={{ opacity: shadowOpacity }}
@@ -189,7 +262,7 @@ export function LandingHeader() {
             />
           </motion.div>
 
-          {/* Mobile dropdown (slide + fade) */}
+          {/* Mobile dropdown */}
           <motion.div
             initial={false}
             animate={open ? "open" : "closed"}
@@ -199,6 +272,19 @@ export function LandingHeader() {
             }}
             transition={{ duration: 0.18 }}
             className="overflow-hidden md:hidden"
+            onAnimationComplete={(state) => {
+              // ✅ seulement à la fin de la fermeture
+              if (state !== "closed") return;
+              if (!pendingHash) return;
+
+              // double rAF = laisse le layout + ResizeObserver respirer
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  scrollToHash(pendingHash);
+                  setPendingHash(null);
+                });
+              });
+            }}
           >
             <div className="px-3 pb-3">
               <div className="grid gap-1 rounded-xl border border-border bg-card/70 p-2">
@@ -223,6 +309,7 @@ export function LandingHeader() {
 
                 <Link
                   href="/register"
+                  onClick={() => setOpen(false)}
                   className={cn(
                     "mt-1 inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition",
                     "bg-emerald-500 text-slate-950 hover:bg-emerald-400"

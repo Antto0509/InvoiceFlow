@@ -1,37 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { motion, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useWindowScrollY } from "@/hooks/useWindowScrollY";
 
 export function LandingBackground() {
-  const [offset, setOffset] = useState(0);
+  const scrollY = useWindowScrollY();
 
-  useEffect(() => {
-    let raf = 0;
-
-    const onScroll = () => {
-      raf = requestAnimationFrame(() => {
-        setOffset(window.scrollY);
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  // coefficients faibles = mouvement lent (clé du rendu premium)
-  const glowFast = offset * 0.15;
-  const glowSlow = offset * 0.07;
+  const glowFast = useTransform(scrollY, (v) => v * 0.15);
+  const glowSlow = useTransform(scrollY, (v) => v * 0.07);
+  const glowFastInv = useTransform(glowFast, (v) => -v);
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background"
+      className={cn("pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background")}
     >
-      {/* gradient global */}
       <div
         className={cn(
           "absolute inset-0",
@@ -40,31 +24,24 @@ export function LandingBackground() {
         )}
       />
 
-      {/* glow haut droite */}
-      <div
+      <motion.div
         className={cn(
           "absolute -top-24 right-[-120px] h-72 w-72 rounded-full blur-3xl",
           "bg-emerald-500/15 dark:bg-emerald-500/10",
           "will-change-transform"
         )}
-        style={{
-          transform: `translateY(${glowSlow}px)`,
-        }}
+        style={{ y: glowSlow }}
       />
 
-      {/* glow bas gauche */}
-      <div
+      <motion.div
         className={cn(
           "absolute -bottom-28 left-[-120px] h-72 w-72 rounded-full blur-3xl",
           "bg-emerald-500/10 dark:bg-emerald-500/5",
           "will-change-transform"
         )}
-        style={{
-          transform: `translateY(${-glowFast}px)`,
-        }}
+        style={{ y: glowFastInv }}
       />
 
-      {/* grain / grid subtil */}
       <div
         className={cn(
           "absolute inset-0 opacity-[0.08]",

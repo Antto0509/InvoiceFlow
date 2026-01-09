@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Relance — facture {{document.number}}</title>
+  </head>
+  <body style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.5;">
+    <p>Bonjour {{client.name}},</p>
+
+    <p>
+      Petit rappel concernant la <strong>facture {{document.number}}</strong>
+      d’un montant de <strong>{{document.total}} {{document.currency}}</strong>.
+    </p>
+
+    {{#if document.due_date}}
+    <p>
+      Date d’échéance : <strong>{{document.due_date}}</strong>
+      {{#if document.days_overdue}}
+      ({{document.days_overdue}} jour(s) de retard)
+      {{/if}}
+    </p>
+    {{/if}}
+
+    <p>
+      Si le règlement a déjà été effectué, vous pouvez ignorer ce message.
+      Sinon, merci de procéder au paiement dès que possible.
+    </p>
+
+    {{#if company.bank_info}}
+    <p>
+      Coordonnées de paiement :<br />
+      <span style="white-space: pre-line;">{{company.bank_info}}</span>
+    </p>
+    {{/if}}
+
+    <p>
+      Cordialement,<br />
+      <strong>{{company.name}}</strong>
+    </p>
+
+    {{> footer.html}}
+  </body>
+</html>

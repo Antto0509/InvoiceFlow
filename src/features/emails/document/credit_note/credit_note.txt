@@ -1,0 +1,14 @@
+Bonjour {{client.name}},
+
+Veuillez trouver ci-joint votre avoir {{document.number}}
+d’un montant de {{document.total}} {{document.currency}}.
+
+{{#if document.issue_date}}Date d’émission : {{document.issue_date}}{{/if}}
+{{#if document.reference_number}}Référence : {{document.reference_number}}{{/if}}
+
+Si vous avez la moindre question, répondez à cet email.
+
+Cordialement,
+{{company.name}}
+
+{{> footer.txt}}

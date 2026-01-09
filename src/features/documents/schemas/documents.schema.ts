@@ -251,6 +251,7 @@ export type DocumentListRow = {
   currency_code: string | null;
   client_name: string | null;     // Depuis JOIN / vue
   user_id: string | null;
+  email_sent?: boolean;           // Depuis JOIN / vue
 };
 
 /** Props du tableau des documents */

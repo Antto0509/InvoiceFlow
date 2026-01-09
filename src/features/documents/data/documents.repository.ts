@@ -80,7 +80,12 @@ export async function listDocuments(params: Partial<DocumentListParams> = {}, us
     filters,
   });
 
-  const rows : DocumentListRow[] = (data as Array<Document & { client_name: string | null }>).map((d) => ({
+  const rows : DocumentListRow[] = (data as Array<
+    Document & { 
+      client_name: string | null, 
+      email_sent: boolean 
+    }
+  >).map((d) => ({
     id: d.id,
     number: d.number_readonly ?? d.number ?? null,
     issue_date: d.issue_date,
@@ -91,6 +96,7 @@ export async function listDocuments(params: Partial<DocumentListParams> = {}, us
     client_id: d.client_id ?? null,
     user_id: d.user_id ?? null,
     kind: d.kind as string,
+    email_sent: !!d.email_sent,
   }));
 
   return { rows, total };

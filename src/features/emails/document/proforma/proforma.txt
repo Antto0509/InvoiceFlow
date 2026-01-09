@@ -1,0 +1,14 @@
+Bonjour {{client.name}},
+
+Veuillez trouver ci-joint votre facture proforma {{document.number}}
+d’un montant de {{document.total}} {{document.currency}}.
+
+{{#if document.issue_date}}Date d’émission : {{document.issue_date}}{{/if}}
+
+Cette proforma est un document prévisionnel (non comptable).
+Si vous souhaitez lancer la facturation définitive, répondez à cet email.
+
+Cordialement,
+{{company.name}}
+
+{{> footer.txt}}

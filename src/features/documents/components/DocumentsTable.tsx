@@ -21,6 +21,7 @@ import type {
   DocumentSort,
   DocumentsTableProps,
 } from "@/features/documents/schemas/documents.schema";
+import { DocumentEmailPreviewDialog } from "@/features/emails/components/DocumentEmailPreviewDialog";
 
 export function DocumentsTable({
   data = [],
@@ -32,33 +33,7 @@ export function DocumentsTable({
   onDelete,
   showKindColumn = false,
 }: DocumentsTableProps) {
-  // ---------------------------------------------------------------------------
-  // Envoi email
-  // ---------------------------------------------------------------------------
-  const sendByEmail = React.useCallback(
-    async (doc: DocumentListRow) => {
-      try {
-        const res = await fetch(`/api/documents/${doc.id}/send-email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind: doc.kind }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data?.error ?? "Erreur lors de l’envoi");
-        }
-
-        toast.success("Email envoyé avec succès");
-      } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Impossible d’envoyer l’email"
-        );
-      }
-    },
-    []
-  );
+  const [previewDoc, setPreviewDoc] = React.useState<DocumentListRow | null>(null);
 
   // ---------------------------------------------------------------------------
   // Colonnes
@@ -234,21 +209,11 @@ export function DocumentsTable({
                 isPdfCapable
                   ? [
                       {
-                        label: alreadySent
-                          ? "Email déjà envoyé"
-                          : "Envoyer par email",
-                        icon: alreadySent ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Mail className="h-4 w-4" />
-                        ),
-                        onClick: alreadySent
-                          ? undefined
-                          : () => sendByEmail(doc),
+                        label: alreadySent ? "Email déjà envoyé" : "Prévisualiser & envoyer",
+                        icon: alreadySent ? <Check className="h-4 w-4" /> : <Mail className="h-4 w-4" />,
+                        onClick: alreadySent ? undefined : () => setPreviewDoc(doc),
                         disabled: alreadySent,
-                        variant: alreadySent
-                          ? "ghost"
-                          : "default",
+                        variant: alreadySent ? "ghost" : "default",
                         separatorBefore: true,
                       },
                       {
@@ -285,7 +250,6 @@ export function DocumentsTable({
     onEdit,
     onDelete,
     showKindColumn,
-    sendByEmail,
   ]);
 
   return (
@@ -295,6 +259,16 @@ export function DocumentsTable({
         data={data}
         isLoading={!!loading}
         onRowClick={(row) => onRowClick?.(row.id)}
+      />
+
+      <DocumentEmailPreviewDialog
+        documentId={previewDoc?.id ?? ""}
+        kind={previewDoc?.kind ?? "invoice"}
+        alreadySent={!!previewDoc?.email_sent}
+        open={!!previewDoc}
+        onOpenChange={(v) => {
+          if (!v) setPreviewDoc(null);
+        }}
       />
     </div>
   );

@@ -15,7 +15,7 @@ import {
 
 import { removeDocument } from "@/features/documents/data/documents.repository";
 import { listDocumentLines, deleteDocumentLines } from "@/features/documents/data/documentLines.repository";
-import type { Document, DocumentDeleteProps } from "@/features/documents/schemas/documents.schema";
+import type { Document, DocumentDeleteProps } from "@/schemas/documents.schema";
 import { toastSuccessMessage } from "@/lib/utils";
 
 export function DocumentDeleteDialog({

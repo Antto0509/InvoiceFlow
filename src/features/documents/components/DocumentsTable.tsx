@@ -20,7 +20,7 @@ import type {
   DocumentListRow,
   DocumentSort,
   DocumentsTableProps,
-} from "@/features/documents/schemas/documents.schema";
+} from "@/schemas/documents.schema";
 import { DocumentEmailPreviewDialog } from "@/features/emails/components/DocumentEmailPreviewDialog";
 
 export function DocumentsTable({

@@ -2,7 +2,7 @@ import { createResourceApi } from "@/data/createResourceApi";
 import { createClient } from "@/data/supabase/client";
 import { FilterOps, SORTABLE_DOCS } from "@/lib/index";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
-import type { Document, DocumentLine, DocumentListParams, DocumentListRow } from "@/features/documents/schemas/documents.schema";
+import type { Document, DocumentLine, DocumentListParams, DocumentListRow } from "@/schemas/documents.schema";
 
 // ==============================================
 // API liste + détail + création avec lignes

@@ -42,7 +42,7 @@ import {
   DocumentFormSchema,
   DocumentKind,
   DocumentStatus,
-} from "@/features/documents/schemas/documents.schema";
+} from "@/schemas/documents.schema";
 import { labelDocStatus, getDocStatusVariant } from "@/lib/utils";
 
 import { useRHFDebug } from "@/lib/forms/debug";

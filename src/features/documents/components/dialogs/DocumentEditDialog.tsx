@@ -7,7 +7,7 @@ import { DocumentForm } from "../DocumentForm";
 
 import { updateDocument } from "@/data/documents.repository";
 import { replaceDocumentLines } from "@/data/documentLines.repository";
-import type { DocumentLine, DocumentEditProps } from "@/features/documents/schemas/documents.schema";
+import type { DocumentLine, DocumentEditProps } from "@/schemas/documents.schema";
 
 import { toastSuccessMessage } from "@/lib/utils";
 

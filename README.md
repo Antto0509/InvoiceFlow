@@ -5,7 +5,7 @@
 [![Supabase](https://img.shields.io/badge/Powered%20by-Supabase-3FCF8E?logo=supabase)](https://supabase.com/)
 [![Deploy on Vercel](https://img.shields.io/badge/Deploy%20on-Vercel-black?logo=vercel)](https://vercel.com/)
 [![Stripe](https://img.shields.io/badge/Payments-Stripe-635BFF?logo=stripe)](https://stripe.com/)
-[![Status](https://img.shields.io/badge/Status-🚧%20In%20Development-yellow)]()
+[![Status](https://img.shields.io/badge/Status-🚧%20In%20Development-yellow)](https://github.com/Antto05/InvoiceFlow/issues)
 
 ---
 
@@ -30,7 +30,7 @@
 ## 🧱 Stack technique
 
 | Technologie | Rôle |
-|--------------|------|
+| ------------ | ------ |
 | [Next.js](https://nextjs.org/) | Framework React full-stack |
 | [TailwindCSS](https://tailwindcss.com/) | Design system moderne |
 | [Supabase](https://supabase.com/) | Base de données, Auth & Storage |
@@ -124,17 +124,37 @@ InvoiceFlow/
 ## 🧮 Variables d’environnement (.env.local)
 
 ```text
+# ---------------
+# Next.js
+# ---------------
+
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# ---------------
+# Supabase
+# ---------------
+
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
+# ---------------
+# Stripe
+# ---------------
+
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
 
-RESEND_API_KEY=
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+# ---------------
+# Brevo
+# ---------------
+
+BREVO_API_KEY=
+BREVO_WAITLIST_ID=
+BREVO_WEBHOOK_TRANS_TOKEN=
+BREVO_WEBHOOK_MARKET_TOKEN=
 ```
 
 ---
@@ -144,6 +164,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```bash
 npm run dev
 ```
+
 🧠 L’application sera accessible sur `http://localhost:3000`.  
 🔄 Toute modification est rechargée automatiquement.
 
@@ -154,6 +175,7 @@ npm run dev
 Ce projet est distribué sous la licence **MIT**.
 
 Tu es libre de :
+
 - ✅ utiliser le code dans tes projets personnels ou commerciaux ;
 - ✏️ le modifier et l’adapter à tes besoins ;
 - 🚀 le redistribuer librement, tant que la mention de copyright est conservée.
@@ -176,11 +198,12 @@ Tu es libre de :
 ## 💬 Statut du projet
 
 🧱 **Phase actuelle :** développement du MVP  
-📅 **Lancement prévu :** décembre 2025  
+📅 **Lancement prévu :** septembre 2026  
 🚀 **Objectif :** premier SaaS rentable & automatisé pour freelances  
 
 🧠 *Prochaines étapes :*
-- Finaliser le système de factures PDF  
+
+- Finaliser le système de factures  
 - Lancer la bêta test  
 - Intégrer la facturation Stripe  
 
@@ -208,6 +231,7 @@ Si tu veux aider à améliorer **InvoiceFlow**, voici comment faire 👇
 ## 🗨️ Discussion & Feedback
 
 Tu peux :
+
 - Ouvrir une issue pour signaler un bug ou proposer une idée 💡
 - Discuter sur les Discussions GitHub (si activées)
 - Ou me contacter directement sur [LinkedIn](https://www.linkedin.com/in/antoine-coutreel/)  
@@ -220,16 +244,16 @@ Tu peux :
 
 ## 🧭 Roadmap publique
 
- - Authentification Supabase
- - CRUD Clients / Factures
- - Génération PDF + facturation électronique (Factur-X, UBL et/ou CII)
- - Envoi d’emails
- - Relances automatiques
- - Stripe Billing
- - Déploiement Vercel
- - Lancement public 🚀
+- Authentification Supabase
+- CRUD Clients / Factures
+- Génération PDF + facturation électronique (Factur-X, UBL et/ou CII)
+- Envoi d’emails
+- Relances automatiques
+- Stripe Billing
+- Déploiement Vercel
+- Lancement public 🚀
 
 ---
 
-> _« Build slow, build right, then let your code earn while you sleep. »_  
+> *« Build slow, build right, then let your code earn while you sleep. »*  
 > — Antoine ⚡️

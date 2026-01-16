@@ -2,7 +2,7 @@ import * as React from "react";
 import { DocumentCreateDialog } from "./DocumentCreateDialog";
 import { DocumentDeleteDialog } from "./DocumentDeleteDialog";
 import { DocumentEditDialog } from "./DocumentEditDialog";
-import { DocumentDialogsProps } from "@/features/documents/schemas/documents.schema";
+import { DocumentDialogsProps } from "@/schemas/documents.schema";
 
 export function DocumentDialogs(props: DocumentDialogsProps) {
   const mode = ("mode" in props && props.mode) ? props.mode : "create";

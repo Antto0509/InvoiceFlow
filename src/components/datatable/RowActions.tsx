@@ -17,6 +17,7 @@ export type RowExtraAction<T> = {
   /** Soit href (lien), soit onClick (callback) */
   href?: string;
   onClick?: (item: T) => void | Promise<void>;
+  disabled?: boolean;
   /** style visuel */
   variant?: React.ComponentProps<typeof Button>["variant"];
   /** className (facultatif) */
@@ -64,6 +65,7 @@ export function RowActions<T>({
               key={i}
               asChild
               size="sm"
+              disabled={a.disabled}
               variant={a.variant ?? "secondary"}
               className={a.className}
               onClick={(e) => e.stopPropagation()}
@@ -77,6 +79,7 @@ export function RowActions<T>({
             <Button
               key={i}
               size="sm"
+              disabled={a.disabled}
               variant={a.variant ?? "secondary"}
               className={a.className}
               onClick={handle(a.onClick)}

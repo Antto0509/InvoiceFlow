@@ -1,0 +1,14 @@
+Bonjour {{client.name}},
+
+Veuillez trouver ci-joint votre devis {{document.number}}
+pour un montant de {{document.total}} {{document.currency}}.
+
+{{#if document.issue_date}}Date d’émission : {{document.issue_date}}{{/if}}
+{{#if document.valid_until}}Valable jusqu’au : {{document.valid_until}}{{/if}}
+
+Si vous souhaitez valider ce devis, répondez à cet email (ou signez selon votre procédure).
+
+Cordialement,
+{{company.name}}
+
+{{> footer.txt}}

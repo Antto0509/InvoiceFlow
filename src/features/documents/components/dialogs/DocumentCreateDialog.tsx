@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DocumentForm } from "../DocumentForm";
 
 import { createDocumentWithLines } from "@/features/documents/data/documents.repository";
-import type { DocumentFormValues, DocumentCreateProps } from "@/features/documents/schemas/documents.schema";
+import type { DocumentFormValues, DocumentCreateProps } from "@/schemas/documents.schema";
 import { toastSuccessMessage } from "@/lib/utils";
 
 export function DocumentCreateDialog({

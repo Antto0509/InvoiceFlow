@@ -1,5 +1,5 @@
 type InvoiceEmailSubjectParams = {
-  document: { number: string | number };
+  document: { number: string | null };
   company: { name: string };
 };
 

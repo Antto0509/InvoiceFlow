@@ -1,4 +1,9 @@
 import { DocumentKind } from "@/features/documents";
+import { creditNoteEmailTemplate } from "./credit_note/credit_note";
+import { invoiceEmailTemplate } from "./invoice/invoice";
+import { proformaEmailTemplate } from "./proforma/proforma";
+import { quoteEmailTemplate } from "./quote/quote";
+import { reminderOverdueEmailTemplate } from "./reminder_overdue/reminder_overdue";
 
 export type EmailVars = {
   client: {
@@ -27,19 +32,34 @@ export type EmailVars = {
 
 export const emailSubjects = {
   invoice: (v: EmailVars) =>
-    `Facture ${v.document.number ?? ""} – ${v.company.name}`.trim(),
+    invoiceEmailTemplate.subject({
+      document: { number: v.document.number ?? "" },
+      company: v.company,
+    }),
 
   quote: (v: EmailVars) =>
-    `Devis ${v.document.number ?? ""} – ${v.company.name}`.trim(),
+    quoteEmailTemplate.subject({
+      document: { number: v.document.number ?? "" },
+      company: v.company,
+    }),
 
   credit_note: (v: EmailVars) =>
-    `Avoir ${v.document.number ?? ""} – ${v.company.name}`.trim(),
+    creditNoteEmailTemplate.subject({
+      document: { number: v.document.number ?? "" },
+      company: v.company,
+    }),
 
   proforma: (v: EmailVars) =>
-    `Proforma ${v.document.number ?? ""} – ${v.company.name}`.trim(),
+    proformaEmailTemplate.subject({
+      document: { number: v.document.number ?? "" },
+      company: v.company,
+    }),
 
   reminder_overdue: (v: EmailVars) =>
-    `Relance – Facture ${v.document.number ?? ""} – ${v.company.name}`.trim(),
+    reminderOverdueEmailTemplate.subject({
+      document: { number: v.document.number ?? "" },
+      company: v.company,
+    }),
 };
 
 export type EmailKind = keyof typeof emailSubjects;

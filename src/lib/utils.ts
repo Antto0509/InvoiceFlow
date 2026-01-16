@@ -588,6 +588,12 @@ export async function safeUpdateEmailLog(
   const { error } = await supabase.from("email_logs").update(update).eq("id", emailLogId);
   if (!error) return;
 
+  console.error("[InvoiceFlow][EmailLog] safe_update_failed", {
+    emailLogId,
+    update,
+    error,
+  });
+
   // fallback minimal (ex: status seulement) si colonnes inconnues
   if (Object.keys(fallback).length) {
     await supabase.from("email_logs").update(fallback).eq("id", emailLogId);

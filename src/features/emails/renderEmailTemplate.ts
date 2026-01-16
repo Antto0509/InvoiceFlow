@@ -22,7 +22,7 @@ function registerPartials() {
 
   if (!fs.existsSync(partialsDir)) {
     throw new Error(
-      `Email partials directory not found: ${partialsDir}`
+      `Répertoire des fichiers partiels d'e-mail introuvable : ${partialsDir}`
     );
   }
 

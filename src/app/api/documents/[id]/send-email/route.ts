@@ -99,7 +99,7 @@ export async function POST(req: Request, ctx: Ctx) {
     .from("email_logs")
     .select("id")
     .eq("document_id", document.id)
-    .eq("status", "sent")
+    .in("status", ["sent", "pending"])
     .maybeSingle();
 
   if (existingLog) {
@@ -255,8 +255,8 @@ export async function POST(req: Request, ctx: Ctx) {
         name: document.company.name,
       },
       sender: {
-        email: "no-reply@reelium.fr",
-        name: "InvoiceFlow",
+        email: process.env.NEXT_PUBLIC_SENDER_EMAIL || "no-reply@reelium.fr",
+        name: process.env.NEXT_PUBLIC_SENDER_NAME || "InvoiceFlow",
       },
       to: [
         {

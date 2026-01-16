@@ -43,7 +43,7 @@ export async function GET(req: Request, ctx: Ctx) {
   }
 
   if (!document.pdf_url) {
-    return NextResponse.json({ error: "PDF non généré. Veuillez la générer avant d'envoyer l'email." }, { status: 400 });
+    return NextResponse.json({ error: "PDF non généré. Veuillez le générer avant d'envoyer l'email." }, { status: 400 });
   }
 
   // Anti double envoi (info utile à la preview)

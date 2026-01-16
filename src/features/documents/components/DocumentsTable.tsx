@@ -14,7 +14,7 @@ import {
   downloadDocumentPdf,
 } from "@/lib/utils";
 import { SortBtn } from "@/components/datatable/SortBtn";
-import { FileDown, Mail, RefreshCcw, Check } from "lucide-react";
+import { FileDown, Mail, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import type {
   DocumentListRow,
@@ -206,14 +206,13 @@ export function DocumentsTable({
               onDelete={(item) => onDelete?.(item)}
               labels={{ edit: "Éditer", delete: "Supprimer" }}
               actions={
-                isPdfCapable
+                isPdfCapable && !alreadySent
                   ? [
                       {
-                        label: alreadySent ? "Email déjà envoyé" : "Prévisualiser & envoyer",
-                        icon: alreadySent ? <Check className="h-4 w-4" /> : <Mail className="h-4 w-4" />,
-                        onClick: alreadySent ? undefined : () => setPreviewDoc(doc),
-                        disabled: alreadySent,
-                        variant: alreadySent ? "ghost" : "default",
+                        label: "Prévisualiser & envoyer",
+                        icon: <Mail className="h-4 w-4" />,
+                        onClick: () => setPreviewDoc(doc),
+                        variant: "default",
                         separatorBefore: true,
                       },
                       {

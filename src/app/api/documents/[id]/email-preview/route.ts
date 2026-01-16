@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClientServer } from "@/data/supabase";
 import { renderEmailTemplate } from "@/features/emails/renderEmailTemplate";
-import { emailSubjects } from "@/features/emails/document";
+import { emailSubjects, EmailVars } from "@/features/emails/document";
+import { DocumentKind } from "@/schemas/documents.schema";
 
 // Type pour le contexte avec les params
 type Ctx = { params: Promise<{ id: string }> };
@@ -34,15 +35,15 @@ export async function GET(req: Request, ctx: Ctx) {
     .single();
 
   if (docError || !document) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    return NextResponse.json({ error: "Document non trouvé" }, { status: 404 });
   }
 
   if (!document.client?.email) {
-    return NextResponse.json({ error: "Client has no email" }, { status: 400 });
+    return NextResponse.json({ error: "Client n'a pas d'email. Veuillez en ajouter un avant d'envoyer l'email." }, { status: 400 });
   }
 
   if (!document.pdf_url) {
-    return NextResponse.json({ error: "PDF not generated" }, { status: 400 });
+    return NextResponse.json({ error: "PDF non généré. Veuillez la générer avant d'envoyer l'email." }, { status: 400 });
   }
 
   // Anti double envoi (info utile à la preview)
@@ -53,14 +54,11 @@ export async function GET(req: Request, ctx: Ctx) {
     .eq("status", "sent")
     .maybeSingle();
 
-  type EmailKind = keyof typeof emailSubjects;
-  const kind = document.kind as EmailKind;
+  const kind = document.kind as DocumentKind;
 
   if (!kind || !(kind in emailSubjects)) {
     return NextResponse.json({ error: "Invalid document kind" }, { status: 400 });
   }
-
-  type EmailVars = Parameters<(typeof emailSubjects)[EmailKind]>[0];
 
   const vars: EmailVars = {
     client: {

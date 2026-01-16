@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, Check, ExternalLink } from "lucide-react";
+import { extractErrorMessage } from "@/lib/index";
 
 type PreviewResponse = {
   to: string;
@@ -58,7 +59,11 @@ export function DocumentEmailPreviewDialog({
         method: "GET",
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Impossible de charger la preview");
+
+      if (!res.ok) {
+        const message = extractErrorMessage(data) ?? "Erreur lors de la récupération de la preview";
+        throw new Error(message);
+      }
       setPreview(data);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur preview");
@@ -80,9 +85,13 @@ export function DocumentEmailPreviewDialog({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Erreur lors de l’envoi");
 
-      toast.success("Email envoyé ✅");
+      if (!res.ok) {
+        const message = extractErrorMessage(data) ?? "Échec lors de l'envoi de l'email";
+        throw new Error(message);
+      }
+
+      toast.success("Email envoyé");
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Échec envoi email");

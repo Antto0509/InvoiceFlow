@@ -1,189 +1,342 @@
 import { NextResponse } from "next/server";
 import { createClientServer } from "@/data/supabase";
+import { sendBrevoTransacEmail } from "@/data/brevo";
 import { renderEmailTemplate } from "@/features/emails/renderEmailTemplate";
-import { emailSubjects } from "@/features/emails/document";
+import { emailSubjects, EmailVars, EmailKind } from "@/features/emails/document";
 import { EMAIL_LOG_STATUSES } from "@/lib/constants";
+import {
+  isValidEmail,
+  normalizeBrevoError,
+  mapBrevoToUserMessage,
+  userError,
+  safeUpdateEmailLog,
+} from "@/lib/utils";
+import { getOrCreateSignedDocumentPdfUrlWithClient } from "@/features/documents/hooks/signDocumentPdf";
+import { DocumentKind } from "@/features/documents";
 
 // Type pour le contexte avec les params
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: Ctx) {
-    const supabase = createClientServer();
+  const traceId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `trace_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-    // ---------------------------------------------------------------------------
-    // Auth
-    // ---------------------------------------------------------------------------
-    const {
-        data: { user },
-        error: authError,
-    } = await supabase.auth.getUser();
+  const supabase = createClientServer();
 
-    if (!user || authError) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // ---------------------------------------------------------------------------
+  // Auth
+  // ---------------------------------------------------------------------------
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    const { id: documentId } = await ctx.params;
+  if (!user || authError) {
+    return userError(401, "UNAUTHORIZED", "Connexion requise.", traceId);
+  }
 
-    // ---------------------------------------------------------------------------
-    // Fetch document + client + company
-    // ---------------------------------------------------------------------------
-    const { data: document, error: docError } = await supabase
-        .from("documents")
-        .select(`
-            *,
-            client:clients (*),
-            company:companies (*)
-        `)
-        .eq("id", documentId)
-        .eq("user_id", user.id)
-        .single();
+  const { id: documentId } = await ctx.params;
 
-    if (docError || !document) {
-        return NextResponse.json({ error: "Document not found" }, { status: 404 });
-    }
+  // ---------------------------------------------------------------------------
+  // Fetch document + client + company
+  // ---------------------------------------------------------------------------
+  const { data: document, error: docError } = await supabase
+    .from("documents")
+    .select(
+      `
+        *,
+        client:clients (*),
+        company:companies (*)
+      `
+    )
+    .eq("id", documentId)
+    .eq("user_id", user.id)
+    .single();
 
-    if (!document.client?.email) {
-        return NextResponse.json(
-            { error: "Client has no email" },
-            { status: 400 }
-        );
-    }
+  if (docError || !document) {
+    return userError(404, "DOCUMENT_NOT_FOUND", "Document introuvable.", traceId);
+  }
 
-    if (!document.pdf_url) {
-        return NextResponse.json(
-            { error: "PDF not generated" },
-            { status: 400 }
-        );
-    }
-
-    // ---------------------------------------------------------------------------
-    // Anti double envoi (AVANT création du log)
-    // ---------------------------------------------------------------------------
-    const { data: existingLog } = await supabase
-        .from("email_logs")
-        .select("id")
-        .eq("document_id", document.id)
-        .eq("status", "sent")
-        .maybeSingle();
-
-    if (existingLog) {
-        return NextResponse.json(
-            { error: "Email déjà envoyé pour ce document" },
-            { status: 409 }
-        );
-    }
-
-    // ---------------------------------------------------------------------------
-    // Variables email
-    // ---------------------------------------------------------------------------
-    type EmailKind = keyof typeof emailSubjects;
-    type EmailVars = Parameters<(typeof emailSubjects)[EmailKind]>[0];
-
-    const vars: EmailVars = {
-        client: {
-            name: document.client.name,
-            email: document.client.email,
-        },
-        company: {
-            name: document.company.name,
-            email: document.company.email,
-            website: document.company.website,
-            legal_notes: document.company.legal_notes,
-            bank_info: document.company.bank_info,
-        },
-        document: {
-            kind: document.kind,
-            number: document.number,
-            total: document.total?.toLocaleString("fr-FR", {
-                minimumFractionDigits: 2,
-            }),
-            currency: document.currency_code,
-            issue_date: document.issue_date,
-            due_date: document.due_date,
-        },
-    };
-
-    const kind = document.kind as string;
-
-    if (!kind || !(kind in emailSubjects)) {
-        return NextResponse.json({ error: "Invalid document kind" }, { status: 400 });
-    }
-
-    const typedKind = kind as EmailKind;
-
-    // ---------------------------------------------------------------------------
-    // Render email
-    // ---------------------------------------------------------------------------
-    const { /* html, text */ } = renderEmailTemplate({
-        kind: typedKind,
-        variables: vars,
+  // checks “user-friendly”
+  if (!isValidEmail(document.client?.email)) {
+    console.error("[InvoiceFlow][EmailSend] client_email_invalid", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      clientEmail: document.client?.email,
     });
 
-    const subject = emailSubjects[typedKind](vars);
+    return userError(
+      400,
+      "CLIENT_EMAIL_MISSING",
+      "Le client n’a pas d’adresse email valide.",
+      traceId
+    );
+  }
 
-    // ---------------------------------------------------------------------------
-    // Log email (pending)
-    // ---------------------------------------------------------------------------
-    const { data: emailLog, error: logError } = await supabase
-        .from("email_logs")
-        .insert({
-            user_id: user.id,
-            document_id: document.id,
-            to_email: document.client.email,
-            subject,
-            status: "pending" as typeof EMAIL_LOG_STATUSES[number],
-        })
-        .select()
-        .single();
+  if (!isValidEmail(document.company?.email)) {
+    console.error("[InvoiceFlow][EmailSend] company_email_invalid", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      companyEmail: document.company?.email,
+    });
 
-    if (logError || !emailLog) {
-        return NextResponse.json(
-            { error: "Failed to create email log" },
-            { status: 500 }
-        );
-    }
+    return userError(
+      400,
+      "COMPANY_EMAIL_INVALID",
+      "L’email de l’entreprise est invalide. Mets-le à jour dans les paramètres.",
+      traceId
+    );
+  }
 
-    // ---------------------------------------------------------------------------
-    // Send email (placeholder)
-    // ---------------------------------------------------------------------------
-    try {
-        // TODO: brancher Brevo ici
-        // await brevo.sendTransacEmail({
-        //     to: [{ email: vars.client.email, name: vars.client.name }],
-        //     subject,
-        //     htmlContent: html,
-        //     textContent: text,
-        //     attachment: [
-        //         {
-        //         url: document.pdf_url,
-        //         name: `${document.number}.pdf`,
-        //         },
-        //     ],
-        // });
+  // ---------------------------------------------------------------------------
+  // Anti double envoi
+  // ---------------------------------------------------------------------------
+  const { data: existingLog } = await supabase
+    .from("email_logs")
+    .select("id")
+    .eq("document_id", document.id)
+    .eq("status", "sent")
+    .maybeSingle();
 
-        await supabase
-        .from("email_logs")
+  if (existingLog) {
+    return userError(
+      409,
+      "EMAIL_ALREADY_SENT",
+      "Email déjà envoyé pour ce document.",
+      traceId
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Variables email
+  // ---------------------------------------------------------------------------
+  const vars: EmailVars = {
+    client: {
+      name: document.client.name,
+      email: document.client.email,
+    },
+    company: {
+      name: document.company.name,
+      email: document.company.email,
+      website: document.company.website,
+      legal_notes: document.company.legal_notes,
+      bank_info: document.company.bank_info,
+    },
+    document: {
+      kind: document.kind,
+      number: document.number,
+      total: document.total?.toLocaleString("fr-FR", {
+        minimumFractionDigits: 2,
+      }),
+      currency: document.currency_code,
+      issue_date: document.issue_date,
+      due_date: document.due_date,
+    },
+  };
+
+  const kind = document.kind as DocumentKind;
+
+  if (!kind || !(kind in emailSubjects)) {
+    console.error("[InvoiceFlow][EmailSend] document_kind_invalid", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      documentKind: document.kind,
+    });
+
+    return userError(
+      400,
+      "DOCUMENT_KIND_INVALID",
+      "Type de document invalide.",
+      traceId
+    );
+  }
+
+  const typedKind = kind as EmailKind;
+
+  // ---------------------------------------------------------------------------
+  // Render email
+  // ---------------------------------------------------------------------------
+  const { html, text } = renderEmailTemplate({
+    kind: typedKind,
+    variables: vars,
+  });
+
+  const subject = emailSubjects[typedKind](vars);
+
+  // ---------------------------------------------------------------------------
+  // Log email (pending)
+  // ---------------------------------------------------------------------------
+  const { data: emailLog, error: logError } = await supabase
+    .from("email_logs")
+    .insert({
+      user_id: user.id,
+      document_id: document.id,
+      to_email: document.client.email,
+      subject,
+      status: "pending" as (typeof EMAIL_LOG_STATUSES)[number],
+      trace_id: traceId,
+    })
+    .select()
+    .single();
+
+  if (logError || !emailLog) {
+    console.error("[InvoiceFlow][EmailSend] log_create_failed", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      error: logError,
+    });
+
+    return userError(
+      500,
+      "EMAIL_LOG_CREATE_FAILED",
+      "Impossible de préparer l’envoi de l’email. Réessaie.",
+      traceId
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // PDF signed URL
+  // ---------------------------------------------------------------------------
+  let pdfSignedUrl: string;
+  let pdfPath: string | null = null;
+
+  try {
+    // 15 minutes: Brevo a le temps de fetch
+    const signed = await getOrCreateSignedDocumentPdfUrlWithClient(
+      supabase,
+      user.id,
+      document.id,
+      { expiresIn: 900, force: false }
+    );
+
+    pdfSignedUrl = signed.signedUrl;
+    pdfPath = signed.pdfPath;
+  } catch (e) {
+    console.error("[InvoiceFlow][EmailSend] signed_pdf_url_failed", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      pdfPath: document.pdf_url,
+      error: e,
+    });
+
+    await safeUpdateEmailLog(
+      supabase,
+      emailLog.id,
+      {
+        status: "failed",
+        provider: "brevo",
+        trace_id: traceId,
+      },
+      { status: "failed" }
+    );
+
+    return userError(
+      400,
+      "PDF_NOT_READY",
+      "Le PDF n’est pas disponible pour l’instant. Génère le PDF puis réessaie.",
+      traceId
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Send email (Brevo)
+  // ---------------------------------------------------------------------------
+  try {
+    const brevoRes = await sendBrevoTransacEmail({
+      replyTo: {
+        email: document.company.email,
+        name: document.company.name,
+      },
+      sender: {
+        email: "no-reply@reelium.fr",
+        name: "InvoiceFlow",
+      },
+      to: [
+        {
+          email: vars.client.email!,
+          ...(vars.client.name ? { name: vars.client.name } : {}),
+        },
+      ],
+      subject,
+      htmlContent: html,
+      textContent: text,
+      attachment: [{ url: pdfSignedUrl, name: `${document.number}.pdf` }],
+      headers: {
+        "X-InvoiceFlow-Trace-Id": traceId,
+        "X-InvoiceFlow-Document-Id": String(document.id),
+        "X-InvoiceFlow-EmailLog-Id": String(emailLog.id),
+        ...(pdfPath ? { "X-InvoiceFlow-Pdf-Path": pdfPath } : {}),
+      },
+    });
+
+    await safeUpdateEmailLog(
+      supabase,
+      emailLog.id,
+      {
+        status: "sent",
+        provider: "brevo",
+        provider_message_id:
+          brevoRes.messageId ?? brevoRes.messageIds?.[0] ?? null,
+        trace_id: traceId,
+      },
+      { status: "sent" }
+    );
+
+    // Met à jour le statut du document si draft
+    if (document.status === "draft") {
+      const { error: docUpdateErr } = await supabase
+        .from("documents")
         .update({ status: "sent" })
-        .eq("id", emailLog.id);
+        .eq("id", document.id);
 
-        // Optionnel : update document.status = sent
-        if (document.status === "draft") {
-        await supabase
-            .from("documents")
-            .update({ status: "sent" })
-            .eq("id", document.id);
-        }
-
-        return NextResponse.json({ success: true });
-    } catch {
-        await supabase
-        .from("email_logs")
-        .update({ status: "failed" })
-        .eq("id", emailLog.id);
-
-        return NextResponse.json(
-        { error: "Email sending failed" },
-        { status: 500 }
-        );
+      if (docUpdateErr) {
+        console.warn("[InvoiceFlow][EmailSend] document_status_update_failed", {
+          traceId,
+          documentId: document.id,
+          error: docUpdateErr,
+        });
+      }
     }
+
+    return NextResponse.json({ ok: true, traceId });
+  } catch (err) {
+    const brevo = normalizeBrevoError(err);
+    const mapped = mapBrevoToUserMessage(brevo.status);
+
+    console.error("[InvoiceFlow][EmailSend] brevo_send_failed", {
+      traceId,
+      userId: user.id,
+      documentId: document.id,
+      emailLogId: emailLog.id,
+      to: document.client.email,
+      subject,
+      brevoStatus: brevo.status,
+      brevoMessage: brevo.message,
+      brevoPayload: brevo.payload,
+      pdfPath,
+    });
+
+    await safeUpdateEmailLog(
+      supabase,
+      emailLog.id,
+      {
+        status: "failed",
+        provider: "brevo",
+        error_code: mapped.code,
+        error_message: brevo.message,
+        error_details: brevo.payload ?? null,
+        trace_id: traceId,
+      },
+      { status: "failed" }
+    );
+
+    return userError(mapped.http, mapped.code, mapped.message, traceId);
+  }
 }

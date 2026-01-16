@@ -1,3 +1,5 @@
+import { DocumentKind } from "@/features/documents";
+
 export type EmailVars = {
   client: {
     name: string;
@@ -11,7 +13,7 @@ export type EmailVars = {
     bank_info?: string | null;
   };
   document: {
-    kind: "invoice" | "quote" | "credit_note" | "proforma";
+    kind: DocumentKind;
     number?: string | null;
     total: string;
     currency: string;
@@ -39,3 +41,5 @@ export const emailSubjects = {
   reminder_overdue: (v: EmailVars) =>
     `Relance – Facture ${v.document.number ?? ""} – ${v.company.name}`.trim(),
 };
+
+export type EmailKind = keyof typeof emailSubjects;

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Avoir {{document.number}}</title>
+  </head>
+  <body style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.5;">
+    <p>Bonjour {{client.name}},</p>
+
+    <p>
+      Veuillez trouver ci-joint votre <strong>avoir</strong>
+      <strong>{{document.number}}</strong>
+      d’un montant de <strong>{{document.total}} {{document.currency}}</strong>.
+    </p>
+
+    {{#if document.issue_date}}
+    <p>Date d’émission : <strong>{{document.issue_date}}</strong></p>
+    {{/if}}
+
+    {{#if document.reference_number}}
+    <p>Référence : <strong>{{document.reference_number}}</strong></p>
+    {{/if}}
+
+    <p>
+      Si vous avez la moindre question, répondez à cet email.
+    </p>
+
+    <p>
+      Cordialement,<br />
+      <strong>{{company.name}}</strong>
+    </p>
+
+    {{> footer.html}}
+  </body>
+</html>

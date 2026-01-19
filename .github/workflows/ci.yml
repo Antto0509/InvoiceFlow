@@ -33,6 +33,12 @@ jobs:
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_WAITLIST_ID: ${{ secrets.BREVO_WAITLIST_ID }}
+      BREVO_WEBHOOK_TRANS_TOKEN: ${{ secrets.BREVO_WEBHOOK_TRANS_TOKEN }}
+      BREVO_WEBHOOK_MARKET_TOKEN: ${{ secrets.BREVO_WEBHOOK_MARKET_TOKEN }}
+      NEXT_PUBLIC_SENDER_EMAIL: ${{ secrets.NEXT_PUBLIC_SENDER_EMAIL }}
+      NEXT_PUBLIC_SENDER_NAME: ${{ secrets.NEXT_PUBLIC_SENDER_NAME }}
 
     strategy:
       fail-fast: false

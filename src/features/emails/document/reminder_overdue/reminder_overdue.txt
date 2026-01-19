@@ -1,0 +1,22 @@
+Bonjour {{client.name}},
+
+Petit rappel concernant la facture {{document.number}}
+d’un montant de {{document.total}} {{document.currency}}.
+
+{{#if document.due_date}}
+Date d’échéance : {{document.due_date}}
+{{#if document.days_overdue}}({{document.days_overdue}} jour(s) de retard){{/if}}
+{{/if}}
+
+Si le règlement a déjà été effectué, vous pouvez ignorer ce message.
+Sinon, merci de procéder au paiement dès que possible.
+
+{{#if company.bank_info}}
+Coordonnées de paiement :
+{{company.bank_info}}
+{{/if}}
+
+Cordialement,
+{{company.name}}
+
+{{> footer.txt}}

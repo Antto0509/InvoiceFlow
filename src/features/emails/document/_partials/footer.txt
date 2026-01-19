@@ -1,0 +1,8 @@
+---
+{{company.name}}
+{{#if company.email}}{{company.email}}{{/if}}
+{{#if company.website}}{{company.website}}{{/if}}
+
+{{#if company.legal_notes}}
+{{company.legal_notes}}
+{{/if}}

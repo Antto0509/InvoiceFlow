@@ -64,9 +64,18 @@ SELECT
   d.reference_document_id,
   d.created_at,
   d.updated_at,
-  c.name AS client_name
-FROM public.documents d
-LEFT JOIN public.clients c ON c.id = d.client_id;
+  c.name as client_name,
+
+  EXISTS (
+    SELECT 1
+    FROM email_logs el
+    WHERE el.document_id = d.id
+      AND el.status = 'sent'
+  ) AS email_sent
+
+FROM documents d
+LEFT JOIN clients c ON c.id = d.client_id;
+
 
 
 -- =====================================================================

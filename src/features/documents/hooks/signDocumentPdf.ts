@@ -2,7 +2,7 @@
 
 import "server-only";
 import { createClientServer } from "@/data/supabase/server";
-import { ensurePdfForDocument } from "./generateDocumentPdf.server";
+import { assertCanAccessDocument, ensurePdfForDocument } from "./generateDocumentPdf.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type SignOptions = {
@@ -35,13 +35,15 @@ export async function getOrCreateSignedDocumentPdfUrl(
   // 2) On récupère le document pour connaître le pdf_url actuel
   const { data: doc, error: docErr } = await supabase
     .from("documents")
-    .select("id, user_id, pdf_url, kind, number")
+    .select("id, user_id, company_id, pdf_url, kind, number")
     .eq("id", documentId)
     .maybeSingle();
 
   if (docErr) throw docErr;
   if (!doc) throw new Error("Not found");
-  if (doc.user_id && doc.user_id !== user.id) throw new Error("Forbidden");
+
+  // Vérification des droits d’accès
+  await assertCanAccessDocument(supabase, { actorUserId: user.id, document: doc });
 
   let pdfPath = doc.pdf_url as string | null;
 
@@ -131,7 +133,7 @@ export async function getOrCreateSignedDocumentPdfUrlWithClient(
 
   // 3) Génération de l’URL signée
   const { data: signed, error: signErr } = await supabase.storage
-    .from("invoices") // ✅ ton bucket
+    .from("invoices") // même bucket qu’avant
     .createSignedUrl(pdfPath, expiresIn);
 
   if (signErr) throw signErr;

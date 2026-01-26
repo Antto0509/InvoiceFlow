@@ -56,7 +56,7 @@ export const DocumentDbSchema = z.object({
   client_id: zUuid.describe("Client destinataire du document"),
 
   kind: z.enum(DOC_KINDS).describe("Type : invoice | quote | credit_note | proforma"),
-  status: z.enum(DOC_STATUSES).describe("Statut : draft | sent | paid | overdue | void…"),
+  status: z.enum(DOC_STATUSES).describe("Statut : draft | sent | paid | overdue | void | finalized"),
 
   number: z.string().nullable().describe("Numéro visible (ex: FAC-2025-001)"),
 
@@ -118,6 +118,9 @@ export const DocumentSequencesDbSchema = z.object({
   kind: z.enum(DOC_KINDS).describe("Type concerné (invoice, quote, …)"),
   year: z.number().describe("Année de la séquence (ex: 2025)"),
   next_number: z.number().default(1).describe("Prochain numéro à attribuer"),
+  config_id: zUuid.describe("Configuration de numérotation associée"),
+  created_at: zDateISO.describe("Création (ISO)"),
+  updated_at: zDateISO.describe("Dernière modification (ISO)"),
 }).describe("Séquence de numérotation des documents");
 
 /**
@@ -150,14 +153,8 @@ export const DocumentLinesDbSchema = z.object({
   line_total: zNonNegative.default(0).describe("Total HT de la ligne (après remise)"),
   position: z.number().nullable().optional().describe("Ordre d’affichage/tri"),
 
-  created_at: z
-    .string()
-    .default(new Date().toISOString())
-    .describe("Création (ISO)"),
-  updated_at: z
-    .string()
-    .default(new Date().toISOString())
-    .describe("Dernière modification (ISO)"),
+  created_at: zDateISO.describe("Création (ISO)"),
+  updated_at: zDateISO.describe("Dernière modification (ISO)"),
 }).describe("Ligne d’un document (article, service, etc.)");
 
 /**
@@ -170,14 +167,44 @@ export const DocumentRemindersDbSchema = z.object({
   scheduled_at: zDateISO.describe("Date/heure planifiée (ISO)"),
   sent_at: z.string().nullable().describe("Date/heure d’envoi effectif (ISO)"),
   status: z.enum(REMINDER_STATUSES).default("scheduled").describe("Statut : scheduled | sent | failed"),
-  created_at: z.string().default(new Date().toISOString()).describe("Création (ISO)"),
+  created_at: zDateISO.describe("Création (ISO)"),
+  updated_at: zDateISO.describe("Dernière modification (ISO)"),
 }).describe("Rappel automatique pour document (relance)");
+
+/** 
+ * Configuration de numérotation des documents
+ */
+export const DocumentNumberingConfigDbSchema = z.object({
+  id: zUuid.optional().describe("Identifiant unique de la configuration"),
+
+  company_id: zUuid.describe("Entreprise associée"),
+
+  kind: z.enum(DOC_KINDS).describe("Type de document concerné"),
+
+  prefix: z.string()
+    .min(1, "Préfixe requis")
+    .describe("Préfixe du numéro (ex: FAC)"),
+
+  format: z.string()
+    .refine(v => v.includes("{number}"), {
+      message: "Le format doit contenir {number}",
+    })
+    .describe("Format du numéro (ex: {prefix}-{year}-{number})"),
+
+  is_active: z.boolean()
+    .default(true)
+    .describe("Indique si cette configuration est active"),
+
+  created_at: zDateISO.optional().describe("Création (ISO)"),
+  updated_at: zDateISO.optional().describe("Dernière modification (ISO)"),
+}).describe("Configuration de numérotation des documents");
 
 // Types TS dérivés
 export type Document = z.infer<typeof DocumentDbSchema>;
 export type DocumentLine = z.infer<typeof DocumentLinesDbSchema>;
 export type DocumentSequence = z.infer<typeof DocumentSequencesDbSchema>;
 export type DocumentReminder = z.infer<typeof DocumentRemindersDbSchema>;
+export type DocumentNumberingConfig = z.infer<typeof DocumentNumberingConfigDbSchema>;
 
 // ---------------------------------------------------------------------------
 // 4) Schéma FORM (ce que RHF manipule côté UI)

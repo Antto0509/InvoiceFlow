@@ -77,7 +77,7 @@ const kindConfig: Record<
 // Transitions métier (pour éviter draft -> paid direct)
 const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatus[]>> = {
   invoice: {
-    draft: ["sent", "void"],
+    draft: ["sent", "void", "finalized"],
     sent: ["paid", "overdue", "void"],
     overdue: ["paid", "void"],
     paid: [],
@@ -85,9 +85,10 @@ const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatu
     accepted: [],
     declined: [],
     expired: [],
+    finalized: ["sent", "void"],
   },
   quote: {
-    draft: ["sent", "void"],
+    draft: ["sent", "void", "finalized"],
     sent: ["accepted", "declined", "expired", "void"],
     accepted: [],
     declined: [],
@@ -95,9 +96,10 @@ const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatu
     void: [],
     paid: [],
     overdue: [],
+    finalized: ["sent", "void"],
   },
   credit_note: {
-    draft: ["sent", "void"],
+    draft: ["sent", "void", "finalized"],
     sent: ["void"],
     void: [],
     paid: [],
@@ -105,9 +107,10 @@ const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatu
     accepted: [],
     declined: [],
     expired: [],
+    finalized: ["sent", "void"],
   },
   proforma: {
-    draft: ["sent", "void"],
+    draft: ["sent", "void", "finalized"],
     sent: ["void"],
     void: [],
     paid: [],
@@ -115,6 +118,7 @@ const DOC_TRANSITIONS: Record<DocumentKind, Record<DocumentStatus, DocumentStatu
     accepted: [],
     declined: [],
     expired: [],
+    finalized: ["sent", "void"],
   },
 };
 

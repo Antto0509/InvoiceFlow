@@ -28,7 +28,7 @@ export const MEMBERSHIP_ROLES = ['owner', 'admin', 'member', 'accountant'] as co
 export const PAYMENT_METHODS = ['bank_transfer', 'card', 'cash', 'check', 'paypal', 'other'] as const;
 
 export const EMAIL_LOG_STATUSES = ['scheduled', 'sent', 'failed', 'skipped', 'pending'] as const;
-export const DOC_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'paid', 'overdue', 'void'] as const;
+export const DOC_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'paid', 'overdue', 'void', 'finalized'] as const;
 export const REMINDER_STATUSES = ['scheduled', 'sent', 'skipped', 'failed'] as const;
 
 export const FILE_TARGETS = ['document', 'client', 'company', 'other'] as const;

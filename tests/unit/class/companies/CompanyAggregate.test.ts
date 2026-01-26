@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "../supabase";
+import { supabaseMock } from "../supabase";
 import { CompanyAggregate } from "@/data/class/companies";
 
 describe("CompanyAggregate", () => {
@@ -8,7 +8,7 @@ describe("CompanyAggregate", () => {
     
     await companyAggregate.getCompanyFull("company-1");
 
-    expect(supabase.__calls).toEqual(
+    expect(supabaseMock.__calls).toEqual(
       expect.arrayContaining([
         { fn: "from", args: ["companies"] },
         { fn: "from", args: ["company_addresses"] },

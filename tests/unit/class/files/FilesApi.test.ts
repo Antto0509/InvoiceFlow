@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "../supabase";
+import { supabaseMock } from "../supabase";
 import { FilesApi } from "@/data/class/files";
 
 describe("FilesApi", () => {
@@ -8,7 +8,7 @@ describe("FilesApi", () => {
 
     await api.list({ page: 1, pageSize: 10 });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "eq",
       args: ["user_id", "user-1"],
     });
@@ -20,7 +20,7 @@ describe("FilesApi", () => {
     await api.list({ page: 1, pageSize: 10 });
 
     expect(
-      supabase.__calls.find(
+      supabaseMock.__calls.find(
         c => c.fn === "eq" && c.args[0] === "user_id"
       )
     ).toBeUndefined();
@@ -31,7 +31,7 @@ describe("FilesApi", () => {
 
     await api.search({ q: "pdf" });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "order",
       args: ["created_at", { ascending: false }],
     });
@@ -48,7 +48,7 @@ describe("FilesApi", () => {
       path: "file.pdf",
     } as unknown as CreatePayload);
 
-    const insert = supabase.__calls.find(c => c.fn === "insert");
+    const insert = supabaseMock.__calls.find(c => c.fn === "insert");
 
     expect(insert?.args[0]).not.toHaveProperty("user_id");
   });

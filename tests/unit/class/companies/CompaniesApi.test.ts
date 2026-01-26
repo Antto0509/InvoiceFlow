@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "../supabase";
+import { supabaseMock } from "../supabase";
 import { CompaniesApi } from "@/data/class/companies";
 
 describe("CompaniesApi", () => {
@@ -8,7 +8,7 @@ describe("CompaniesApi", () => {
 
     await api.list({ page: 1, pageSize: 10 });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "from",
       args: ["companies"],
     });

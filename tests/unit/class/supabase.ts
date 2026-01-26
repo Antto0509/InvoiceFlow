@@ -1,14 +1,14 @@
 import { beforeEach, vi } from "vitest";
 import { createSupabaseMock } from "../../mocks/supabaseMock";
 
-const supabase = createSupabaseMock();
+const supabaseMock = createSupabaseMock();
 
 vi.mock("@/data/supabase/client", () => ({
-  createClient: () => supabase,
+  createClient: () => supabaseMock,
 }));
 
 beforeEach(() => {
-  supabase.__resetCalls();
+  supabaseMock.__resetCalls();
 });
 
-export { supabase };
+export { supabaseMock };

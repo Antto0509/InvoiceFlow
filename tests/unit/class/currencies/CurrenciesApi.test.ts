@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "../supabase";
+import { supabaseMock } from "../supabase";
 import { CurrenciesApi } from "@/data/class/currencies/CurrenciesApi";
 
 describe("CurrenciesApi", () => {
@@ -8,7 +8,7 @@ describe("CurrenciesApi", () => {
 
     await api.list({ page: 1, pageSize: 10 });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "from",
       args: ["currencies"],
     });
@@ -19,7 +19,7 @@ describe("CurrenciesApi", () => {
 
     await api.listAll();
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "order",
       args: ["code", { ascending: true }],
     });

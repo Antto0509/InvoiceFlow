@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "./supabase";
+import { supabaseMock } from "./supabase";
 import { ResourceApi } from "@/data/class/ResourceApi";
 
 describe("ResourceApi", () => {
@@ -10,7 +10,7 @@ describe("ResourceApi", () => {
 
     await api.list({ page: 1, pageSize: 10 });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "from",
       args: ["test_table"],
     });
@@ -27,7 +27,7 @@ describe("ResourceApi", () => {
       },
     });
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "eq",
       args: ["status", "active"],
     });

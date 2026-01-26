@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { supabase } from "../supabase";
+import { supabaseMock } from "../supabase";
 import { FileLinksApi } from "@/data/class/files";
 
 describe("FileLinksApi", () => {
@@ -8,7 +8,7 @@ describe("FileLinksApi", () => {
 
     await api.listByFile("file-1");
 
-    expect(supabase.__calls).toContainEqual({
+    expect(supabaseMock.__calls).toContainEqual({
       fn: "eq",
       args: ["file_id", "file-1"],
     });
@@ -19,7 +19,7 @@ describe("FileLinksApi", () => {
 
     await api.get(["file-1", "documents", "doc-1"]);
 
-    expect(supabase.__calls).toEqual(
+    expect(supabaseMock.__calls).toEqual(
       expect.arrayContaining([
         { fn: "eq", args: ["file_id", "file-1"] },
         { fn: "eq", args: ["target_table", "documents"] },

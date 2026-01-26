@@ -1,5 +1,5 @@
 import type { FileWithDetail, FileTarget } from "@/schemas/files.schema";
-import { FilesApi } from "./filesApi";
+import { FilesApi } from "./FilesApi";
 import { FileLinksApi } from "./FileLinksApi";
 
 /**

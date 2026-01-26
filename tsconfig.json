@@ -27,7 +27,8 @@
       "@/data/*": ["data/*", "features/clients/data/*", "features/documents/data/*", "features/companies/data/*"],
       "@/schemas/*": ["schemas/*", "features/clients/schemas/*", "features/documents/schemas/*", "features/companies/schemas/*"],
       "@/hooks/*": ["hooks/*"],
-      "@/lib/*": ["lib/*"]
+      "@/lib/*": ["lib/*"],
+      "@/class/*": ["data/class/*"],
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

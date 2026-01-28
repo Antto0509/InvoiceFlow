@@ -32,7 +32,9 @@ export default async function Topbar() {
 
       {/* Breadcrumb simple / logo mobile */}
       <h1 className="font-semibold cursor-default text-lg md:text-xl">
-        InvoiceFlow
+        <Link href="/dashboard">
+          InvoiceFlow
+        </Link>
       </h1>
 
       <div className="ml-auto flex items-center gap-2">

@@ -1,4 +1,5 @@
-import { createClient } from "@/data/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/data/supabase";
 import {
   applyFilters,
   stripGenerated,
@@ -18,7 +19,7 @@ import type {
  */
 export class ResourceApi<T extends Record<string, unknown>> {
   /** Instance Supabase */
-  protected supabase = createClient();
+  protected supabase: SupabaseClient;
 
   /** Configuration de la ressource */
   protected table: string;
@@ -32,7 +33,9 @@ export class ResourceApi<T extends Record<string, unknown>> {
   protected conflictTarget?: string | string[];
   protected protectedColumns?: string[];
 
-  constructor(opts: ResourceApiOptions<T>) {
+  constructor(opts: ResourceApiOptions<T>, supabaseClient?: SupabaseClient) {
+    this.supabase = supabaseClient ?? createClient();
+
     this.log("[ResourceApi:init]", opts.table);
 
     this.table = opts.table;
@@ -136,17 +139,24 @@ export class ResourceApi<T extends Record<string, unknown>> {
    * @returns Expression OR ou undefined
    */
   protected buildSearchOr(raw?: string): string | undefined {
-    if (!raw || !raw.trim() || this.searchColumns.length === 0) return;
+    if (!raw?.trim() || this.searchColumns.length === 0) return;
 
-    const term = raw
+    const cleaned = raw
       .trim()
-      .replaceAll(",", " ")
-      .replace(/[%_]/g, (m) => `\\${m}`);
+      .replace(/[,;]+/g, " ")     // Remplace séparateurs par espaces
+      .replace(/[%_]/g, "\\$&");  // Échappe % et _
 
+    // Autorise lettres, chiffres, espaces, tirets et apostrophes
+    if (!/^[\p{L}\p{N}\s\-']+$/u.test(cleaned)) return;
+
+    const term = cleaned.trim();
     if (!term) return;
+
     const pattern = `%${term}%`;
 
-    return this.searchColumns.map((c) => `${c}.ilike.${pattern}`).join(",");
+    return this.searchColumns
+      .map((c) => `${c}.ilike.${pattern}`)
+      .join(",");
   }
 
   /** 

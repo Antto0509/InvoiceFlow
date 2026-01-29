@@ -17,15 +17,13 @@ export class DocumentLinesApi extends ResourceApi<DocumentLine> {
    * @param documentId ID du document
    * @return Liste des lignes
    */
-  async listByDocument(documentId: string): Promise<DocumentLine[]> {
-    const { data, error } = await this.supabase
-      .from(this.table)
-      .select(this.select)
-      .eq("document_id", documentId)
-      .order("position", { ascending: true });
-
-    if (error) throw error;
-    return (data ?? []) as DocumentLine[];
+  async listByDocument(documentId: string) {
+    return this.list({
+      filters: {
+        document_id: { op: "eq", value: documentId },
+      },
+      sort: { column: "id", dir: "asc" },
+    });
   }
 
   /** 
@@ -82,7 +80,8 @@ export class DocumentLinesApi extends ResourceApi<DocumentLine> {
     incoming: Array<Partial<DocumentLine>>
   ) {
     const existing = await this.listByDocument(documentId);
-    const existingIds = new Set(existing.map((l) => l.id));
+    const existingRows = existing.data ?? [];
+    const existingIds = new Set(existingRows.map((l) => l.id));
 
     const incomingWithDoc = incoming.map((l) => ({
       ...l,

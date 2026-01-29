@@ -15,6 +15,8 @@ import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/
  * Crée une API CRUD pour une ressource donnée avec Supabase/PostgREST.
  * @param opts Options de configuration de l'API.
  * @returns Un objet contenant les méthodes CRUD pour la ressource.
+ * 
+ * @deprecated Use ResourceApi class instead  
  */
 export function createResourceApi<T extends Record<string, unknown>>(opts: ResourceApiOptions<T>) {
   console.log("[ResourceApi] Initializing", { 

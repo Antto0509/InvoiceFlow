@@ -163,7 +163,8 @@ export class DocumentsAggregate {
     const linesApi = new DocumentLinesApi();
 
     const existing = await linesApi.listByDocument(documentId);
-    const existingIds = new Set(existing.map((l) => l.id));
+    const existingRows = existing.data ?? [];
+    const existingIds = new Set(existingRows.map((l) => l.id));
 
     const incomingWithDoc = incoming.map((l) => ({
       ...l,

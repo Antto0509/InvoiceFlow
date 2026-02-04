@@ -1,4 +1,6 @@
 import { createClient } from "@/data/supabase/client";
+import { logAction } from "@/data/logs";
+import {LogsStatus, LogsActionNature} from "@/features/logs/schemas/logs.schema";
 import {
   buildOrIlike,
   ensureSortable,
@@ -167,7 +169,15 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
 
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>), protectedColumns);
         const { data, error } = await supabase.from(table).insert(clean).select().single();
-        if (error) throw error;
+        if (error) {
+          await logAction({
+            companyID: undefined, action:"insert" as LogsActionNature, payload, logError:error, status: "error" as LogsStatus
+            }); //faudra trouver un truc pour companyID
+          throw error;
+        }
+        await logAction({
+          companyID: undefined, action:"insert" as LogsActionNature, payload, status: "success" as LogsStatus
+          }); //faudra trouver un truc pour companyID
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
         console.error(`[ResourceApi:create] table=${table} payload=`, payload, err);

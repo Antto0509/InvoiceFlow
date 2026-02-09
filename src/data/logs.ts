@@ -26,7 +26,6 @@ export async function logAction(params: {
             console.log("const logError :", error);
             throw error;
         }
-        console.log("const logData :", data);
     } catch {
         //IMPORTANT : le logging ne doit JAMAIS faire planter l'app
     }

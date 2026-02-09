@@ -200,7 +200,15 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { data, error } = await req.select().single();
-        if (error) throw error;
+        if (error) {
+          await logAction({
+            companyID: viewCompanyID({table, objectID:data.id}), action:"update" as LogsActionNature, payload, logError:error, status: "error" as LogsStatus
+          });
+          throw error;
+        }
+        await logAction({
+          companyID: viewCompanyID({table, objectID:data.id}), action:"update" as LogsActionNature, payload, status: "success" as LogsStatus
+        });
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
         console.error(
@@ -247,11 +255,35 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       try {
         console.log("[ResourceApi:remove] key", { table, key });
 
+        let fetchReq = supabase.from(table).select("*");
+        fetchReq = applyPkFilter(fetchReq, key);
+        const { data: dataToDelete, error: fetchError} = await fetchReq.single();
+        if (fetchError) {
+          console.log("const fetchError :", fetchError);
+        }
+        const company_id = viewCompanyID({table, objectID: dataToDelete.id});
+
         let req = supabase.from(table).delete();
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { error } = await req;
-        if (error) throw error;
+        if (error) {
+          await logAction(
+              {
+                companyID: company_id,
+                action: "delete" as LogsActionNature,
+                payload: dataToDelete,
+                logError: error,
+                status: "error" as LogsStatus
+              });
+          throw error;
+        }
+        await logAction({
+            companyID: company_id,
+            action: "delete" as LogsActionNature,
+            payload: dataToDelete,
+            status: "success" as LogsStatus
+        });
       } catch (err) {
         console.error(`[ResourceApi:remove] table=${table} key=${JSON.stringify(key)}`, err);
         throw err;

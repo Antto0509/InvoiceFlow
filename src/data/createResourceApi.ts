@@ -1,6 +1,7 @@
 import { createClient } from "@/data/supabase/client";
-import {logAction, viewCompanyID} from "@/data/logs";
-import {LogsStatus, LogsActionNature} from "@/features/logs/schemas/logs.schema";
+import { logAction, viewCompanyID } from "@/data/logs";
+import { LogsStatus, LogsActionNature } from "@/features/logs/schemas/logs.schema";
+import { extractLogMetadata, type Resource } from "@/lib/logs";
 import {
   buildOrIlike,
   ensureSortable,
@@ -10,6 +11,9 @@ import {
   stripProtected,
 } from "@/lib/utils";
 import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/types";
+
+
+
 
 // --- API générique pour une ressource CRUD avec Supabase/PostgREST ---
 
@@ -21,7 +25,7 @@ import type { Paginated, FilterOps, ResourceApiOptions, ListQuery } from "@/lib/
  * @deprecated Use ResourceApi class instead  
  */
 export function createResourceApi<T extends Record<string, unknown>>(opts: ResourceApiOptions<T>) {
-  console.log("[ResourceApi] Initializing", { 
+  console.log("[ResourceApi] Initializing", {
     opts: {
       table: opts.table,
       select: opts.select,
@@ -170,14 +174,35 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
         const clean = stripProtected(stripGenerated(payload as Record<string, unknown>), protectedColumns);
         const { data, error } = await supabase.from(table).insert(clean).select().single();
         if (error) {
+          const resource = (table === "documents_with_client" ? "documents" : table) as Resource;
+          const logPayload = {
+            resource,
+            action_nature: "insert",
+            metadata: extractLogMetadata(resource, payload as Record<string, unknown>),
+            data: payload
+          };
           await logAction({
-            companyID: viewCompanyID({table, objectID:data.id}), action:"insert" as LogsActionNature, payload, logError:error, status: "error" as LogsStatus
-            }); //faudra trouver un truc pour companyID
+            companyID: viewCompanyID({ table, objectID: data?.id }),
+            action: "insert" as LogsActionNature,
+            payload: logPayload,
+            logError: error,
+            status: "error" as LogsStatus
+          }); //faudra trouver un truc pour companyID
           throw error;
         }
+        const resource = (table === "documents_with_client" ? "documents" : table) as Resource;
+        const logPayload = {
+          resource,
+          action_nature: "insert",
+          metadata: extractLogMetadata(resource, data as Record<string, unknown>),
+          data: data
+        };
         await logAction({
-          companyID: viewCompanyID({table, objectID:data.id}), action:"insert" as LogsActionNature, payload, status: "success" as LogsStatus
-          }); //faudra trouver un truc pour companyID
+          companyID: viewCompanyID({ table, objectID: data.id }),
+          action: "insert" as LogsActionNature,
+          payload: logPayload,
+          status: "success" as LogsStatus
+        }); //faudra trouver un truc pour companyID
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
         console.error(`[ResourceApi:create] table=${table} payload=`, payload, err);
@@ -200,14 +225,34 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { data, error } = await req.select().single();
+        const resource = (table === "documents_with_client" ? "documents" : table) as Resource;
         if (error) {
+          const logPayload = {
+            resource,
+            action_nature: "update",
+            metadata: extractLogMetadata(resource, payload as Record<string, unknown>),
+            data: payload
+          };
           await logAction({
-            companyID: viewCompanyID({table, objectID:data.id}), action:"update" as LogsActionNature, payload, logError:error, status: "error" as LogsStatus
+            companyID: viewCompanyID({ table, objectID: data?.id }),
+            action: "update" as LogsActionNature,
+            payload: logPayload,
+            logError: error,
+            status: "error" as LogsStatus
           });
           throw error;
         }
+        const logPayload = {
+          resource,
+          action_nature: "update",
+          metadata: extractLogMetadata(resource, data as Record<string, unknown>),
+          data: payload
+        };
         await logAction({
-          companyID: viewCompanyID({table, objectID:data.id}), action:"update" as LogsActionNature, payload, status: "success" as LogsStatus
+          companyID: viewCompanyID({ table, objectID: data.id }),
+          action: "update" as LogsActionNature,
+          payload: logPayload,
+          status: "success" as LogsStatus
         });
         return (mapRow ? mapRow(data) : data) as T;
       } catch (err) {
@@ -247,7 +292,7 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
       }
     },
 
-    /** 
+    /**
      * Supprime un item par clé primaire (simple ou composite) 
      * @param key Valeur(s) de la clé primaire
      */
@@ -257,32 +302,45 @@ export function createResourceApi<T extends Record<string, unknown>>(opts: Resou
 
         let fetchReq = supabase.from(table).select("*");
         fetchReq = applyPkFilter(fetchReq, key);
-        const { data: dataToDelete, error: fetchError} = await fetchReq.single();
+        const { data: dataToDelete, error: fetchError } = await fetchReq.single();
         if (fetchError) {
           console.log("const fetchError :", fetchError);
         }
-        const company_id = viewCompanyID({table, objectID: dataToDelete.id});
+        const company_id = viewCompanyID({ table, objectID: dataToDelete.id });
 
         let req = supabase.from(table).delete();
         req = applyPkFilter(req, key);
         if (defaultFilters) req = applyFilters(req, defaultFilters);
         const { error } = await req;
+        const resource = (table === "documents_with_client" ? "documents" : table) as Resource;
         if (error) {
+          const logPayload = {
+            resource,
+            action_nature: "delete",
+            metadata: extractLogMetadata(resource, dataToDelete),
+            data: dataToDelete
+          };
           await logAction(
-              {
-                companyID: company_id,
-                action: "delete" as LogsActionNature,
-                payload: dataToDelete,
-                logError: error,
-                status: "error" as LogsStatus
-              });
+            {
+              companyID: company_id,
+              action: "delete" as LogsActionNature,
+              payload: logPayload,
+              logError: error,
+              status: "error" as LogsStatus
+            });
           throw error;
         }
+        const logPayload = {
+          resource,
+          action_nature: "delete",
+          metadata: extractLogMetadata(resource, dataToDelete),
+          data: dataToDelete
+        };
         await logAction({
-            companyID: company_id,
-            action: "delete" as LogsActionNature,
-            payload: dataToDelete,
-            status: "success" as LogsStatus
+          companyID: company_id,
+          action: "delete" as LogsActionNature,
+          payload: logPayload,
+          status: "success" as LogsStatus
         });
       } catch (err) {
         console.error(`[ResourceApi:remove] table=${table} key=${JSON.stringify(key)}`, err);

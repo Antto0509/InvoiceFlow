@@ -1,5 +1,5 @@
-import {createClient} from "@/data/supabase/client";
-import {LogsStatus, LogsActionNature} from "@/features/logs/schemas/logs.schema";
+import { createClient } from "@/data/supabase/client";
+import { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
 
 /** Fonction utilitaire */
 export async function logAction(params: {
@@ -14,7 +14,7 @@ export async function logAction(params: {
 
         const companyID = await params.companyID;
 
-        const {data, error} = await supabase.from("logs").insert({
+        const { data, error } = await supabase.from("logs").insert({
             company_id: companyID,
             action_nature: params.action,
             log_json: params.payload,
@@ -32,8 +32,8 @@ export async function logAction(params: {
 }
 
 export async function viewCompanyID(params: {
-    table? : string;
-    objectID? : string;
+    table?: string;
+    objectID?: string;
 }): Promise<string | undefined> {
     try {
         const supabase = createClient();
@@ -51,5 +51,5 @@ export async function viewCompanyID(params: {
         }
 
         return data.company_id || undefined;
-    } catch {}
+    } catch { }
 }

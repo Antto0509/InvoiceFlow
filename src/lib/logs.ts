@@ -1,4 +1,4 @@
-import { LogsView } from "@/features/logs/schemas/logs.schema";
+import { LogsView } from "@/features/activityLogs/schemas/logs.schema";
 
 type ActivityMetadata = {
     reference?: string; // Présent si c'est un document

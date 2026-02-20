@@ -1,7 +1,7 @@
 import { createResourceApi } from "@/data/createResourceApi";
 import { logAction, viewCompanyID } from "@/data/logs";
 import { createClient } from "@/data/supabase/client";
-import { LogsStatus, LogsActionNature } from "@/features/logs/schemas/logs.schema";
+import { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
 import { extractLogMetadata } from "@/lib/logs";
 import { FilterOps, SORTABLE_DOCS } from "@/lib/index";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";

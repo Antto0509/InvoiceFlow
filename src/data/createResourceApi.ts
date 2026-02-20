@@ -1,6 +1,6 @@
 import { createClient } from "@/data/supabase/client";
 import { logAction, viewCompanyID } from "@/data/logs";
-import { LogsStatus, LogsActionNature } from "@/features/logs/schemas/logs.schema";
+import { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
 import { extractLogMetadata, type Resource } from "@/lib/logs";
 import {
   buildOrIlike,

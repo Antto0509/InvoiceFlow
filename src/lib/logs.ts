@@ -52,6 +52,20 @@ const ACTIVITY_MESSAGES = {
             error: (data: ActivityMetadata) => `Une adresse d'entreprise à ${data.name} n'a pas pu être supprimée`,
         }
     },
+    company_bank_accounts: {
+        insert: {
+            success: (data: ActivityMetadata) => `Un nouveau compte bancaire d'entreprise à ${data.name} a été ajouté`,
+            error: (data: ActivityMetadata) => `Un nouveau compte bancaire d'entreprise à ${data.name} n'a pas pu être ajouté`,
+        },
+        update: {
+            success: (data: ActivityMetadata) => `Un compte bancaire d'entreprise à ${data.name} a été modifié`,
+            error: (data: ActivityMetadata) => `Un compte bancaire d'entreprise à ${data.name} n'a pas pu être modifié`,
+        },
+        delete: {
+            success: (data: ActivityMetadata) => `Un compte bancaire d'entreprise à ${data.name} a été supprimé`,
+            error: (data: ActivityMetadata) => `Un compte bancaire d'entreprise à ${data.name} n'a pas pu être supprimé`,
+        }
+    },
     documents: DOCUMENT_MESSAGES,
     documents_with_client: DOCUMENT_MESSAGES,
     clients: {
@@ -137,6 +151,9 @@ export function extractLogMetadata(
         case "client_addresses":
         case "company_addresses":
             return { name: (payload.city ?? "N/A") as string };
+        case "company_bank_accounts":
+            return { name: (payload.bank_name ?? "N/A") as string };
+
         default:
             return {};
     }

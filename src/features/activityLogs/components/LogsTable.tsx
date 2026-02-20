@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/datatable/DataTable";
-import { LogsTableProps, LogsView, LogsSort } from "@/features/activityLogs/schemas/logs.schema";
+import { LogsTableProps, LogsView } from "@/features/activityLogs/schemas/logs.schema";
 import { getLogMessage } from "@/lib/logs";
 
 export function LogsTable({

@@ -2,12 +2,11 @@ import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DocumentSort } from "@/schemas/documents.schema";
 import type { ClientSort, ClientAddressSort, ClientContactSort } from "@/schemas/clients.schema";
-import {LogsSort} from "@/features/logs/schemas/logs.schema";
 
 export function SortBtn({ col, sort, onSortChange }: {
-  col: DocumentSort["column"] | ClientSort["column"] | ClientAddressSort["column"] | ClientContactSort["column"] | LogsSort["column"];
-  sort: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort | LogsSort;
-  onSortChange: (s: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort | LogsSort) => void;
+  col: DocumentSort["column"] | ClientSort["column"] | ClientAddressSort["column"] | ClientContactSort["column"];
+  sort: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort;
+  onSortChange: (s: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort ) => void;
 }) {
   return (
     <Button

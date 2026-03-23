@@ -23,6 +23,7 @@ export const CLIENT_ADDRESS_KINDS = ['billing', 'shipping', 'other'] as const;
 export const DOC_KINDS = ['invoice', 'credit_note', 'quote', 'proforma'] as const;
 export const ITEM_KINDS = ['service', 'product'] as const;
 export const REMINDER_KINDS = ['before_due', 'on_due', 'after_due_1', 'after_due_2', 'custom'] as const;
+export const LOGS_ACTION_NATURE = ['insert', 'update', 'delete'] as const;
 
 export const MEMBERSHIP_ROLES = ['owner', 'admin', 'member', 'accountant'] as const;
 export const PAYMENT_METHODS = ['bank_transfer', 'card', 'cash', 'check', 'paypal', 'other'] as const;
@@ -30,6 +31,7 @@ export const PAYMENT_METHODS = ['bank_transfer', 'card', 'cash', 'check', 'paypa
 export const EMAIL_LOG_STATUSES = ['scheduled', 'sent', 'failed', 'skipped', 'pending'] as const;
 export const DOC_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'paid', 'overdue', 'void', 'finalized'] as const;
 export const REMINDER_STATUSES = ['scheduled', 'sent', 'skipped', 'failed'] as const;
+export const LOGS_STATUS = ['success', 'error'] as const;
 
 export const FILE_TARGETS = ['document', 'client', 'company', 'other'] as const;
 export const SUPPORTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;

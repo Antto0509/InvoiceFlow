@@ -6,7 +6,7 @@ import type { ClientSort, ClientAddressSort, ClientContactSort } from "@/schemas
 export function SortBtn({ col, sort, onSortChange }: {
   col: DocumentSort["column"] | ClientSort["column"] | ClientAddressSort["column"] | ClientContactSort["column"];
   sort: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort;
-  onSortChange: (s: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort) => void;
+  onSortChange: (s: DocumentSort | ClientSort | ClientAddressSort | ClientContactSort ) => void;
 }) {
   return (
     <Button

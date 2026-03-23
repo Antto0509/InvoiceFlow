@@ -1,5 +1,8 @@
 import { createResourceApi } from "@/data/createResourceApi";
+import { logAction, viewCompanyID } from "@/data/logs";
 import { createClient } from "@/data/supabase/client";
+import { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
+import { extractLogMetadata } from "@/lib/logs";
 import { FilterOps, SORTABLE_DOCS } from "@/lib/index";
 import { stripGenerated, stripGeneratedMany } from "@/lib/utils";
 import type { Document, DocumentLine, DocumentListParams, DocumentListRow } from "@/schemas/documents.schema";
@@ -80,10 +83,10 @@ export async function listDocuments(params: Partial<DocumentListParams> = {}, us
     filters,
   });
 
-  const rows : DocumentListRow[] = (data as Array<
-    Document & { 
-      client_name: string | null, 
-      email_sent: boolean 
+  const rows: DocumentListRow[] = (data as Array<
+    Document & {
+      client_name: string | null,
+      email_sent: boolean
     }
   >).map((d) => ({
     id: d.id,
@@ -136,11 +139,11 @@ export async function getDocumentDetail(id: string, userId?: string) {
     lines: (data.document_lines ?? []) as DocumentLine[],
     client: data.clients
       ? {
-          id: data.client_id,
-          name: data.clients.name,
-          address: data.clients.address,
-          company: data.clients.company,
-        }
+        id: data.client_id,
+        name: data.clients.name,
+        address: data.clients.address,
+        company: data.clients.company,
+      }
       : null,
     company: data.companies ?? null,
   };
@@ -182,6 +185,19 @@ export async function createDocumentWithLines(
     await sb.from("documents").delete().eq("id", doc.id);
     throw linesErr;
   }
+
+  // Log manually since we bypassed ResourceApi
+  await logAction({
+    companyID: viewCompanyID({ table: "documents", objectID: doc.id }),
+    action: "insert" as LogsActionNature,
+    payload: {
+      resource: "documents",
+      action_nature: "insert",
+      metadata: extractLogMetadata("documents", doc),
+      data: doc,
+    },
+    status: "success" as LogsStatus,
+  });
 
   return doc;
 }

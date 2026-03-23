@@ -12,7 +12,7 @@ export class ClientAddressesApi extends ResourceApi<ClientAddress> {
   constructor(clientId?: string) {
     super({
       table: "client_addresses",
-      select: "*, client:clients(name)",
+      select: "id, client_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at, client:clients(name)",
       sortableColumns: [
         "kind",
         "city",

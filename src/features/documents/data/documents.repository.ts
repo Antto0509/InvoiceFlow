@@ -1,4 +1,5 @@
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
+import { isDev } from "@/lib/env";
 import { logAction, viewCompanyID } from "@/data/logs";
 import { createClient } from "@/data/supabase/client";
 import { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
@@ -17,13 +18,14 @@ import type { Document, DocumentLine, DocumentListParams, DocumentListRow } from
  * @returns API liste des documents avec client
  */
 const makeDocumentListApi = (userId?: string) =>
-  createResourceApi<Document & { client_name: string | null }>({
+  new ResourceApi<Document & { client_name: string | null }>({
     table: "documents_with_client",
     select: "id, number, number_readonly, issue_date, total, status, currency_code, client_name, client_id, user_id, kind",
     sortableColumns: [...SORTABLE_DOCS],
     searchColumns: ["number", "client_name"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
     protectedColumns: ["user_id"],
+    withLogging: true,
   });
 
 /**
@@ -33,13 +35,14 @@ const makeDocumentListApi = (userId?: string) =>
  * @returns Liste des documents + total
  */
 const makeDocumentCrudApi = (userId?: string) =>
-  createResourceApi<Document>({
+  new ResourceApi<Document>({
     table: "documents",
-    select: "*",
+    select: "id, user_id, company_id, client_id, kind, status, number, issue_date, due_date, currency_code, fx_eur_per_unit_snapshot, subtotal, tax, total, total_eur, issue_year, sequence_number, number_readonly, reference_document_id, supply_date, payment_terms, penalty_rate, recovery_fee, purchase_order_number, notes_public, notes_private, pdf_url, created_at, updated_at",
     sortableColumns: [...SORTABLE_DOCS.filter((c) => c !== "client_name")],
     searchColumns: ["number"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
     protectedColumns: ["user_id"],
+    withLogging: true,
   });
 
 /**
@@ -238,7 +241,7 @@ export const createDocument = async (
         return { ...doc, pdf_url: path };
       }
     } catch (e) {
-      console.error("PDF gen failed:", e);
+      if (isDev) console.error("PDF gen failed:", e);
     }
   }
   return doc;

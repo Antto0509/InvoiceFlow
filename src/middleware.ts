@@ -76,7 +76,7 @@ export async function middleware(req: NextRequest) {
     res.cookies.set("lastDashboardPath", lastDashboardPath, {
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 jours
-      httpOnly: false,
+      httpOnly: true,
     });
 
     return res;
@@ -106,7 +106,7 @@ export async function middleware(req: NextRequest) {
 
     let target: string;
 
-    if (redirectToParam && redirectToParam.startsWith("/")) {
+    if (redirectToParam && redirectToParam.startsWith("/dashboard")) {
       target = redirectToParam;
     } else if (lastDashboardPath && lastDashboardPath.startsWith("/dashboard")) {
       target = lastDashboardPath;

@@ -14,20 +14,21 @@ export async function logAction(params: {
 
         const companyID = await params.companyID;
 
-        const { data, error } = await supabase.from("logs").insert({
+        const { error } = await supabase.from("logs").insert({
             company_id: companyID,
             action_nature: params.action,
             log_json: params.payload,
             status: params.status,
             error: params.logError,
-        }).select().single();
+        });
 
         if (error) {
-            console.log("const logError :", error);
+            if (process.env.NODE_ENV === "development") console.error("[logs] logAction insert error:", error);
             throw error;
         }
-    } catch {
+    } catch (err) {
         //IMPORTANT : le logging ne doit JAMAIS faire planter l'app
+        if (process.env.NODE_ENV === "development") console.error("[logs] logAction failed silently:", err);
     }
 }
 
@@ -46,10 +47,13 @@ export async function viewCompanyID(params: {
             .maybeSingle();
 
         if (error) {
-            console.log("viewCompanyID error :", error);
+            if (process.env.NODE_ENV === "development") console.error("[logs] viewCompanyID error:", error);
             return undefined;
         }
 
-        return data.company_id || undefined;
-    } catch { }
+        return data?.company_id ?? undefined;
+    } catch (err) {
+        if (process.env.NODE_ENV === "development") console.error("[logs] viewCompanyID failed silently:", err);
+        return undefined;
+    }
 }

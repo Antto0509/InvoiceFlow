@@ -29,7 +29,6 @@ export function ClientCreateDialog({
                 <ClientForm
                     loading={creating}
                     onSubmit={async (values) => {
-                        console.log("Creating client with values:", values);
                         try {
                             setCreating(true);
                             await createClient(values);

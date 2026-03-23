@@ -40,14 +40,16 @@ export class DocumentsAggregate {
     const docs = new DocumentsApi(this.userId);
     const lines = new DocumentLinesApi();
 
-    const document = await docs.get(id);
-    if (!document) return null;
+    const [document, { data: documentLines }] = await Promise.all([
+      docs.get(id),
+      lines.listByDocument(id),
+    ]);
 
-    const documentLines = await lines.listByDocument(id);
+    if (!document) return null;
 
     return {
       ...document,
-      lines: documentLines,
+      lines: documentLines ?? [],
     };
   }
 

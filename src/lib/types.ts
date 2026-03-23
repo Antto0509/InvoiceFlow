@@ -59,6 +59,8 @@ export type ResourceApiOptions<T> = {
   conflictTarget?: string | string[];
   /** Colonnes protégées en écriture (ex: created_at, user_id) */
   protectedColumns?: (keyof T & string)[];
+  /** Active le logging automatique des mutations (create/update/remove) */
+  withLogging?: boolean;
 };
 
 /** PostgREST-like filters */

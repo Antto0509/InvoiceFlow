@@ -674,3 +674,6 @@ FodyWeavers.xsd
 
 # Claude
 .claude
+
+# Husky
+.husky

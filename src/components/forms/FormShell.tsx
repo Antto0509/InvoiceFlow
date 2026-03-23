@@ -13,28 +13,11 @@ export function FormShell({
   children: React.ReactNode;
 }) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.group("📝 FormShell / submit");
-
+    e.preventDefault();
     try {
-      e.preventDefault();
-
-      console.info("➡️ Submit déclenché");
-      console.info("⏳ Loading :", loading);
-
-      const form = e.currentTarget;
-      const formData = new FormData(form);
-
-      const values = Object.fromEntries(formData.entries());
-
-      console.debug("📦 Données envoyées :", values);
-
       onSubmit(e);
-
-      console.info("✅ onSubmit exécuté sans erreur synchrone");
-    } catch (error) {
-      console.error("❌ Erreur pendant le submit :", error);
-    } finally {
-      console.groupEnd();
+    } catch {
+      // onSubmit errors are handled by the caller (react-hook-form)
     }
   };
 

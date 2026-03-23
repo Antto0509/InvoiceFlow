@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { createClientServer } from "@/data/supabase";
 import { getOrCreateSignedDocumentPdfUrl } from "@/features/documents/hooks/signDocumentPdf";
 
 export const runtime = "nodejs";
@@ -7,6 +9,21 @@ export const runtime = "nodejs";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, ctx: Ctx) {
+  const supabase = createClientServer();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (!user || authError) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
+  // Rate limit : 30 générations PDF par 5 minutes et par utilisateur
+  if (!checkRateLimit(`pdf:${user.id}`, 30, 5 * 60 * 1000)) {
+    return rateLimitResponse(300);
+  }
+
   try {
     const { id } = await ctx.params;
 

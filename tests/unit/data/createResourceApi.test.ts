@@ -2,14 +2,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSupabaseMock } from "../../mocks/supabaseMock";
 import type { FilterOps } from "@/lib/types";
 
-// Mock createClient() utilisé dans createResourceApi
+// Mock createClient() utilisé dans ResourceApi
 const supabaseMock = createSupabaseMock();
 
 vi.mock("@/data/supabase/client", () => ({
   createClient: () => supabaseMock,
 }));
 
-import { createResourceApi } from "@/data/createResourceApi";
+// Mock logging (pas testé ici, withLogging=false par défaut)
+vi.mock("@/data/logs", () => ({
+  logAction: vi.fn(),
+  viewCompanyID: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { ResourceApi } from "@/data/class/ResourceApi";
 
 type Row = {
   id: string;
@@ -26,7 +32,7 @@ type SupabaseMockCall = { fn: string; args: unknown[] };
 const getCall = (fn: string) => supabaseMock.__calls.find((c) => c.fn === fn) as SupabaseMockCall | undefined;
 const getCalls = (fn: string) => supabaseMock.__calls.filter((c) => c.fn === fn) as SupabaseMockCall[];
 
-describe("[DATA] createResourceApi", () => {
+describe("[DATA] ResourceApi", () => {
   beforeEach(() => {
     supabaseMock.__resetCalls();
     supabaseMock.__setNextResult({ data: [], count: 0, error: null });
@@ -34,7 +40,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() builds select + range + returns pagination", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id,name",
       sortableColumns: ["name", "created_at"],
@@ -66,7 +72,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() applies default page/pageSize when omitted", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id,name",
     });
@@ -88,7 +94,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() applies search with OR ilike and safe sort", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id,name,email",
       sortableColumns: ["name"],
@@ -112,7 +118,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() ignores empty/blank search", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       searchColumns: ["name", "email"],
     });
@@ -126,7 +132,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("get() uses simple PK by default (id)", async () => {
-    const api = createResourceApi<Row>({ table: "clients", select: "id,name" });
+    const api = new ResourceApi<Row>({ table: "clients", select: "id,name" });
 
     supabaseMock.__setNextSingleResult({
       data: { id: "abc", name: "Client" },
@@ -142,7 +148,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("get() uses customSelect when provided", async () => {
-    const api = createResourceApi<Row>({ table: "clients", select: "id,name,email" });
+    const api = new ResourceApi<Row>({ table: "clients", select: "id,name,email" });
 
     supabaseMock.__setNextSingleResult({
       data: { id: "abc" },
@@ -156,7 +162,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("get() supports composite PK and throws on wrong key array length", async () => {
-    const api = createResourceApi<PaymentAllocation>({
+    const api = new ResourceApi<PaymentAllocation>({
       table: "payment_allocations",
       primaryKey: ["payment_id", "document_id"],
     });
@@ -179,7 +185,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("create() strips generated fields and protected columns before insert", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       protectedColumns: ["secret"],
     });
@@ -201,7 +207,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("create() strips multiple generated fields (total/subtotal/tax)", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextSingleResult({
       data: { id: "1", name: "Gen" },
@@ -220,7 +226,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("update() applies PK filter and strips generated fields", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id,name",
     });
@@ -242,7 +248,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("remove() deletes by PK", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextResult({ data: null, error: null });
 
@@ -256,7 +262,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("bulkDelete() returns 0 when keys is empty and does not call in()", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     const count = await api.bulkDelete([]);
     expect(count).toBe(0);
@@ -266,7 +272,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("bulkDelete() rejects composite PK", async () => {
-    const api = createResourceApi<PaymentAllocation>({
+    const api = new ResourceApi<PaymentAllocation>({
       table: "payment_allocations",
       primaryKey: ["payment_id", "document_id"],
     });
@@ -275,7 +281,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("bulkDelete() uses delete({count:'exact'}) + in(pk, keys) and returns count", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextResult({ data: null, count: 3, error: null });
 
@@ -291,7 +297,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("count() uses head select and applies search", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       searchColumns: ["name", "email"],
     });
@@ -311,7 +317,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("exists() selects pkSelect with head + limit(1) and returns boolean", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextResult({ data: null, count: 1, error: null });
 
@@ -331,7 +337,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("exists() returns false when count is 0", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextResult({ data: null, count: 0, error: null });
 
@@ -344,18 +350,20 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("listAll() uses limit and safe sort", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       sortableColumns: ["name"],
     });
 
     supabaseMock.__setNextResult({
       data: [{ id: "1", name: "A" }],
+      count: 1,
       error: null,
     });
 
-    const rows = await api.listAll(50, { sort: { column: "name", dir: "asc" } });
+    const { data: rows, truncated } = await api.listAll(50, { sort: { column: "name", dir: "asc" } });
     expect(rows).toHaveLength(1);
+    expect(truncated).toBe(false);
 
     const limitCall = getCall("limit");
     expect(limitCall?.args[0]).toBe(50);
@@ -366,7 +374,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() ignores unsafe sort column (not in sortableColumns)", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       sortableColumns: ["name"],
     });
@@ -380,7 +388,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() does not apply search when searchColumns is empty", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       searchColumns: [],
     });
@@ -399,7 +407,7 @@ describe("[DATA] createResourceApi", () => {
       return { ...row, name: (row.name ?? "").toUpperCase() };
     });
 
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id,name",
       mapRow,
@@ -417,7 +425,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("upsertMany() uses conflictTarget or pkSelect", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       primaryKey: "id",
       conflictTarget: "id",
@@ -437,7 +445,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("upsertMany() falls back to pkSelect when conflictTarget is omitted", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       primaryKey: "id",
     });
@@ -451,7 +459,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("upsertMany() joins array conflictTarget into onConflict", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       primaryKey: "id",
       conflictTarget: ["email", "name"],
@@ -466,7 +474,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("upsertMany() uses composite pkSelect when conflictTarget is omitted", async () => {
-    const api = createResourceApi<PaymentAllocation>({
+    const api = new ResourceApi<PaymentAllocation>({
       table: "payment_allocations",
       primaryKey: ["payment_id", "document_id"],
     });
@@ -485,7 +493,7 @@ describe("[DATA] createResourceApi", () => {
   // --- Additional tests (new) ---
 
   it("list() forwards countMode to select(..., {count})", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       select: "id",
       countMode: "estimated",
@@ -501,7 +509,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("list() applies defaultFilters then q.filters", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       defaultFilters: {
         name: { op: "eq", value: "A" },
@@ -522,7 +530,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("get() applies defaultFilters in addition to PK filter", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       defaultFilters: {
         email: { op: "eq", value: "a@b.com" },
@@ -545,7 +553,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("count() ignores empty/blank search", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       searchColumns: ["name", "email"],
     });
@@ -560,7 +568,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("exists() applies defaultFilters + provided filters", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       defaultFilters: {
         name: { op: "eq", value: "A" },
@@ -581,7 +589,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("exists() returns false when count is undefined/nullish", async () => {
-    const api = createResourceApi<Row>({ table: "clients" });
+    const api = new ResourceApi<Row>({ table: "clients" });
 
     supabaseMock.__setNextResult({ data: null, count: undefined, error: null });
 
@@ -593,7 +601,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("listAll() applies search when searchColumns is provided", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       searchColumns: ["name", "email"],
     });
@@ -608,7 +616,7 @@ describe("[DATA] createResourceApi", () => {
   });
 
   it("bulkDelete() applies defaultFilters to the delete query", async () => {
-    const api = createResourceApi<Row>({
+    const api = new ResourceApi<Row>({
       table: "clients",
       defaultFilters: {
         name: { op: "eq", value: "A" },

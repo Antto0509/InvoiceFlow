@@ -126,17 +126,7 @@ export function ClientForm({
                 <SelectCompany
                   value={field.value}
                   onChange={(next) => {
-                    // logs ciblés, optionnels (si tu les veux)
-                    console.group("🏢 ClientForm / SelectCompany");
-                    console.info("➡️ company_id change:", { prev: field.value, next });
-
                     field.onChange(next);
-
-                    queueMicrotask(() => {
-                      console.info("📦 RHF company_id now:", form.getValues("company_id"));
-                      console.info("🧨 errors.company_id:", form.formState.errors.company_id);
-                      console.groupEnd();
-                    });
                   }}
                 />
               </FormControl>

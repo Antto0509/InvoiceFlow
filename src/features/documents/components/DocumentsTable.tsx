@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { RowActions } from "@/components/datatable/RowActions";
 import { DEFAULT_CURRENCY } from "@/lib/constants";
 import {
+  formatDate,
   formatMoney,
   labelDocKind,
   labelDocStatus,
@@ -112,11 +113,7 @@ export function DocumentsTable({
           </div>
         ),
         cell: ({ row }) => (
-          <span>
-            {new Date(
-              row.original.issue_date
-            ).toLocaleDateString()}
-          </span>
+          <span>{formatDate(row.original.issue_date)}</span>
         ),
         size: 140,
       },

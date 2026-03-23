@@ -9,7 +9,7 @@ export class DocumentsApi extends ResourceApi<Document> {
   constructor(userId?: string) {
     super({
       table: "documents",
-      select: "*",
+      select: "id, user_id, company_id, client_id, kind, status, number, issue_date, due_date, currency_code, fx_eur_per_unit_snapshot, subtotal, tax, total, total_eur, issue_year, sequence_number, number_readonly, reference_document_id, supply_date, payment_terms, penalty_rate, recovery_fee, purchase_order_number, notes_public, notes_private, pdf_url, created_at, updated_at",
       sortableColumns: SORTABLE_DOCS.filter((c) => c !== "client_name"),
       searchColumns: ["number"],
       defaultFilters: userId

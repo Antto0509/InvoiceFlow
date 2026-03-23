@@ -4,7 +4,7 @@ import * as React from "react";
 import { Client } from "@/schemas/clients.schema";
 import { RowActions } from "@/components/datatable/RowActions";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Mail } from "lucide-react";
 
 export function ClientCard({
@@ -57,7 +57,7 @@ export function ClientCard({
 
           {client.created_at && (
             <div className={cn("text-[11px] text-muted-foreground/70", "hidden sm:block")}>
-              Créé le {new Date(client.created_at).toLocaleDateString()}
+              Créé le {formatDate(client.created_at)}
             </div>
           )}
         </div>

@@ -6,9 +6,9 @@
 
 /* ---------- THEME (v4) ---------- */
 @theme inline {
-  /* 🔤 mapping fonts -> Inter / Lexend */
+  /* 🔤 mapping fonts -> Inter / Space Grotesk */
   --font-sans: var(--font-inter);
-  --font-display: var(--font-lexend);
+  --font-display: var(--font-space-grotesk);
 
   /* mappe les couleurs vers tes CSS vars */
   --color-background: var(--background);
@@ -55,7 +55,7 @@
 /* ---------- TOKENS (OKLCH) ---------- */
 :root {
   --font-sans: var(--font-inter);
-  --font-display: var(--font-lexend);
+  --font-display: var(--font-space-grotesk);
 
   --radius: 0.625rem;
 
@@ -153,7 +153,9 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    transition: background-color 200ms ease, color 200ms ease;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
   }
   h1,
   h2,

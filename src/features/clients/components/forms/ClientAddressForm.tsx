@@ -41,7 +41,7 @@ export function ClientAddressForm({
     resolver: zodResolver(clientAddressFormSchema),
     defaultValues: {
         client_id: defaultValues?.client_id ?? "",
-        kind: defaultValues?.kind ?? "headquarters",
+        kind: defaultValues?.kind ?? "billing",
         line1: defaultValues?.line1 ?? "",
         line2: defaultValues?.line2 ?? "",
         city: defaultValues?.city ?? "",

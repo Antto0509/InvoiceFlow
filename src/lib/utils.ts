@@ -429,6 +429,50 @@ export function labelDocKind(kind: DocumentKind | string): string {
   }
 }
 
+/** Formate une date ISO en date courte FR (ex. "23/03/2026"). */
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString("fr-FR");
+}
+
+/** Formate une date ISO en date + heure courtes FR (ex. "23/03/2026 14:30"). */
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return "—";
+  return new Date(date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+}
+
+/** Forme plurielle du type de document (ex. "Factures", "Devis"). */
+export function labelDocKindPlural(kind: DocumentKind | string): string {
+  switch (kind) {
+    case "invoice":
+      return "Factures";
+    case "credit_note":
+      return "Avoirs";
+    case "quote":
+      return "Devis";
+    case "proforma":
+      return "Proformas";
+    default:
+      return "Documents";
+  }
+}
+
+/** Libellé du bouton de création (ex. "Nouvelle facture", "Nouveau devis"). */
+export function labelNewDoc(kind: DocumentKind | string): string {
+  switch (kind) {
+    case "invoice":
+      return "Nouvelle facture";
+    case "credit_note":
+      return "Nouvel avoir";
+    case "quote":
+      return "Nouveau devis";
+    case "proforma":
+      return "Nouvelle proforma";
+    default:
+      return "Nouveau document";
+  }
+}
+
 /**
  * Map centrale des statuts possibles par type de document.
  * Utilisé pour le labelling.

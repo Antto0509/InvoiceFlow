@@ -30,22 +30,31 @@ npx vitest run tests/path/to/file.test.ts
 - Protected columns (auto-stripped on writes)
 - Bulk operations (`upsertMany`, `bulkDelete`)
 - Default filters (used to scope all queries to `company_id`)
+- AbortSignal support for cancellable requests
 
-Domain APIs live in `src/data/class/<domain>/` and extend ResourceApi.
+Domain APIs live in `src/data/class/<domain>/` and extend ResourceApi. `src/data/class/index.ts` re-exports all of them.
+
+> **Note:** `src/data/createResourceApi.ts` is deprecated. Do not use it for new code — extend `ResourceApi` instead.
+
+### Aggregate Pattern
+
+For operations spanning multiple tables, `*Aggregate` classes in `src/data/class/<domain>/` orchestrate parallel fetches and transactional writes. Example: `ClientsAggregate` fetches client + addresses + contacts in parallel and handles cascading deletes.
 
 ### Feature Modules
 
 Each domain lives in `src/features/<domain>/` with a consistent internal structure:
 - `components/` — UI components (dialogs, forms, tables)
-- `data/` — Repository functions (wrap the domain API class)
+- `data/` — Repository functions that wrap the domain API classes from `src/data/class/<domain>/`
 - `hooks/` — React hooks (e.g., `useClientsTable`)
-- `schemas/` — Zod schemas + inferred TypeScript types
+- `schemas/` — Domain-specific Zod schemas + inferred TypeScript types
 
-Schemas define two variants: a strict DB schema and a permissive form schema. TypeScript types are derived via `z.infer<typeof schema>`.
+### Schemas
 
-### Aggregate Pattern
+Schemas exist in two locations:
+- `src/schemas/` — Global shared schemas (currencies, payments, email_logs, settings, users…)
+- `src/features/<domain>/schemas/` — Domain-specific schemas used within a feature
 
-For operations spanning multiple tables, `*Aggregate` classes in `src/features/<domain>/data/` orchestrate parallel fetches and transactional writes. Example: `ClientsAggregate` fetches client + addresses + contacts in parallel and handles cascading deletes.
+Each schema file typically exports a strict DB schema and a permissive form schema. TypeScript types are derived via `z.infer<typeof schema>`.
 
 ### Page → Data Flow
 
@@ -63,10 +72,14 @@ Page component
 
 Every query is scoped to `company_id`. The `defaultFilters` option on ResourceApi instances enforces this automatically — never build queries without passing `companyId` through.
 
+### Activity Logging
+
+All CRUD operations log to an activity journal via `src/data/logs.ts`. This is integrated into ResourceApi and the repository layer — no need to call it manually in new features that use these abstractions.
+
 ### Supabase Clients
 
 - Browser: singleton in `src/data/supabase/client.ts`
-- Server (API routes): `createClientServer()` in `src/data/supabase/server.ts`
+- Server (API routes / RSC): `createClientServer()` in `src/data/supabase/server.ts`
 - Middleware: `src/middleware.ts` — protects `(private)` routes, handles auth redirects
 
 ### Testing

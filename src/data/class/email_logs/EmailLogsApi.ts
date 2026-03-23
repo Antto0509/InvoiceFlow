@@ -11,7 +11,7 @@ export class EmailLogsApi extends ResourceApi<EmailLog> {
     super(
       {
         table: "email_logs",
-        select: "*",
+        select: "id, user_id, to_email, subject, status, created_at, updated_at, document_id, provider, provider_message_id, trace_id, error_code, error_message, error_details",
         sortableColumns: ["created_at"],
       },
       createClientServer()

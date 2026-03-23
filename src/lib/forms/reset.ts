@@ -1,4 +1,5 @@
 // "@/lib/forms/reset.ts"
+/* eslint-disable no-console */
 "use client";
 
 import { useEffect } from "react";

@@ -8,7 +8,7 @@ export class FilesApi extends ResourceApi<File> {
   constructor(userId?: string) {
     super({
       table: "files",
-      select: "*",
+      select: "id, user_id, bucket, path, mime_type, size_bytes, created_at",
       sortableColumns: [
         "id",
         "user_id",

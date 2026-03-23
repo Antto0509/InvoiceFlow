@@ -426,6 +426,44 @@ END;
 $function$;
 
 
+-- RPC appelé par DocumentsApi.generateNumber() pour finaliser un document
+-- Incrémente atomiquement le compteur document_sequences et retourne le numéro généré.
+-- Même logique que le trigger documents_assign_number(), mais invocable explicitement
+-- (ex : finalisation d'un brouillon qui doit recevoir son numéro définitif).
+CREATE OR REPLACE FUNCTION public.generate_document_number(
+  p_company_id uuid,
+  p_kind       text,
+  p_issue_date date
+)
+RETURNS TABLE (number_value text, number_readonly text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_year int  := EXTRACT(YEAR FROM p_issue_date)::int;
+  v_seq  int;
+  v_num  text;
+BEGIN
+  -- Crée la ligne de séquence si elle n'existe pas encore
+  INSERT INTO public.document_sequences (company_id, kind, year)
+  VALUES (p_company_id, p_kind, v_year)
+  ON CONFLICT (company_id, kind, year) DO NOTHING;
+
+  -- Incrémente et récupère la valeur courante (avant l'incrément)
+  UPDATE public.document_sequences
+    SET next_number = next_number + 1
+    WHERE company_id = p_company_id
+      AND kind       = p_kind
+      AND year       = v_year
+    RETURNING next_number - 1 INTO v_seq;
+
+  v_num := lpad(v_year::text, 4, '0') || '-' || lpad(v_seq::text, 6, '0');
+
+  RETURN QUERY SELECT v_num, v_num;
+END;
+$$;
+
 
 -- Création automatique du membership "owner" après création d'une company
 CREATE OR REPLACE FUNCTION public.companies_ai_create_owner_membership()
@@ -536,5 +574,86 @@ BEGIN
   NEW.membership_id := mid;
 
   RETURN NEW;
+END;
+$$;
+
+
+-- =========================================================
+-- RPC transactionnel : remplacement atomique des lignes d'un document
+-- =========================================================
+-- Exécuté en une seule transaction PostgreSQL pour éviter les états
+-- incohérents (lignes orphelines si delete échoue après upsert).
+-- Appelé par DocumentLinesApi.replaceForDocument() côté TypeScript.
+CREATE OR REPLACE FUNCTION public.replace_document_lines(
+  p_document_id uuid,
+  p_lines       jsonb   -- tableau JSON des lignes (avec ou sans "id")
+)
+RETURNS jsonb           -- { "upserted": int, "deleted": int }
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_incoming_ids  uuid[];
+  v_deleted_count int;
+  v_upsert_count  int;
+BEGIN
+  -- Collecter les IDs explicites des lignes entrantes
+  -- (les nouvelles lignes sans id n'ont pas encore de UUID côté client)
+  SELECT COALESCE(
+    array_agg((elem->>'id')::uuid) FILTER (WHERE elem->>'id' IS NOT NULL),
+    '{}'::uuid[]
+  )
+  INTO v_incoming_ids
+  FROM jsonb_array_elements(p_lines) AS elem;
+
+  -- Supprimer atomiquement les lignes absentes du nouveau set
+  -- Si v_incoming_ids = '{}', id != ALL('{}') est toujours TRUE → tout supprimer
+  DELETE FROM public.document_lines
+  WHERE document_id = p_document_id
+    AND id != ALL(v_incoming_ids);
+
+  GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+  -- Upsert des lignes entrantes (insert ou update selon la présence d'un id)
+  INSERT INTO public.document_lines (
+    id, document_id, kind, description,
+    qty, unit_price, unit,
+    discount_rate, discount_amount, tax_rate,
+    line_total, position
+  )
+  SELECT
+    COALESCE(NULLIF(elem->>'id', '')::uuid, gen_random_uuid()),
+    p_document_id,
+    elem->>'kind',
+    elem->>'description',
+    (elem->>'qty')::numeric,
+    (elem->>'unit_price')::numeric,
+    NULLIF(elem->>'unit', ''),
+    (elem->>'discount_rate')::numeric,
+    (elem->>'discount_amount')::numeric,
+    (elem->>'tax_rate')::numeric,
+    (elem->>'line_total')::numeric,
+    (elem->>'position')::integer
+  FROM jsonb_array_elements(p_lines) AS elem
+  ON CONFLICT (id) DO UPDATE SET
+    kind            = EXCLUDED.kind,
+    description     = EXCLUDED.description,
+    qty             = EXCLUDED.qty,
+    unit_price      = EXCLUDED.unit_price,
+    unit            = EXCLUDED.unit,
+    discount_rate   = EXCLUDED.discount_rate,
+    discount_amount = EXCLUDED.discount_amount,
+    tax_rate        = EXCLUDED.tax_rate,
+    line_total      = EXCLUDED.line_total,
+    position        = EXCLUDED.position,
+    updated_at      = now();
+
+  GET DIAGNOSTICS v_upsert_count = ROW_COUNT;
+
+  RETURN jsonb_build_object(
+    'upserted', v_upsert_count,
+    'deleted',  v_deleted_count
+  );
 END;
 $$;

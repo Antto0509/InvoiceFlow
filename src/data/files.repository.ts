@@ -1,4 +1,5 @@
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
+import { isDev } from "@/lib/env";
 import type {
   File,
   FileTarget,
@@ -12,9 +13,9 @@ import type {
 
 /** Factory pour l’API fichiers (scopée éventuellement par user_id) */
 export const makeFilesApi = (user_id?: string) =>
-  createResourceApi<File>({
+  new ResourceApi<File>({
     table: "files",
-    select: "*",
+    select: "id, user_id, bucket, path, mime_type, size_bytes, created_at",
     sortableColumns: ["id", "user_id", "bucket", "path", "mime_type", "size_bytes", "created_at"],
     searchColumns: ["bucket", "path", "mime_type"],
     defaultFilters: user_id ? { user_id: { op: "eq", value: user_id } } : undefined,
@@ -25,9 +26,9 @@ export const makeFilesApi = (user_id?: string) =>
 
 /** Factory pour l’API de liaisons fichier → cible */
 export const makeFileTargetsApi = () =>
-  createResourceApi<FileTarget>({
+  new ResourceApi<FileTarget>({
     table: "file_links",
-    select: "*",
+    select: "file_id, target_table, target_id, created_at",
     sortableColumns: ["file_id", "target_table", "target_id", "created_at"],
     searchColumns: ["target_table"],
     primaryKey: ["file_id", "target_table", "target_id"],
@@ -69,11 +70,7 @@ export async function searchFiles(
         mime_type: f.mime_type ?? null,
       }));
   } catch (err) {
-    console.error(
-      "[FilesApi:searchFiles] Failed",
-      { q, limit, userId },
-      err
-    );
+    if (isDev) console.error("[FilesApi:searchFiles] Failed", { q, limit, userId }, err);
     throw err;
   }
 }
@@ -114,11 +111,7 @@ export async function listFiles(
 
     return { rows: data as File[], total };
   } catch (err) {
-    console.error(
-      "[FilesApi:listFiles] Failed",
-      { params, userId },
-      err
-    );
+    if (isDev) console.error("[FilesApi:listFiles] Failed", { params, userId }, err);
     throw err;
   }
 }
@@ -198,11 +191,7 @@ export async function getFileWithDetails(
       target,
     };
   } catch (err) {
-    console.error(
-      "[FilesApi:getFileWithDetails] Failed",
-      { id, userId },
-      err
-    );
+    if (isDev) console.error("[FilesApi:getFileWithDetails] Failed", { id, userId }, err);
     throw err;
   }
 }

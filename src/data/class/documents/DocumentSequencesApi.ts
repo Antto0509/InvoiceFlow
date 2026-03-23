@@ -8,7 +8,7 @@ export class DocumentSequencesApi extends ResourceApi<DocumentSequence> {
   constructor() {
     super({
       table: "document_sequences",
-      select: "*",
+      select: "id, company_id, kind, year, next_number",
       sortableColumns: ["year", "kind", "next_number"],
       searchColumns: [],
       protectedColumns: ["next_number"],

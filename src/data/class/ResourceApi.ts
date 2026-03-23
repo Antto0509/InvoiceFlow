@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/data/supabase";
+import { createClient } from "@/data/supabase/client";
+import { logAction, viewCompanyID } from "@/data/logs";
+import type { LogsStatus, LogsActionNature } from "@/features/activityLogs/schemas/logs.schema";
+import { extractLogMetadata, type Resource } from "@/lib/logs";
 import {
   applyFilters,
   stripGenerated,
@@ -32,6 +35,7 @@ export class ResourceApi<T extends Record<string, unknown>> {
   protected primaryKey: string[];
   protected conflictTarget?: string | string[];
   protected protectedColumns?: string[];
+  protected withLogging: boolean;
 
   constructor(opts: ResourceApiOptions<T>, supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient ?? createClient();
@@ -50,6 +54,7 @@ export class ResourceApi<T extends Record<string, unknown>> {
       : [opts.primaryKey ?? "id"];
     this.conflictTarget = opts.conflictTarget;
     this.protectedColumns = opts.protectedColumns;
+    this.withLogging = opts.withLogging ?? false;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -83,6 +88,7 @@ export class ResourceApi<T extends Record<string, unknown>> {
    */
   protected log(...args: unknown[]) {
     if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
       console.log(...args);
     }
   }
@@ -192,6 +198,32 @@ export class ResourceApi<T extends Record<string, unknown>> {
     return r;
   }
 
+  /**
+   * Enregistre une mutation dans les logs d'activité (si withLogging=true)
+   * @param action Nature de l'action (insert/update/delete)
+   * @param data Données après mutation (ou payload si erreur)
+   * @param logError Erreur éventuelle à enregistrer
+   */
+  protected async logMutation(
+    action: LogsActionNature,
+    data: Record<string, unknown>,
+    logError?: unknown
+  ): Promise<void> {
+    const resource = (this.table === "documents_with_client" ? "documents" : this.table) as Resource;
+    await logAction({
+      companyID: viewCompanyID({ table: this.table, objectID: data?.id as string | undefined }),
+      action,
+      payload: {
+        resource,
+        action_nature: action,
+        metadata: extractLogMetadata(resource, data),
+        data,
+      },
+      ...(logError ? { logError } : {}),
+      status: (logError ? "error" : "success") as LogsStatus,
+    });
+  }
+
   /* -------------------------------------------------------------------------- */
   /* Méthodes publiques                                                         */
   /* -------------------------------------------------------------------------- */
@@ -280,6 +312,14 @@ export class ResourceApi<T extends Record<string, unknown>> {
       .select()
       .single();
 
+    if (this.withLogging) {
+      await this.logMutation(
+        "insert",
+        error ? (payload as Record<string, unknown>) : (data as Record<string, unknown>),
+        error ?? undefined
+      );
+    }
+
     if (error) throw error;
     return (this.mapRow ? this.mapRow(data) : data) as T;
   }
@@ -301,8 +341,16 @@ export class ResourceApi<T extends Record<string, unknown>> {
     req = this.applyAllFilters(req);
 
     const { data, error } = await req.select().single();
-    if (error) throw error;
 
+    if (this.withLogging) {
+      await this.logMutation(
+        "update",
+        error ? (payload as Record<string, unknown>) : (data as Record<string, unknown>),
+        error ?? undefined
+      );
+    }
+
+    if (error) throw error;
     return (this.mapRow ? this.mapRow(data) : data) as T;
   }
 
@@ -337,11 +385,25 @@ export class ResourceApi<T extends Record<string, unknown>> {
    * @returns void
    */
   async remove(key: unknown): Promise<void> {
+    let dataToDelete: Record<string, unknown> | null = null;
+
+    if (this.withLogging) {
+      let fetchReq = this.supabase.from(this.table).select("*");
+      fetchReq = this.applyPkFilter(fetchReq, key);
+      const { data } = await fetchReq.single();
+      dataToDelete = data;
+    }
+
     let req = this.supabase.from(this.table).delete();
     req = this.applyPkFilter(req, key);
     req = this.applyAllFilters(req);
 
     const { error } = await req;
+
+    if (this.withLogging) {
+      await this.logMutation("delete", dataToDelete ?? {}, error ?? undefined);
+    }
+
     if (error) throw error;
   }
 
@@ -410,16 +472,24 @@ export class ResourceApi<T extends Record<string, unknown>> {
   }
 
   /**
-   * Liste toutes les ressources avec un limite et des filtres optionnels
-   * @param limit Nombre maximum de ressources à retourner
+   * Liste toutes les ressources avec un limite et des filtres optionnels.
+   *
+   * ⚠️ Hard limit : au maximum `limit` lignes sont retournées (défaut 1000).
+   * Si `truncated: true` dans le résultat, la table contient davantage de lignes
+   * que le seuil — paginer via `list()` à la place.
+   *
+   * @param limit Nombre maximum de ressources à retourner (défaut 1000)
    * @param q Paramètres de requête (filtres, recherche, tri)
-   * @returns Liste des ressources
+   * @returns `{ data, truncated }` — `truncated` est `true` si des lignes ont été omises
    */
   async listAll(
     limit = 1000,
     q?: Omit<ListQuery, "page" | "pageSize">
-  ): Promise<T[]> {
-    let req = this.supabase.from(this.table).select(this.select).limit(limit);
+  ): Promise<{ data: T[]; truncated: boolean }> {
+    let req = this.supabase
+      .from(this.table)
+      .select(this.select, { count: "exact" })
+      .limit(limit);
     req = this.applyAllFilters(req, q?.filters);
 
     const orExpr = this.buildSearchOr(q?.search);
@@ -439,11 +509,14 @@ export class ResourceApi<T extends Record<string, unknown>> {
       });
     }
 
-    const { data, error } = await req;
+    const { data, count, error } = await req;
     if (error) throw error;
 
-    return (data ?? []).map((r: unknown) =>
-      this.mapRow ? this.mapRow(r) : r
-    ) as T[];
+    return {
+      data: (data ?? []).map((r: unknown) =>
+        this.mapRow ? this.mapRow(r) : r
+      ) as T[],
+      truncated: (count ?? 0) > limit,
+    };
   }
 }

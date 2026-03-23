@@ -21,8 +21,10 @@ const hoisted = vi.hoisted(() => ({
   createResourceApiMock: vi.fn(),
 }));
 
-vi.mock("@/data/createResourceApi", () => ({
-  createResourceApi: (opts: Record<string, unknown>) => hoisted.createResourceApiMock(opts),
+vi.mock("@/data/class/ResourceApi", () => ({
+  ResourceApi: function(opts: Record<string, unknown>) {
+    return hoisted.createResourceApiMock(opts);
+  },
 }));
 
 import {
@@ -54,7 +56,7 @@ describe("[DATA / Files] files.repository", () => {
     makeFilesApi("user-1");
     const opts = hoisted.createResourceApiMock.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(opts.table).toBe("files");
-    expect(opts.select).toBe("*");
+    expect(opts.select).toBe("id, user_id, bucket, path, mime_type, size_bytes, created_at");
     expect(opts.sortableColumns).toEqual(
       expect.arrayContaining(["id", "user_id", "bucket", "path", "mime_type", "size_bytes", "created_at"]) 
     );

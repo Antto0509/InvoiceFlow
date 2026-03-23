@@ -6,7 +6,7 @@ export class DocumentLinesApi extends ResourceApi<DocumentLine> {
   constructor() {
     super({
       table: "document_lines",
-      select: "*",
+      select: "id, document_id, kind, description, qty, unit_price, unit, discount_rate, discount_amount, tax_rate, line_total, position, created_at, updated_at",
       sortableColumns: ["id", "description", "quantity", "unit_price", "total"],
       searchColumns: ["description"],
     });
@@ -69,42 +69,40 @@ export class DocumentLinesApi extends ResourceApi<DocumentLine> {
     return { count: data?.length ?? 0 };
   }
 
-  /** 
-   * Remplacement total des lignes d’un document 
+  /**
+   * Remplacement atomique des lignes d’un document via RPC PostgreSQL.
+   *
+   * Toutes les opérations (delete des lignes supprimées + upsert des
+   * lignes entrantes) sont exécutées dans une seule transaction DB,
+   * éliminant le risque d’état incohérent en cas d’erreur partielle.
+   *
    * @param documentId ID du document
-   * @param incoming Lignes entrantes
-   * @returns Statistiques de l’opération
+   * @param incoming Lignes entrantes (avec `id` pour les existantes, sans pour les nouvelles)
+   * @returns `{ upserted, deleted }` — compteurs retournés par la DB
    */
   async replaceForDocument(
     documentId: string,
     incoming: Array<Partial<DocumentLine>>
-  ) {
-    const existing = await this.listByDocument(documentId);
-    const existingRows = existing.data ?? [];
-    const existingIds = new Set(existingRows.map((l) => l.id));
-
-    const incomingWithDoc = incoming.map((l) => ({
-      ...l,
-      document_id: documentId,
-    }));
-
-    await this.upsert(incomingWithDoc);
-
-    const incomingIds = new Set(
-      incomingWithDoc.map((l) => l.id).filter(Boolean) as string[]
+  ): Promise<{ upserted: number; deleted: number }> {
+    const lines = stripGeneratedMany(
+      incoming.map((l) => ({
+        ...l,
+        document_id: documentId,
+        unit: l.unit ?? null,
+        discount_rate: l.discount_rate ?? null,
+        discount_amount: l.discount_amount ?? null,
+        tax_rate: l.tax_rate ?? null,
+      }))
     );
 
-    const toDelete = [...existingIds].filter(
-      (id) => id && !incomingIds.has(id)
-    );
+    const { data, error } = await this.supabase.rpc("replace_document_lines", {
+      p_document_id: documentId,
+      p_lines: lines,
+    });
 
-    if (toDelete.length) {
-      await this.deleteMany(toDelete);
-    }
+    if (error) throw error;
 
-    return {
-      upserted: incomingWithDoc.length,
-      deleted: toDelete.length,
-    };
+    const result = data as { upserted: number; deleted: number } | null;
+    return { upserted: result?.upserted ?? 0, deleted: result?.deleted ?? 0 };
   }
 }

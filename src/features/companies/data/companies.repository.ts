@@ -1,4 +1,5 @@
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
+import { isDev } from "@/lib/env";
 import type {
   Company,
   CompanyAddress,
@@ -14,13 +15,14 @@ import { SORTABLE_COMPANIES } from "@/lib/constants";
 /* ---------------------------------- */
 
 export const makeCompaniesApi = (userId?: string) =>
-  createResourceApi<Company>({
+  new ResourceApi<Company>({
     table: "companies",
-    select: "*",
+    select: "id, user_id, name, legal_form, siren, siret, vat_number, rcs_city, ape_naf, share_capital, website, email, phone, logo_url, default_currency, payment_terms, penalty_rate, recovery_fee_enabled, vat_regime, legal_notes, created_at, updated_at",
     sortableColumns: [...SORTABLE_COMPANIES],
     searchColumns: ["name", "siren", "siret", "vat_number", "website", "email"],
     defaultFilters: userId ? { user_id: { op: "eq", value: userId } } : undefined,
     protectedColumns: ["user_id"],
+    withLogging: true,
   });
 
 /** Recherche rapide (autocomplete) */
@@ -46,11 +48,7 @@ export async function searchCompanies(
       )
       .map((c) => ({ id: c.id, name: c.name, vat_number: c.vat_number ?? null }));
   } catch (err) {
-    console.error(
-      "[CompaniesApi:searchCompanies] Failed",
-      { q, limit, userId },
-      err
-    );
+    if (isDev) console.error("[CompaniesApi:searchCompanies] Failed", { q, limit, userId }, err);
     throw err;
   }
 }
@@ -107,10 +105,7 @@ export async function listCompanies(
 
     return { rows: data as Company[], total };
   } catch (err) {
-    console.error(
-      "[CompaniesApi:listCompanies] Failed",
-      { params, userId },
-      err
+    if (isDev) console.error("[CompaniesApi:listCompanies] Failed", { params, userId }, err
     );
     throw err;
   }
@@ -137,28 +132,31 @@ export const bulkDeleteCompanies = (ids: string[], userId?: string) =>
 /* ---------------------------------- */
 
 export const makeCompanyAddressesApi = () =>
-  createResourceApi<CompanyAddress>({
+  new ResourceApi<CompanyAddress>({
     table: "company_addresses",
     select:
       "id, company_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at",
     sortableColumns: ["kind", "city", "country", "created_at", "updated_at"],
     searchColumns: ["line1", "line2", "city", "postal_code", "region", "country"],
+    withLogging: true,
   });
 
 export const makeCompanyBankAccountsApi = () =>
-  createResourceApi<CompanyBankAccount>({
+  new ResourceApi<CompanyBankAccount>({
     table: "company_bank_accounts",
     select: "id, company_id, label, iban, bic, display, created_at, updated_at",
     sortableColumns: ["label", "display", "created_at", "updated_at"],
     searchColumns: ["label", "iban", "bic"],
+    withLogging: true,
   });
 
 export const makeCompanyMembershipsApi = () =>
-  createResourceApi<CompanyMembership>({
+  new ResourceApi<CompanyMembership>({
     table: "company_memberships",
     select: "id, company_id, user_id, role, created_at, updated_at",
     sortableColumns: ["role", "created_at", "updated_at"],
     searchColumns: ["role"],
+    withLogging: true,
   });
 
 // CRUD Addresses
@@ -255,10 +253,7 @@ export async function getCompanyWithDetails(
       memberships: memberships as CompanyMembership[],
     };
   } catch (err) {
-    console.error(
-      "[CompaniesApi:getCompanyWithDetails] Failed",
-      { id, userId },
-      err
+    if (isDev) console.error("[CompaniesApi:getCompanyWithDetails] Failed", { id, userId }, err
     );
     throw err;
   }

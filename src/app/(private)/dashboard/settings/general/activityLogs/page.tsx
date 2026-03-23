@@ -5,7 +5,6 @@ import { ListPage } from "@/components/ListPage";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { useDataTable } from "@/hooks/useDataTable";
-import { toast } from "sonner";
 import { ExportMenu } from "@/components/datatable/toolbar/ExportMenu";
 
 import type { LogsView, LogsListParams, LogsSort } from "@/features/activityLogs/schemas/logs.schema";

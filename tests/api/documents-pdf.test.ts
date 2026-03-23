@@ -30,6 +30,17 @@ async function loadRouteWithSigner(
     getOrCreateSignedDocumentPdfUrl: signer,
   }));
 
+  vi.doMock("@/data/supabase/server", () => ({
+    createClientServer: () => ({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "test-user" } },
+          error: null,
+        }),
+      },
+    }),
+  }));
+
   const mod = (await import("@/app/api/documents/[id]/pdf/route")) as unknown as { GET: PdfRouteGet };
   return { GET: mod.GET, signer };
 }

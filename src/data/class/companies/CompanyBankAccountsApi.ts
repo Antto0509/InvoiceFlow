@@ -8,7 +8,7 @@ export class CompanyBankAccountsApi extends ResourceApi<CompanyBankAccount> {
   constructor() {
     super({
       table: "company_bank_accounts",
-      select: "*",
+      select: "id, company_id, label, iban, bic, display, created_at, updated_at",
       sortableColumns: ["label", "display", "created_at", "updated_at"],
       searchColumns: ["label", "iban", "bic"],
       protectedColumns: ["company_id"],

@@ -8,7 +8,7 @@ export class UsersApi extends ResourceApi<User> {
     constructor() {
         super({
             table: "users",
-            select: "*",
+            select: "id, email, first_name, last_name, avatar_url, company_id, role, created_at, updated_at",
             sortableColumns: ["created_at", "email", "first_name", "last_name"],
             searchColumns: ["email", "first_name", "last_name"],
         });

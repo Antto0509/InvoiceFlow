@@ -5,6 +5,7 @@ import { ClientsTable, ClientDialogs } from "@/features/clients";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Upload } from "lucide-react";
 import { useDataTable } from "@/hooks/useDataTable";
 import { listClients } from "@/data/clients.repository";
@@ -38,14 +39,12 @@ export default function ClientsPage() {
     }
   );
 
-  // Handlers envoyés à la table (RowActions les utilisera)
   const handleEdit = (row: ClientListRow) => {
-    // si ClientListRow est compatible avec Client, sinon mappe ce qu’il faut
-    setEditClient(row as unknown as Client);
+    setEditClient(row as Client);
   };
 
   const handleDelete = (row: ClientListRow) => {
-    setDeleteClient(row as unknown as Client);
+    setDeleteClient(row as Client);
   };
 
   return (
@@ -64,11 +63,20 @@ export default function ClientsPage() {
           onSearch={(v) => setParams({ ...params, page: 1, search: v })}
           right={
             <>
-              <Button size="sm" variant="secondary" onClick={() => {}}>
-                <Upload className="h-4 w-4 mr-1" />
-                Importer
-              </Button>
-              <ExportMenu onExportAll={() => {}} onExportPage={() => {}} />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0}>
+                      <Button size="sm" variant="secondary" disabled>
+                        <Upload className="h-4 w-4 mr-1" />
+                        Importer
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Bientôt disponible</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <ExportMenu onExportAll={() => {}} onExportPage={() => {}} disabled />
             </>
           }
         />

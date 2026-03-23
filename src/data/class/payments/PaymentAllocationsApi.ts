@@ -8,7 +8,7 @@ export class PaymentAllocationsApi extends ResourceApi<PaymentAllocation> {
     constructor() {
         super({
             table: "payment_allocations",
-            select: "*",
+            select: "payment_id, document_id, amount",
             sortableColumns: ["payment_id", "document_id", "amount"],
             searchColumns: ["payment_id", "document_id"],
         });

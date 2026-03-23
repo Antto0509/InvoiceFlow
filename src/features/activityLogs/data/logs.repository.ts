@@ -1,8 +1,9 @@
 import { LogsView, LogsListParams, LogsSort } from "@/features/activityLogs/schemas/logs.schema";
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
+import { isDev } from "@/lib/env";
 
-export const makeLogsApi = (userId?: string, companyId?: string) =>
-    createResourceApi<LogsView>({
+export const makeLogsApi = (userId?: string) =>
+    new ResourceApi<LogsView>({
         table: "logs_with_user_company", //Vue SQL Supabase
         select:
             "id, user_id, first_name, last_name, avatar_url, company_id, company_name, action_nature, log_json, created_at, updated_at, status",
@@ -21,8 +22,7 @@ export const makeLogsApi = (userId?: string, companyId?: string) =>
 
 export async function listLogs(
     params: Partial<LogsListParams> = {},
-    userId?: string,
-    companyId?: string
+    userId?: string
 ) {
     const {
         page = 1,
@@ -34,7 +34,7 @@ export async function listLogs(
         dateTo,
     } = params as LogsListParams;
 
-    const api = makeLogsApi(userId, companyId);
+    const api = makeLogsApi(userId);
 
     try {
         const { data, total } = await api.list({
@@ -56,11 +56,7 @@ export async function listLogs(
 
         return { rows, total };
     } catch (err) {
-        console.error(
-            "[logsApi:listLogs] Failed",
-            { params, userId },
-            err
-        );
+        if (isDev) console.error("[logsApi:listLogs] Failed", { params, userId }, err);
         throw err;
     }
 }

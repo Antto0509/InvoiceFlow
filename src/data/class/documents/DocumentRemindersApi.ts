@@ -8,7 +8,7 @@ export class DocumentRemindersApi extends ResourceApi<DocumentReminder> {
   constructor() {
     super({
       table: "document_reminders",
-      select: "*",
+      select: "id, document_id, kind, scheduled_at, sent_at, status, created_at",
       sortableColumns: ["scheduled_at", "sent_at", "status", "created_at"],
       searchColumns: [],
     });

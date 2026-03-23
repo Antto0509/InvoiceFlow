@@ -8,7 +8,7 @@ export class CompanyAddressesApi extends ResourceApi<CompanyAddress> {
   constructor() {
     super({
       table: "company_addresses",
-      select: "*",
+      select: "id, company_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at",
       sortableColumns: ["created_at", "city", "country"],
       searchColumns: ["label", "street", "city", "postal_code", "country"],
       protectedColumns: ["company_id"],

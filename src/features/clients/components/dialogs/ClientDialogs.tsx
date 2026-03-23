@@ -126,7 +126,6 @@ export function ClientDialogs(props: ClientDialogsProps) {
 
     // Par défaut: création
     const p = props as Extract<ClientDialogsProps, { mode?: "create" }>;
-    console.log("Rendering ClientCreateDialog with props:", p);
     return (
         <ClientCreateDialog
             isCreateOpen={p.isCreateOpen}

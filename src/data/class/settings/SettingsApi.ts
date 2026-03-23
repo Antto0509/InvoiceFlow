@@ -8,7 +8,7 @@ export class SettingsApi extends ResourceApi<Settings> {
     constructor() {
         super({
             table: "settings",
-            select: "*",
+            select: "user_id, logo_url, legal_notes, bank_info, tax_rate, updated_at",
             sortableColumns: ["updated_at", "user_id"],
             searchColumns: [],
         });

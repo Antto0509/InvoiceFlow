@@ -4,6 +4,7 @@ import { ListPage } from "@/components/ListPage";
 import { DataToolbar } from "@/components/datatable/DataToolbar";
 import { Pagination } from "@/components/datatable/Pagination";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useDataTable } from "@/hooks/useDataTable";
@@ -22,7 +23,7 @@ import {
     DocumentDialogs, 
     DocumentsComponentProps
 } from "@/features/documents";
-import { labelDocKind } from "@/lib/utils";
+import { labelDocKind, labelDocKindPlural, labelNewDoc } from "@/lib/utils";
 
 export default function DocumentComponent({ kind }: DocumentsComponentProps): React.ReactElement {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
@@ -60,15 +61,7 @@ export default function DocumentComponent({ kind }: DocumentsComponentProps): Re
       const full = await getDocumentDetail(row.id);
       setEditInvoice(full as EditDoc);
     } catch (e) {
-      if ( kind === "invoice") {
-        toast.error("Impossible de charger la facture");
-      } else if ( kind === "quote") {
-        toast.error("Impossible de charger le devis");
-      } else if ( kind === "credit_note") {
-        toast.error("Impossible de charger l'avoir");
-      } else if ( kind === "proforma") {
-        toast.error("Impossible de charger le proforma");
-      }
+      toast.error(`Impossible de charger ${labelDocKind(kind).toLowerCase()}`);
       console.error(e);
     } finally {
       setUpdating(false);
@@ -81,16 +74,16 @@ export default function DocumentComponent({ kind }: DocumentsComponentProps): Re
 
   return (
     <ListPage
-      title={labelDocKind(kind) === "Devis" ? "Devis" : labelDocKind(kind) + "s"}
-      description={`Gère tes ${labelDocKind(kind).toLowerCase() === "devis" ? "devis" : labelDocKind(kind).toLowerCase() + "s"} : ajouter, éditer, supprimer.`}
+      title={labelDocKindPlural(kind)}
+      description={`Gère tes ${labelDocKindPlural(kind).toLowerCase()} : ajouter, éditer, supprimer.`}
       actions={
         <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4" /> {kind === "invoice" ? "Nouvelle facture" : kind === "quote" ? "Nouveau devis" : kind === "credit_note" ? "Nouvel avoir" : "Nouveau proforma"}
+          <Plus className="h-4 w-4" /> {labelNewDoc(kind)}
         </Button>
       }
       toolbar={
         <DataToolbar
-          placeholder={`Rechercher ${kind === "invoice" ? "une facture" : kind === "quote" ? "un devis" : kind === "credit_note" ? "un avoir" : "un proforma"} (n° ou client).`}
+          placeholder={`Rechercher ${labelNewDoc(kind).toLowerCase()} (n° ou client).`}
           search={params.search ?? ""}
           onSearch={(v) => setParams({ ...params, page: 1, search: v })}
           left={
@@ -102,11 +95,20 @@ export default function DocumentComponent({ kind }: DocumentsComponentProps): Re
           }
           right={
             <>
-              <Button size="sm" variant="secondary" onClick={() => {}}>
-                <Upload className="h-4 w-4 mr-1" />
-                Importer
-              </Button>
-              <ExportMenu onExportAll={() => {}} onExportPage={() => {}} />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0}>
+                      <Button size="sm" variant="secondary" disabled>
+                        <Upload className="h-4 w-4 mr-1" />
+                        Importer
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Bientôt disponible</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <ExportMenu onExportAll={() => {}} onExportPage={() => {}} disabled />
             </>
           }
         />
@@ -118,7 +120,7 @@ export default function DocumentComponent({ kind }: DocumentsComponentProps): Re
         sort={params.sort}
         onSortChange={(s) => setParams({ ...params, sort: s })}
         onRowClick={(id) => {
-          toast.info(`Cliqué sur ${kind === "invoice" ? "la facture" : kind === "quote" ? "le devis" : kind === "credit_note" ? "l'avoir" : "le proforma"} #${id}`);
+          toast.info(`Cliqué sur ${labelDocKind(kind).toLowerCase()} #${id}`);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}

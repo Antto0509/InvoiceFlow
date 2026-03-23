@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { createClientServer } from "@/data/supabase";
 import { sendBrevoTransacEmail } from "@/data/brevo";
 import { renderEmailTemplate } from "@/features/emails/renderEmailTemplate";
@@ -35,6 +36,11 @@ export async function POST(req: Request, ctx: Ctx) {
 
   if (!user || authError) {
     return userError(401, "UNAUTHORIZED", "Connexion requise.", traceId);
+  }
+
+  // Rate limit : 10 envois d'email par heure et par utilisateur
+  if (!checkRateLimit(`send-email:${user.id}`, 10, 60 * 60 * 1000)) {
+    return rateLimitResponse(3600);
   }
 
   const { id: documentId } = await ctx.params;
@@ -248,6 +254,18 @@ export async function POST(req: Request, ctx: Ctx) {
   // ---------------------------------------------------------------------------
   // Send email (Brevo)
   // ---------------------------------------------------------------------------
+  const senderEmail = process.env.NEXT_PUBLIC_SENDER_EMAIL;
+  const senderName = process.env.NEXT_PUBLIC_SENDER_NAME;
+
+  if (!senderEmail || !senderName) {
+    return userError(
+      500,
+      "SENDER_CONFIG_MISSING",
+      "Configuration d'envoi manquante. Contacte le support.",
+      traceId
+    );
+  }
+
   try {
     const brevoRes = await sendBrevoTransacEmail({
       replyTo: {
@@ -255,8 +273,8 @@ export async function POST(req: Request, ctx: Ctx) {
         name: document.company.name,
       },
       sender: {
-        email: process.env.NEXT_PUBLIC_SENDER_EMAIL || "no-reply@reelium.fr",
-        name: process.env.NEXT_PUBLIC_SENDER_NAME || "InvoiceFlow",
+        email: senderEmail,
+        name: senderName,
       },
       to: [
         {

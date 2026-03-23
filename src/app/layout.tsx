@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lexend } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"; 
 import { Suspense } from "react";
@@ -14,9 +14,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const lexend = Lexend({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-lexend",
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -101,7 +101,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={`${inter.variable} ${lexend.variable}`} suppressHydrationWarning>
+    <html lang="fr" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <body className="font-sans bg-background text-foreground antialiased">
         <ThemeProvider>
           <ThemeWipeProvider>

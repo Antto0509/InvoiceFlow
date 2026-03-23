@@ -15,10 +15,10 @@ import {
   zEmail,
   zNonEmptyString,
 } from "@/lib/zod";
-import { ADDRESS_KINDS } from "@/lib/constants";
+import { CLIENT_ADDRESS_KINDS } from "@/lib/constants";
 
-/** ENUM côté front aligné avec DB: client_address_kind */
-export const clientAddressKindEnum = z.enum(ADDRESS_KINDS).describe("Type d’adresse du client");
+/** ENUM côté front aligné avec DB: client_address_kind (pas de ‘headquarters’ pour les clients) */
+export const clientAddressKindEnum = z.enum(CLIENT_ADDRESS_KINDS).describe("Type d’adresse du client");
 
 // ---------------------------------------------------------------------------
 // 2) Schémas — Clients
@@ -123,14 +123,17 @@ export type ClientWithDetails = z.infer<typeof clientWithDetailsSchema>;
 // 6) Listing / Table / Params / Sort
 // ---------------------------------------------------------------------------
 
-/** Liste des clients pour tableau */
+/** Liste des clients pour tableau — reflète les colonnes retournées par listClients() */
 export type ClientListRow = {
   id: string;
-  name: string | null | undefined; // souple si SELECT partiel
+  company_id: string;
+  membership_id: string | null;
+  name: string;
   email: string | null;
   phone: string | null;
-  created_at: string;   // ISO
-  updated_at: string;   // ISO
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 /** Tri des listes de clients */

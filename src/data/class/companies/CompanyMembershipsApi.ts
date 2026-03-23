@@ -13,7 +13,7 @@ export class CompanyMembershipsApi extends ResourceApi<CompanyMembership> {
   constructor() {
     super({
       table: "company_memberships",
-      select: "*",
+      select: "id, company_id, user_id, role, created_at",
       sortableColumns: ["role", "created_at"],
       searchColumns: [],
       protectedColumns: ["company_id", "user_id"],

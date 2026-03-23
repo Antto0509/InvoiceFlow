@@ -1,11 +1,11 @@
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
 import { Currency } from "@/schemas/currencies.schema";
 
 /** API pour les devises */
 const makeCurrenciesApi = () =>
-  createResourceApi<Currency>({
+  new ResourceApi<Currency>({
     table: "currencies",
-    select: "*",
+    select: "code, name, symbol, locale, is_active, created_at, updated_at",
     sortableColumns: ["code", "name", "is_active", "created_at", "updated_at"],
     searchColumns: ["code", "name", "symbol"],
     primaryKey: "code",

@@ -8,7 +8,7 @@ export class DocumentNumberingConfigsApi extends ResourceApi<DocumentNumberingCo
   constructor() {
     super({
       table: "document_numbering_configs",
-      select: "*",
+      select: "id, company_id, kind, prefix, format, is_active, created_at, updated_at",
       sortableColumns: ["id", "company_id", "kind", "is_active", "updated_at"],
       searchColumns: [],
     });

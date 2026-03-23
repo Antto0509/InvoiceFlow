@@ -8,7 +8,7 @@ export class FileLinksApi extends ResourceApi<FileTarget> {
   constructor() {
     super({
       table: "file_links",
-      select: "*",
+      select: "file_id, target_table, target_id, created_at",
       sortableColumns: [
         "file_id",
         "target_table",

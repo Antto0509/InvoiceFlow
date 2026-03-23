@@ -5,6 +5,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/datatable/DataTable";
 import { LogsTableProps, LogsView } from "@/features/activityLogs/schemas/logs.schema";
 import { getLogMessage } from "@/lib/logs";
+import { formatDateTime } from "@/lib/utils";
 
 export function LogsTable({
     data = [],
@@ -26,10 +27,7 @@ export function LogsTable({
             header: "Date",
             cell: ({ row }) => (
                 <span className="font-medium">
-                    {row.original.created_at ? new Date(row.original.created_at).toLocaleString("fr-FR", {  //Formatage de la colonne pour le format JJ/MM/AAAA HH:MM
-                        dateStyle: "short",
-                        timeStyle: "short"
-                    }) : "—"}
+                    {formatDateTime(row.original.created_at)}
                 </span>
             )
         },

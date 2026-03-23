@@ -1,4 +1,5 @@
-import { createResourceApi } from "@/data/createResourceApi";
+import { ResourceApi } from "@/data/class/ResourceApi";
+import { isDev } from "@/lib/env";
 import type {
   Client,
   ClientAddress,
@@ -23,7 +24,7 @@ import { SORTABLE_CLIENTS } from "@/lib/constants";
  * @returns ResourceApi<Client> instance
  */
 export const makeClientsApi = (companyId?: string) =>
-  createResourceApi<Client>({
+  new ResourceApi<Client>({
     table: "clients",
     select:
       "id, company_id, membership_id, name, email, phone, notes, created_at, updated_at",
@@ -34,6 +35,7 @@ export const makeClientsApi = (companyId?: string) =>
       ? { company_id: { op: "eq", value: companyId } }
       : undefined,
     protectedColumns: [],
+    withLogging: true,
   });
 
 /**
@@ -61,7 +63,7 @@ export async function searchClients(
       .filter((c): c is Client & { id: string } => typeof c.id === "string")
       .map((c) => ({ id: c.id, name: c.name, email: c.email ?? null }));
   } catch (err) {
-    console.error("[ClientsApi:searchClients] Failed", { q, limit, companyId }, err);
+    if (isDev) console.error("[ClientsApi:searchClients] Failed", { q, limit, companyId }, err);
     throw err;
   }
 }
@@ -111,7 +113,7 @@ export async function listClients(
 
     return { rows: data as ClientListRow[], total };
   } catch (err) {
-    console.error("[ClientsApi:listClients] Failed", { params, companyId }, err);
+    if (isDev) console.error("[ClientsApi:listClients] Failed", { params, companyId }, err);
     throw err;
   }
 }
@@ -148,7 +150,7 @@ export const bulkDeleteClients = (ids: string[], companyId?: string) =>
  * @returns ResourceApi<ClientAddress> instance
  */
 export const makeClientAddressesApi = (clientId?: string) =>
-  createResourceApi<ClientAddress>({
+  new ResourceApi<ClientAddress>({
     table: "client_addresses",
     select:
       "id, client_id, kind, line1, line2, postal_code, city, region, country, created_at, updated_at, client:clients(name)",
@@ -165,6 +167,7 @@ export const makeClientAddressesApi = (clientId?: string) =>
     defaultFilters: clientId
       ? { client_id: { op: "eq", value: clientId } }
       : undefined,
+    withLogging: true,
   });
 
 /**
@@ -173,7 +176,7 @@ export const makeClientAddressesApi = (clientId?: string) =>
  * @returns ResourceApi<ClientContact> instance
  */
 export const makeClientContactsApi = (clientId?: string) =>
-  createResourceApi<ClientContact>({
+  new ResourceApi<ClientContact>({
     table: "client_contacts",
     select: "id, client_id, full_name, email, phone, role, created_at, updated_at, client:clients(name)",
     sortableColumns: [
@@ -188,6 +191,7 @@ export const makeClientContactsApi = (clientId?: string) =>
     defaultFilters: clientId
       ? { client_id: { op: "eq", value: clientId } }
       : undefined,
+    withLogging: true,
   });
 
 /* ---------------------------------- */
@@ -242,11 +246,7 @@ export async function listClientAddresses(
 
     return { rows, total };
   } catch (err) {
-    console.error(
-      "[ClientsApi:listClientAddresses] Failed",
-      { params, clientId },
-      err
-    );
+    if (isDev) console.error("[ClientsApi:listClientAddresses] Failed", { params, clientId }, err);
     throw err;
   }
 }
@@ -302,11 +302,7 @@ export async function listClientContacts(
 
     return { rows, total };
   } catch (err) {
-    console.error(
-      "[ClientsApi:listClientContacts] Failed",
-      { params, clientId },
-      err
-    );
+    if (isDev) console.error("[ClientsApi:listClientContacts] Failed", { params, clientId }, err);
     throw err;
   }
 }
@@ -368,11 +364,7 @@ export async function getClientWithDetails(
       contacts: contacts.rows,
     };
   } catch (err) {
-    console.error(
-      "[ClientsApi:getClientWithDetails] Failed",
-      { id, companyId },
-      err
-    );
+    if (isDev) console.error("[ClientsApi:getClientWithDetails] Failed", { id, companyId }, err);
     throw err;
   }
 }

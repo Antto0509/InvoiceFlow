@@ -112,11 +112,15 @@ const ACTIVITY_MESSAGES = {
     },
 };
 
-function parseLogJson(log: LogsView): LogJson {
-    if (typeof log.log_json === 'string') {
-        return JSON.parse(log.log_json);
+function parseLogJson(log: LogsView): LogJson | null {
+    try {
+        if (typeof log.log_json === 'string') {
+            return JSON.parse(log.log_json);
+        }
+        return log.log_json;
+    } catch {
+        return null;
     }
-    return log.log_json;
 }
 
 function buildActivityMessage(activity: ActivityBuild): string {
@@ -126,6 +130,7 @@ function buildActivityMessage(activity: ActivityBuild): string {
 
 export function getLogMessage(log: LogsView): string {
     const logJson = parseLogJson(log);
+    if (!logJson) return "Action effectuée";
     const activity: ActivityBuild = {
         resource: logJson.resource,
         action: logJson.action_nature,
@@ -139,7 +144,6 @@ export function extractLogMetadata(
     resource: Resource,
     payload: Record<string, unknown>
 ): ActivityMetadata {
-    console.log("payload", payload);
     switch (resource) {
         case "documents":
         case "documents_with_client":

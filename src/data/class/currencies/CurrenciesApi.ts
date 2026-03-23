@@ -12,7 +12,7 @@ export class CurrenciesApi extends ResourceApi<Currency> {
   constructor() {
     super({
       table: "currencies",
-      select: "*",
+      select: "code, name, symbol, locale, is_active, created_at, updated_at",
       sortableColumns: ["code", "name", "is_active", "created_at", "updated_at"],
       searchColumns: ["code", "name", "symbol"],
       primaryKey: "code",
@@ -55,13 +55,13 @@ export class CurrenciesApi extends ResourceApi<Currency> {
    * Liste complète (usage admin / config)
    * @returns Liste de toutes les devises
    */
-  async listAll() {
-    const { data } = await this.list({
+  override async listAll() {
+    const { data, total } = await this.list({
       page: 1,
       pageSize: 100,
       sort: { column: "code", dir: "asc" },
     });
 
-    return data;
+    return { data, truncated: total > 100 };
   }
 }

@@ -21,8 +21,10 @@ const hoisted = vi.hoisted(() => ({
   createResourceApiMock: vi.fn(),
 }));
 
-vi.mock("@/data/createResourceApi", () => ({
-  createResourceApi: (opts: Record<string, unknown>) => hoisted.createResourceApiMock(opts),
+vi.mock("@/data/class/ResourceApi", () => ({
+  ResourceApi: function(opts: Record<string, unknown>) {
+    return hoisted.createResourceApiMock(opts);
+  },
 }));
 
 // Supabase client mock for getDocumentDetail + createDocumentWithLines

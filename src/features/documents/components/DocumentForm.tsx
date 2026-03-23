@@ -179,7 +179,7 @@ export function DocumentForm({
         defaultValues?.status && cfg.allowedStatuses.includes(defaultValues.status)
           ? defaultValues.status
           : "draft",
-      kind: defaultValues?.kind ?? "invoice",
+      kind: defaultValues?.kind ?? kind,
       reference_document_id: defaultValues?.reference_document_id ?? null,
       payment_terms: defaultValues?.payment_terms ?? null,
       penalty_rate: defaultValues?.penalty_rate ?? null,
@@ -398,14 +398,7 @@ export function DocumentForm({
                     <SelectClient 
                       value={field.value} 
                       onChange={(next) => {
-                        console.group("👤 DocumentForm / SelectClient");
-                        console.info("➡️ client_id change:", { prev: field.value, next });
                         field.onChange(next);
-                        queueMicrotask(() => {
-                          console.info("📦 RHF client_id now:", form.getValues("client_id"));
-                          console.info("🧨 errors.client_id:", form.formState.errors.client_id);
-                          console.groupEnd();
-                        });
                       }}
                       disabled={lockFinancial} 
                     />
@@ -426,14 +419,7 @@ export function DocumentForm({
                     <SelectCompany 
                       value={field.value} 
                       onChange={(next) => {
-                        console.group("🏢 DocumentForm / SelectCompany");
-                        console.info("➡️ company_id change:", { prev: field.value, next });
                         field.onChange(next);
-                        queueMicrotask(() => {
-                          console.info("📦 RHF company_id now:", form.getValues("company_id"));
-                          console.info("🧨 errors.company_id:", form.formState.errors.company_id);
-                          console.groupEnd();
-                        });
                       }} 
                       disabled={lockFinancial} 
                     />

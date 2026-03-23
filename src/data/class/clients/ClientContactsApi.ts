@@ -9,7 +9,7 @@ export class ClientContactsApi extends ResourceApi<ClientContact> {
   constructor(clientId?: string) {
     super({
       table: "client_contacts",
-      select: "*, client:clients(name)",
+      select: "id, client_id, full_name, email, phone, role, created_at, updated_at, client:clients(name)",
       sortableColumns: [
         "full_name",
         "email",

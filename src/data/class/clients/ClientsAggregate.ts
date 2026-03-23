@@ -102,30 +102,26 @@ export class ClientsAggregate {
     const addressesApi = new ClientAddressesApi(client.id);
     const contactsApi = new ClientContactsApi(client.id);
 
-    const createdAddresses: ClientAddress[] = [];
-    const createdContacts: ClientContact[] = [];
+    try {
+      const [createdAddresses, createdContacts] = await Promise.all([
+        addresses?.length
+          ? addressesApi.upsertMany(addresses.map((addr) => ({ ...addr, client_id: client.id })))
+          : Promise.resolve([] as ClientAddress[]),
+        contacts?.length
+          ? contactsApi.upsertMany(contacts.map((cont) => ({ ...cont, client_id: client.id })))
+          : Promise.resolve([] as ClientContact[]),
+      ]);
 
-    if (addresses?.length) {
-        for (const addr of addresses) {
-            createdAddresses.push(
-                await addressesApi.create({ ...addr, client_id: client.id })
-            );
-        }
+      return {
+        client,
+        addresses: createdAddresses,
+        contacts: createdContacts,
+      };
+    } catch (err) {
+      // Rollback : suppression du client pour éviter les données orphelines
+      await clientsApi.remove(client.id).catch(() => null);
+      throw err;
     }
-
-    if (contacts?.length) {
-        for (const cont of contacts) {
-            createdContacts.push(
-                await contactsApi.create({ ...cont, client_id: client.id })
-            );
-        }
-    }
-
-    return {
-      client,
-      addresses: createdAddresses ?? [],
-      contacts: createdContacts ?? [],
-    };
   }
 
   /**

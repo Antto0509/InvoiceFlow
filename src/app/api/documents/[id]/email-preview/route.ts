@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { createClientServer } from "@/data/supabase";
 import { renderEmailTemplate } from "@/features/emails/renderEmailTemplate";
 import { emailSubjects, EmailVars } from "@/features/emails/document";
@@ -17,6 +18,11 @@ export async function GET(req: Request, ctx: Ctx) {
 
   if (!user || authError) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit : 60 prévisualisations par minute et par utilisateur
+  if (!checkRateLimit(`email-preview:${user.id}`, 60, 60 * 1000)) {
+    return rateLimitResponse(60);
   }
 
   const { id: documentId } = await ctx.params;

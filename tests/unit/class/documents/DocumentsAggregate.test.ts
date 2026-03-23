@@ -56,7 +56,7 @@ describe("DocumentsAggregate", () => {
     );
 
     vi.spyOn(DocumentLinesApi.prototype, "listByDocument").mockResolvedValue(
-      ([{ id: "line-1" }] as unknown) as DocumentLinesListByDocumentResponse
+      ({ data: [{ id: "line-1" }], total: 1 } as unknown) as DocumentLinesListByDocumentResponse
     );
 
     const aggregate = new DocumentsAggregate();

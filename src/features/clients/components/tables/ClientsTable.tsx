@@ -6,6 +6,7 @@ import { RowActions } from "@/components/datatable/RowActions";
 import { DataTable } from "@/components/datatable/DataTable";
 import { ClientsTableProps, ClientListRow, ClientSort } from "@/schemas/clients.schema";
 import { SortBtn } from "@/components/datatable/SortBtn";
+import { formatDate } from "@/lib/utils";
 
 export function ClientsTable({
   data = [],
@@ -111,9 +112,7 @@ export function ClientsTable({
         ),
         cell: ({ row }) => (
           <span className="hidden xl:inline">
-            {row.original.created_at
-              ? new Date(row.original.created_at).toLocaleDateString()
-              : "—"}
+            {formatDate(row.original.created_at)}
           </span>
         ),
       },

@@ -12,7 +12,7 @@ export class ClientsApi extends ResourceApi<Client> {
   constructor(companyId?: string) {
     super({
       table: "clients",
-      select: "*",
+      select: "id, company_id, membership_id, name, email, address, company, phone, notes, created_at, updated_at",
       sortableColumns: [...SORTABLE_CLIENTS],
       searchColumns: ["name", "email", "company"],
       defaultFilters: companyId

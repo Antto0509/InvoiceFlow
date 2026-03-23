@@ -10,7 +10,7 @@ export class CompaniesApi extends ResourceApi<Company> {
   constructor(userId?: string) {
     super({
       table: "companies",
-      select: "*",
+      select: "id, user_id, name, legal_form, siren, siret, vat_number, rcs_city, ape_naf, share_capital, website, email, phone, logo_url, default_currency, payment_terms, penalty_rate, recovery_fee_enabled, vat_regime, legal_notes, created_at, updated_at",
       sortableColumns: [...SORTABLE_COMPANIES],
       searchColumns: [
         "name",
